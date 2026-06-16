@@ -32,7 +32,7 @@
 
 ## Próximos pasos inmediatos
 
-1. **Decidir la ciudad piloto** (doc 03 §3: laboratorio vs mercado de pago) — la única decisión abierta que bloquea el arranque.
-2. **Elegir nombre y dominio nuevos** (doc 02 §8) — proyecto nuevo, marca nueva.
-3. Crear el repo nuevo y ejecutar la Fase 0 (doc 06).
-4. Mientras: correr el ETL de prueba sobre la ciudad elegida para medir cuántos lugares reales salen de OSM (valida la Fase 1 antes de escribir UI).
+1. ~~Decidir la ciudad piloto~~ ✅ **Decidida: Puerto Varas (Los Lagos, Chile)** — mercado de pago en formato ciudad mediana/turística (doc 07). Sembrada y activa en `cities`.
+2. **Elegir nombre y dominio nuevos** (doc 02 §8) — proyecto nuevo, marca nueva. *(Decisión abierta restante.)*
+3. ~~Crear el repo nuevo y ejecutar la Fase 0~~ — repo creado; BD de Fase 0 aplicada (esquema doc 05 + RLS + triggers + seed). Migraciones en `supabase/migrations/`.
+4. **Siguiente:** correr el ETL de prueba sobre Puerto Varas para medir cuántos lugares reales salen de OSM (valida la Fase 1 antes de escribir UI).

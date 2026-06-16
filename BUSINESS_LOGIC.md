@@ -36,7 +36,7 @@
 
 **Rol (C):** urbano 18–35, decide a última hora y en grupo, fatiga de Instagram. Momentos: "ahora mismo" (geolocalizado), planificando el finde, descubrimiento pasivo.
 **Rol (B):** dueño de restaurante/bar/cafetería/discoteca/eventos pequeños sin community manager, que vive en el teléfono (auth por OTP).
-**Contexto:** vertical comida/bares/nightlife/eventos pequeños × **una sola ciudad** hasta densidad (≥500 lugares ricos, ≥30 negocios reclamados). Escenario A (Santa Clara/Cuba) = laboratorio de producto; Escenario B (ciudad hispana con poder de pago) = mercado de monetización. Arquitectura multi-ciudad desde el día 1. **Decisión abierta que bloquea el arranque: la ciudad piloto** (doc 03 §3).
+**Contexto:** vertical comida/bares/nightlife/eventos pequeños × **una sola ciudad** hasta densidad (≥500 lugares ricos, ≥30 negocios reclamados). Escenario A (Santa Clara/Cuba) = laboratorio de producto; Escenario B (ciudad hispana con poder de pago) = mercado de monetización. Arquitectura multi-ciudad desde el día 1. **Ciudad piloto decidida: Puerto Varas (Los Lagos, Chile)** — mercado de pago (Chile, doc 07) en formato ciudad mediana/turística como laboratorio de densidad. Ya sembrada y activa en `cities` (id=1).
 
 ## 4. Arquitectura de Datos
 
