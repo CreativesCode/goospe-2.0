@@ -121,6 +121,9 @@ export default function FeedPage() {
         <Link href="/eventos" className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur transition hover:bg-white/25">
           📅 Eventos
         </Link>
+        <Link href="/buscar" className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur transition hover:bg-white/25">
+          🔍 Buscar
+        </Link>
       </div>
 
       {/* cuenta */}

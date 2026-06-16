@@ -1008,6 +1008,7 @@ export type Database = {
           p_radius_m?: number
         }
         Returns: {
+          boosted: boolean
           category_emoji: string
           category_name: string
           description: string
@@ -1063,6 +1064,30 @@ export type Database = {
       }
       recompute_place_stats: { Args: { p_place: string }; Returns: undefined }
       recompute_trending: { Args: never; Returns: undefined }
+      search_places: {
+        Args: {
+          p_category?: number
+          p_lat?: number
+          p_limit?: number
+          p_lng?: number
+          p_max_price?: number
+          p_q?: string
+          p_radius_m?: number
+        }
+        Returns: {
+          category_emoji: string
+          category_name: string
+          distance_m: number
+          hours: Json
+          id: string
+          name: string
+          photo_url: string
+          price_level: number
+          rating: number
+          slug: string
+          vibe_line: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
