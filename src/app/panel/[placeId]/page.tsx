@@ -3,6 +3,8 @@ import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ListingForm } from '@/features/business/ListingForm'
+import { EventManager } from '@/features/business/EventManager'
+import { BoostControl } from '@/features/business/BoostControl'
 
 export const dynamic = 'force-dynamic'
 
@@ -53,6 +55,30 @@ export default async function EditListingPage({
   }
   if (!allowed) redirect('/panel')
 
+  // Eventos del lugar + boost activo (para los controles del dueño).
+  const { data: evRows } = await admin
+    .from('events')
+    .select('id, name, starts_at, description')
+    .eq('place_id', placeId)
+    .order('starts_at', { ascending: false })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const events = (evRows ?? []) as any[]
+
+  const { data: boostRows } = await admin
+    .from('boosts')
+    .select('id, ends_at, status, starts_at')
+    .eq('place_id', placeId)
+    .eq('status', 'active')
+    .order('ends_at', { ascending: false })
+    .limit(1)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const activeBoostRow = (boostRows ?? [])[0] as any
+  const now = Date.now()
+  const activeBoost =
+    activeBoostRow && new Date(activeBoostRow.ends_at).getTime() > now
+      ? { id: activeBoostRow.id as string, ends_at: activeBoostRow.ends_at as string }
+      : null
+
   return (
     <main className="min-h-screen bg-gray-50">
       <header className="border-b border-black/5 bg-white">
@@ -76,8 +102,14 @@ export default async function EditListingPage({
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
-          <ListingForm place={place} />
+        <div className="space-y-6">
+          <BoostControl placeId={place.id} active={activeBoost} />
+
+          <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
+            <ListingForm place={place} />
+          </div>
+
+          <EventManager placeId={place.id} events={events} />
         </div>
       </div>
     </main>

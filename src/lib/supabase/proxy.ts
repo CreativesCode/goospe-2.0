@@ -5,7 +5,7 @@ import type { Database } from '@/lib/database.types'
 type CookieToSet = { name: string; value: string; options: CookieOptions }
 
 // Rutas que requieren sesión. El resto de la app (feed, places, concierge) es pública.
-const PROTECTED = ['/profile', '/saved', '/panel']
+const PROTECTED = ['/profile', '/saved', '/panel', '/admin']
 const AUTH_ROUTES = ['/login', '/signup']
 
 export async function updateSession(request: NextRequest) {

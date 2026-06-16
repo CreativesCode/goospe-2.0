@@ -3,6 +3,11 @@ import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { deletePhoto } from './actions'
 import { PlaceReviews } from '@/features/reviews/PlaceReviews'
+import { PhotoUpload } from '@/features/photos/PhotoUpload'
+import { RsvpButton } from '@/features/events/RsvpButton'
+
+const fmtEventDate = (s: string) =>
+  new Date(s).toLocaleString('es-CL', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 
 export const dynamic = 'force-dynamic'
 
@@ -37,6 +42,16 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
     .maybeSingle()
 
   if (!place) notFound()
+
+  const { data: events } = await sb
+    .from('events')
+    .select('id, name, description, image_url, starts_at, ends_at')
+    .eq('place_id', place.id)
+    .eq('status', 'approved')
+    .gte('starts_at', new Date(Date.now() - 86400_000).toISOString())
+    .order('starts_at')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const upcoming = (events ?? []) as any[]
 
   const { data: coords } = await sb.rpc('places_lnglat', { ids: [place.id] })
   const ll = coords?.[0]
@@ -109,6 +124,7 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
               <img src="/brand/isotipo-white.svg" alt="" className="h-14 w-14 opacity-90" />
             </div>
           )}
+          <PhotoUpload placeId={place.id} />
         </section>
 
         <div className="grid gap-8 md:grid-cols-2">
@@ -165,6 +181,29 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
             <Field label="Creado">{new Date(place.created_at!).toLocaleString('es-CL')}</Field>
           </dl>
         </section>
+
+        {/* eventos */}
+        {upcoming.length > 0 && (
+          <section className="mt-10 border-t border-black/5 pt-8">
+            <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-goospe-gray/40">Próximos eventos</h2>
+            <ul className="space-y-3">
+              {upcoming.map((ev) => (
+                <li key={ev.id} className="flex items-center gap-4 rounded-xl border border-black/5 bg-white p-4 shadow-sm">
+                  {ev.image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={ev.image_url} alt={ev.name} className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium uppercase text-goospe-green">{fmtEventDate(ev.starts_at)}</p>
+                    <h3 className="font-medium text-goospe-gray">{ev.name}</h3>
+                    {ev.description && <p className="line-clamp-1 text-sm text-goospe-gray/60">{ev.description}</p>}
+                  </div>
+                  <RsvpButton eventId={ev.id} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* reseñas */}
         <PlaceReviews placeId={place.id} />

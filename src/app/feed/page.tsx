@@ -23,6 +23,7 @@ type FeedItem = {
   photo_url: string | null
   category_emoji: string | null
   category_name: string | null
+  boosted: boolean
 }
 
 const fmtDist = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`)
@@ -65,10 +66,15 @@ export default function FeedPage() {
 
   return (
     <main className="h-[100dvh] snap-y snap-mandatory overflow-y-scroll bg-black">
-      {/* logo flotante */}
-      <Link href="/places" className="fixed left-4 top-4 z-20">
-        <img src="/brand/logo-white.svg" alt="Goospe" className="h-6 drop-shadow" />
-      </Link>
+      {/* logo + eventos */}
+      <div className="fixed left-4 top-4 z-20 flex items-center gap-3">
+        <Link href="/places">
+          <img src="/brand/logo-white.svg" alt="Goospe" className="h-6 drop-shadow" />
+        </Link>
+        <Link href="/eventos" className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur transition hover:bg-white/25">
+          📅 Eventos
+        </Link>
+      </div>
 
       {/* cuenta */}
       <div className="fixed right-4 top-4 z-20">
@@ -96,6 +102,13 @@ export default function FeedPage() {
           )}
           {/* overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/30" />
+
+          {/* badge destacado */}
+          {p.boosted && (
+            <span className="absolute left-4 top-16 z-10 rounded-full bg-goospe-gradient px-3 py-1 text-xs font-semibold text-white shadow-lg ring-1 ring-white/40">
+              ✨ Destacado
+            </span>
+          )}
 
           {/* acciones laterales */}
           <div className="absolute bottom-40 right-4 z-10 flex flex-col gap-5 text-white">
