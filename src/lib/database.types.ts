@@ -660,7 +660,9 @@ export type Database = {
           created_at: string | null
           id: string
           place_id: string
+          source: string | null
           status: string | null
+          storage_path: string | null
           url: string
         }
         Insert: {
@@ -668,7 +670,9 @@ export type Database = {
           created_at?: string | null
           id?: string
           place_id: string
+          source?: string | null
           status?: string | null
+          storage_path?: string | null
           url: string
         }
         Update: {
@@ -676,7 +680,9 @@ export type Database = {
           created_at?: string | null
           id?: string
           place_id?: string
+          source?: string | null
           status?: string | null
+          storage_path?: string | null
           url?: string
         }
         Relationships: [
@@ -993,6 +999,33 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_feed: {
+        Args: {
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+          p_offset?: number
+          p_radius_m?: number
+        }
+        Returns: {
+          category_emoji: string
+          category_name: string
+          description: string
+          distance_m: number
+          id: string
+          lat: number
+          lng: number
+          name: string
+          photo_url: string
+          price_level: number
+          rating: number
+          reviews_count: number
+          score: number
+          slug: string
+          tags: string[]
+          vibe_line: string
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       is_member: { Args: { b: string }; Returns: boolean }
       is_owner: { Args: { b: string }; Returns: boolean }
