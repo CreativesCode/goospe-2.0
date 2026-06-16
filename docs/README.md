@@ -17,6 +17,7 @@
 | [06-plan-de-implementacion.md](06-plan-de-implementacion.md) | 14 semanas en 6 fases con checklists y criterios de salida; backlog post-lanzamiento; riesgos de ejecución | vas a planificar el trabajo |
 | [07-gpt-conversation.md](07-gpt-conversation.md) | Evaluación externa (segunda opinión): factibilidad 7.5/10, ranking de mercados (Chile #1, Uruguay laboratorio, España después), pricing regional, recorte de MVP y una fase de validación de 4 semanas antes de construir | quieres una crítica externa antes de invertir tiempo/dinero |
 | [08-identidad-visual.md](08-identidad-visual.md) | Marca Goospe (heredada): nombre, logo del eslabón, paleta (verde `#2dc186` + gris + gradiente), tipografía Roboto, variantes de logo y nota del splash animado. Ya integrada en `public/brand/` + Tailwind | vas a construir UI |
+| [09-estado-implementacion.md](09-estado-implementacion.md) | **Estado actual del código**: inventario de lo construido (feed, conserje, auth, reseñas, panel B2B, eventos, boosts, fotos con moderación) + **análisis de brechas por fase** vs. el plan + orden recomendado. Pagos diferidos por decisión de equipo | quieres saber qué hay hecho y qué falta |
 
 ## Resumen en 10 líneas
 
@@ -36,4 +37,5 @@
 1. ~~Decidir la ciudad piloto~~ ✅ **Decidida: Puerto Varas (Los Lagos, Chile)** — mercado de pago en formato ciudad mediana/turística (doc 07). Sembrada y activa en `cities`.
 2. ~~Elegir nombre y dominio~~ ✅ **Nombre: Goospe** (se conserva la marca original — nombre, logo, paleta y tipografía; ver doc 08). Identidad ya integrada en la app. Dominio sugerido: goospe.com (doc 06).
 3. ~~Crear el repo nuevo y ejecutar la Fase 0~~ — repo creado; BD de Fase 0 aplicada (esquema doc 05 + RLS + triggers + seed). Migraciones en `supabase/migrations/`.
-4. **Siguiente:** correr el ETL de prueba sobre Puerto Varas para medir cuántos lugares reales salen de OSM (valida la Fase 1 antes de escribir UI).
+4. ~~Correr el ETL sobre Puerto Varas~~ ✅ **218 lugares** extraídos de OSM, enriquecidos con IA y con fotos. Feed, conserje, auth, reseñas, panel B2B, eventos, boosts y fotos de usuario con moderación **ya construidos** (ver doc 09).
+5. **Siguiente:** cerrar las brechas no-pago del MVP en el orden del **[doc 09 §5](09-estado-implementacion.md)** — empezando por **telemetría `interactions`** (base de la personalización y de las estadísticas B2B). Pagos quedan para después de la validación con el equipo.
