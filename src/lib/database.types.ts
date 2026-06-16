@@ -1027,6 +1027,10 @@ export type Database = {
           vibe_line: string
         }[]
       }
+      increment_concierge_quota: {
+        Args: { p_month: string; p_user: string }
+        Returns: undefined
+      }
       is_admin: { Args: never; Returns: boolean }
       is_member: { Args: { b: string }; Returns: boolean }
       is_owner: { Args: { b: string }; Returns: boolean }

@@ -60,7 +60,12 @@ const PICK_SCHEMA = {
   },
 }
 
-export async function pickPlaces(query: string, candidates: Candidate[]): Promise<{ id: string; reason: string }[]> {
+export type Usage = { input_tokens: number; output_tokens: number }
+
+export async function pickPlaces(
+  query: string,
+  candidates: Candidate[]
+): Promise<{ picks: { id: string; reason: string }[]; usage: Usage }> {
   const compact = candidates.map((c) => ({
     id: c.id,
     nombre: c.name,
@@ -80,5 +85,9 @@ export async function pickPlaces(query: string, candidates: Candidate[]): Promis
     response_format: { type: 'json_schema', json_schema: PICK_SCHEMA },
   })
   const out = JSON.parse(data.choices[0].message.content) as { picks: { id: string; reason: string }[] }
-  return (out.picks ?? []).slice(0, 3)
+  const u = data.usage ?? {}
+  return {
+    picks: (out.picks ?? []).slice(0, 3),
+    usage: { input_tokens: u.prompt_tokens ?? 0, output_tokens: u.completion_tokens ?? 0 },
+  }
 }
