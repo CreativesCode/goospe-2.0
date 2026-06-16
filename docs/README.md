@@ -15,6 +15,7 @@
 | [04-arquitectura-tecnica.md](04-arquitectura-tecnica.md) | Monorepo desde cero, Supabase (PostGIS+pgvector), cómo se calcula el feed sin LLM por scroll, capa de IA con tiers de modelo, ETL, RLS, CI/CD, coste de infra | vas a escribir código |
 | [05-modelo-de-datos.md](05-modelo-de-datos.md) | SQL completo del esquema nuevo, triggers, políticas RLS, y tabla de qué conceptos se inspiran en el dominio ya validado | vas a crear la base de datos |
 | [06-plan-de-implementacion.md](06-plan-de-implementacion.md) | 14 semanas en 6 fases con checklists y criterios de salida; backlog post-lanzamiento; riesgos de ejecución | vas a planificar el trabajo |
+| [07-gpt-conversation.md](07-gpt-conversation.md) | Evaluación externa (segunda opinión): factibilidad 7.5/10, ranking de mercados (Chile #1, Uruguay laboratorio, España después), pricing regional, recorte de MVP y una fase de validación de 4 semanas antes de construir | quieres una crítica externa antes de invertir tiempo/dinero |
 
 ## Resumen en 10 líneas
 
