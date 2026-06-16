@@ -5,6 +5,7 @@ import { deletePhoto } from './actions'
 import { PlaceReviews } from '@/features/reviews/PlaceReviews'
 import { PhotoUpload } from '@/features/photos/PhotoUpload'
 import { RsvpButton } from '@/features/events/RsvpButton'
+import { DetailTracker } from '@/features/places/DetailTracker'
 
 const fmtEventDate = (s: string) =>
   new Date(s).toLocaleString('es-CL', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -64,6 +65,7 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
 
   return (
     <main className="min-h-screen bg-white">
+      <DetailTracker placeId={place.id} />
       <header className="sticky top-0 z-10 border-b border-black/5 bg-white/80 px-5 py-4 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <Link href="/places" className="flex items-center gap-2 text-sm text-goospe-gray/70 hover:text-goospe-green">

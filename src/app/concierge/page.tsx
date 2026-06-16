@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { getPosition } from '@/lib/geo'
+import { track } from '@/lib/track'
 
 const EXAMPLES = [
   'algo romántico y barato',
@@ -46,6 +47,9 @@ export default function ConciergePage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Error')
       setPicks(data.picks)
+      for (const pk of (data.picks ?? []) as { id: string }[]) {
+        track('concierge_pick', { placeId: pk.id, context: { query: q } })
+      }
     } catch (e) {
       setError((e as Error).message)
     } finally {

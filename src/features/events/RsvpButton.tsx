@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toggleRsvp } from '@/actions/events'
+import { track } from '@/lib/track'
 
 export function RsvpButton({ eventId }: { eventId: string }) {
   const [going, setGoing] = useState(false)
@@ -33,6 +34,7 @@ export function RsvpButton({ eventId }: { eventId: string }) {
     const res = await toggleRsvp(fd)
     setBusy(false)
     if (res?.error) { alert(res.error); return }
+    if (res.going) track('rsvp', { eventId })
     setGoing(!!res.going)
   }
 

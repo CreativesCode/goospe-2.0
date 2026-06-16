@@ -1,11 +1,18 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { getPosition } from '@/lib/geo'
 import { useFavorites } from '@/hooks/useFavorites'
 import { AccountMenu } from '@/features/auth/components'
+import { track } from '@/lib/track'
+
+const DISMISSED_KEY = 'goospe:dismissed'
+const loadDismissed = (): Set<string> => {
+  if (typeof window === 'undefined') return new Set()
+  try { return new Set(JSON.parse(localStorage.getItem(DISMISSED_KEY) ?? '[]')) } catch { return new Set() }
+}
 
 type FeedItem = {
   id: string
@@ -34,6 +41,9 @@ export default function FeedPage() {
   const [error, setError] = useState<string | null>(null)
   const { isSaved, toggle } = useFavorites()
   const supabase = useMemo(() => createClient(), [])
+  const dismissed = useRef<Set<string>>(new Set())
+  const containerRef = useRef<HTMLElement>(null)
+  const seenCards = useRef<Set<string>>(new Set())
 
   const fetchFeed = useCallback(async (lat: number, lng: number) => {
     // `as never` en los args: workaround del tipado de rpc de supabase-js para funciones
@@ -46,13 +56,50 @@ export default function FeedPage() {
       p_offset: 0,
     } as never)
     if (error) setError(error.message)
-    else setItems((data ?? []) as FeedItem[])
+    else setItems(((data ?? []) as FeedItem[]).filter((p) => !dismissed.current.has(p.id)))
     setLoading(false)
   }, [supabase])
 
   useEffect(() => {
+    dismissed.current = loadDismissed()
     getPosition().then(({ lat, lng }) => fetchFeed(lat, lng))
   }, [fetchFeed])
+
+  // view_card: registra una vista cuando la card permanece visible ≥2s (señal de interés).
+  useEffect(() => {
+    if (!items.length || !containerRef.current) return
+    const timers = new Map<string, ReturnType<typeof setTimeout>>()
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          const id = (e.target as HTMLElement).dataset.placeId
+          if (!id) continue
+          if (e.isIntersecting && e.intersectionRatio >= 0.6) {
+            if (seenCards.current.has(id) || timers.has(id)) continue
+            timers.set(id, setTimeout(() => {
+              track('view_card', { placeId: id })
+              seenCards.current.add(id)
+              timers.delete(id)
+            }, 2000))
+          } else {
+            const t = timers.get(id)
+            if (t) { clearTimeout(t); timers.delete(id) }
+          }
+        }
+      },
+      { threshold: [0, 0.6, 1] }
+    )
+    containerRef.current.querySelectorAll('section[data-place-id]').forEach((n) => obs.observe(n))
+    return () => { timers.forEach(clearTimeout); obs.disconnect() }
+  }, [items])
+
+  const onSave = (p: FeedItem) => { track(isSaved(p.id) ? 'unsave' : 'save', { placeId: p.id }); toggle(p.id) }
+  const onDismiss = (id: string) => {
+    track('dismiss', { placeId: id })
+    dismissed.current.add(id)
+    localStorage.setItem(DISMISSED_KEY, JSON.stringify([...dismissed.current]))
+    setItems((prev) => prev.filter((p) => p.id !== id))
+  }
 
   if (loading) {
     return (
@@ -65,7 +112,7 @@ export default function FeedPage() {
   if (error) return <div className="p-8 text-red-600">Error: {error}</div>
 
   return (
-    <main className="h-[100dvh] snap-y snap-mandatory overflow-y-scroll bg-black">
+    <main ref={containerRef} className="h-[100dvh] snap-y snap-mandatory overflow-y-scroll bg-black">
       {/* logo + eventos */}
       <div className="fixed left-4 top-4 z-20 flex items-center gap-3">
         <Link href="/places">
@@ -90,7 +137,7 @@ export default function FeedPage() {
       </Link>
 
       {items.map((p) => (
-        <section key={p.id} className="relative h-[100dvh] w-full snap-start snap-always">
+        <section key={p.id} data-place-id={p.id} className="relative h-[100dvh] w-full snap-start snap-always">
           {/* foto */}
           {p.photo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -112,7 +159,7 @@ export default function FeedPage() {
 
           {/* acciones laterales */}
           <div className="absolute bottom-40 right-4 z-10 flex flex-col gap-5 text-white">
-            <button onClick={() => toggle(p.id)} className="flex flex-col items-center gap-1">
+            <button onClick={() => onSave(p)} className="flex flex-col items-center gap-1">
               <span className={`flex h-12 w-12 items-center justify-center rounded-full text-2xl backdrop-blur transition ${isSaved(p.id) ? 'bg-goospe-green' : 'bg-white/20'}`}>
                 {isSaved(p.id) ? '❤️' : '🤍'}
               </span>
@@ -122,19 +169,25 @@ export default function FeedPage() {
               href={`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`}
               target="_blank"
               rel="noreferrer"
+              onClick={() => track('directions', { placeId: p.id })}
               className="flex flex-col items-center gap-1"
             >
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-2xl backdrop-blur">🧭</span>
               <span className="text-xs">Cómo llego</span>
             </a>
             <button
-              onClick={() =>
+              onClick={() => {
+                track('share', { placeId: p.id })
                 navigator.share?.({ title: p.name, text: p.vibe_line ?? p.name, url: `${location.origin}/places/${p.slug}` }).catch(() => {})
-              }
+              }}
               className="flex flex-col items-center gap-1"
             >
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-2xl backdrop-blur">📤</span>
               <span className="text-xs">Compartir</span>
+            </button>
+            <button onClick={() => onDismiss(p.id)} className="flex flex-col items-center gap-1">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-2xl backdrop-blur transition hover:bg-white/30">🚫</span>
+              <span className="text-xs">No me interesa</span>
             </button>
           </div>
 
