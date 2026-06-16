@@ -59,6 +59,13 @@ export function AccountMenu() {
           >
             ❤️ Mis guardados
           </Link>
+          <Link
+            href="/panel"
+            className="block px-4 py-2.5 text-sm text-goospe-gray transition hover:bg-goospe-green/10"
+            onClick={() => setOpen(false)}
+          >
+            🏪 Panel de negocio
+          </Link>
           <form action={signout}>
             <button
               type="submit"
