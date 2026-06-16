@@ -28,9 +28,12 @@ export default async function AdminFotosPage() {
       <header className="border-b border-black/5 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
           <Link href="/feed"><img src="/brand/logo-color.svg" alt="Goospe" className="h-7" /></Link>
-          <span className="rounded-full bg-goospe-green/10 px-3 py-1 text-xs font-medium text-goospe-green-dark">
-            Moderación · {pending.length} pendientes
-          </span>
+          <div className="flex items-center gap-3 text-sm">
+            <span className="rounded-full bg-goospe-green/10 px-3 py-1 text-xs font-medium text-goospe-green-dark">
+              Fotos · {pending.length} pendientes
+            </span>
+            <Link href="/admin/contenido" className="text-goospe-gray/60 hover:text-goospe-green">Contenido</Link>
+          </div>
         </div>
       </header>
 
