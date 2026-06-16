@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { getPosition } from '@/lib/geo'
 
-const FALLBACK = { lat: -41.3195, lng: -72.9854 }
 const EXAMPLES = [
   'algo romántico y barato',
   'café tranquilo para trabajar',
@@ -27,17 +27,6 @@ type Pick = {
 
 const fmtDist = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`)
 
-function getPos(): Promise<{ lat: number; lng: number }> {
-  return new Promise((resolve) => {
-    if (!navigator.geolocation) return resolve(FALLBACK)
-    navigator.geolocation.getCurrentPosition(
-      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
-      () => resolve(FALLBACK),
-      { timeout: 6000 }
-    )
-  })
-}
-
 export default function ConciergePage() {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
@@ -48,7 +37,7 @@ export default function ConciergePage() {
     if (q.trim().length < 2) return
     setLoading(true); setError(null); setPicks(null)
     try {
-      const { lat, lng } = await getPos()
+      const { lat, lng } = await getPosition()
       const res = await fetch('/api/concierge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

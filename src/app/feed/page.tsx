@@ -3,9 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-
-// Puerto Varas centro (fallback si el usuario no da ubicación)
-const FALLBACK = { lat: -41.3195, lng: -72.9854 }
+import { getPosition } from '@/lib/geo'
 
 type FeedItem = {
   id: string
@@ -62,12 +60,7 @@ export default function FeedPage() {
   }, [supabase])
 
   useEffect(() => {
-    if (!navigator.geolocation) return void fetchFeed(FALLBACK.lat, FALLBACK.lng)
-    navigator.geolocation.getCurrentPosition(
-      (pos) => fetchFeed(pos.coords.latitude, pos.coords.longitude),
-      () => fetchFeed(FALLBACK.lat, FALLBACK.lng),
-      { timeout: 6000 }
-    )
+    getPosition().then(({ lat, lng }) => fetchFeed(lat, lng))
   }, [fetchFeed])
 
   const toggleSave = (id: string) => {
