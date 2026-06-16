@@ -996,6 +996,14 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_member: { Args: { b: string }; Returns: boolean }
       is_owner: { Args: { b: string }; Returns: boolean }
+      places_lnglat: {
+        Args: { ids: string[] }
+        Returns: {
+          id: string
+          lat: number
+          lng: number
+        }[]
+      }
       recompute_place_stats: { Args: { p_place: string }; Returns: undefined }
       recompute_trending: { Args: never; Returns: undefined }
     }
