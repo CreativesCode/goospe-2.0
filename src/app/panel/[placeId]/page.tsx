@@ -5,6 +5,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { ListingForm } from '@/features/business/ListingForm'
 import { EventManager } from '@/features/business/EventManager'
 import { BoostControl } from '@/features/business/BoostControl'
+import { StatsPanel } from '@/features/business/StatsPanel'
+
+const toMetricsMap = (rows: { kind: string; n: number }[] | null) =>
+  Object.fromEntries((rows ?? []).map((r) => [r.kind, Number(r.n)]))
 
 export const dynamic = 'force-dynamic'
 
@@ -79,6 +83,16 @@ export default async function EditListingPage({
       ? { id: activeBoostRow.id as string, ends_at: activeBoostRow.ends_at as string }
       : null
 
+  // Métricas de comportamiento (7 y 30 días) + agregados de place_stats.
+  const [{ data: m30 }, { data: m7 }, { data: stats }] = await Promise.all([
+    admin.rpc('place_metrics', { p_place_id: placeId, p_days: 30 } as never),
+    admin.rpc('place_metrics', { p_place_id: placeId, p_days: 7 } as never),
+    admin.from('place_stats').select('saves_count, rating, reviews_count').eq('place_id', placeId).maybeSingle(),
+  ])
+  const d30 = toMetricsMap(m30 as { kind: string; n: number }[] | null)
+  const d7 = toMetricsMap(m7 as { kind: string; n: number }[] | null)
+  const st = (stats ?? {}) as { saves_count?: number; rating?: number; reviews_count?: number }
+
   return (
     <main className="min-h-screen bg-gray-50">
       <header className="border-b border-black/5 bg-white">
@@ -103,6 +117,14 @@ export default async function EditListingPage({
         </div>
 
         <div className="space-y-6">
+          <StatsPanel
+            d7={d7}
+            d30={d30}
+            savesTotal={st.saves_count ?? 0}
+            rating={st.rating ?? 0}
+            reviewsCount={st.reviews_count ?? 0}
+          />
+
           <BoostControl placeId={place.id} active={activeBoost} />
 
           <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">

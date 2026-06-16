@@ -1054,6 +1054,13 @@ export type Database = {
           vibe_line: string
         }[]
       }
+      place_metrics: {
+        Args: { p_days?: number; p_place_id: string }
+        Returns: {
+          kind: string
+          n: number
+        }[]
+      }
       places_lnglat: {
         Args: { ids: string[] }
         Returns: {
