@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { deletePhoto } from './actions'
+import { PlaceReviews } from '@/features/reviews/PlaceReviews'
 
 export const dynamic = 'force-dynamic'
 
@@ -164,6 +165,9 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
             <Field label="Creado">{new Date(place.created_at!).toLocaleString('es-CL')}</Field>
           </dl>
         </section>
+
+        {/* reseñas */}
+        <PlaceReviews placeId={place.id} />
       </div>
     </main>
   )
