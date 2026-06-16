@@ -751,6 +751,7 @@ export type Database = {
           description: string | null
           email: string | null
           embedding: string | null
+          embedding_model: string | null
           hours: Json | null
           id: string
           instagram: string | null
@@ -779,6 +780,7 @@ export type Database = {
           description?: string | null
           email?: string | null
           embedding?: string | null
+          embedding_model?: string | null
           hours?: Json | null
           id?: string
           instagram?: string | null
@@ -807,6 +809,7 @@ export type Database = {
           description?: string | null
           email?: string | null
           embedding?: string | null
+          embedding_model?: string | null
           hours?: Json | null
           id?: string
           instagram?: string | null
@@ -962,6 +965,7 @@ export type Database = {
         Row: {
           cat_affinity: Json | null
           embedding: string | null
+          embedding_model: string | null
           summary: string | null
           updated_at: string | null
           user_id: string
@@ -969,6 +973,7 @@ export type Database = {
         Insert: {
           cat_affinity?: Json | null
           embedding?: string | null
+          embedding_model?: string | null
           summary?: string | null
           updated_at?: string | null
           user_id: string
@@ -976,6 +981,7 @@ export type Database = {
         Update: {
           cat_affinity?: Json | null
           embedding?: string | null
+          embedding_model?: string | null
           summary?: string | null
           updated_at?: string | null
           user_id?: string
