@@ -3,7 +3,7 @@
 > Junio 2026. Paquete de documentación para arrancar un **proyecto completamente nuevo, desde cero**, basado en la idea reconducida: no un directorio de lugares, sino un **motor de decisión** — feed personalizado tipo TikTok de lugares + eventos + conserje IA + capa B2B ligera para dueños de negocio.
 > Stack: **Next.js + Supabase + Capacitor (Android primero)**.
 >
-> ⚠️ **Nada del proyecto antiguo (Goospe/Gonet 2018–2023) se migra ni se reutiliza como código.** El legacy se analizó únicamente como **cantera de ideas validadas y lecciones aprendidas** (doc 01). Repo nuevo, código nuevo, datos nuevos, credenciales nuevas, y nombre/marca a decidir de cero.
+> ⚠️ **Nada del proyecto antiguo (Goospe/Gonet 2018–2023) se migra ni se reutiliza como código.** El legacy se analizó únicamente como **cantera de ideas validadas y lecciones aprendidas** (doc 01). Repo nuevo, código nuevo, datos nuevos, credenciales nuevas. **La marca sí se conserva: nombre Goospe + identidad visual original** (logo, paleta, tipografía — doc 08); es lo único que se hereda tal cual.
 
 ## Índice
 
@@ -16,6 +16,7 @@
 | [05-modelo-de-datos.md](05-modelo-de-datos.md) | SQL completo del esquema nuevo, triggers, políticas RLS, y tabla de qué conceptos se inspiran en el dominio ya validado | vas a crear la base de datos |
 | [06-plan-de-implementacion.md](06-plan-de-implementacion.md) | 14 semanas en 6 fases con checklists y criterios de salida; backlog post-lanzamiento; riesgos de ejecución | vas a planificar el trabajo |
 | [07-gpt-conversation.md](07-gpt-conversation.md) | Evaluación externa (segunda opinión): factibilidad 7.5/10, ranking de mercados (Chile #1, Uruguay laboratorio, España después), pricing regional, recorte de MVP y una fase de validación de 4 semanas antes de construir | quieres una crítica externa antes de invertir tiempo/dinero |
+| [08-identidad-visual.md](08-identidad-visual.md) | Marca Goospe (heredada): nombre, logo del eslabón, paleta (verde `#2dc186` + gris + gradiente), tipografía Roboto, variantes de logo y nota del splash animado. Ya integrada en `public/brand/` + Tailwind | vas a construir UI |
 
 ## Resumen en 10 líneas
 
@@ -33,6 +34,6 @@
 ## Próximos pasos inmediatos
 
 1. ~~Decidir la ciudad piloto~~ ✅ **Decidida: Puerto Varas (Los Lagos, Chile)** — mercado de pago en formato ciudad mediana/turística (doc 07). Sembrada y activa en `cities`.
-2. **Elegir nombre y dominio nuevos** (doc 02 §8) — proyecto nuevo, marca nueva. *(Decisión abierta restante.)*
+2. ~~Elegir nombre y dominio~~ ✅ **Nombre: Goospe** (se conserva la marca original — nombre, logo, paleta y tipografía; ver doc 08). Identidad ya integrada en la app. Dominio sugerido: goospe.com (doc 06).
 3. ~~Crear el repo nuevo y ejecutar la Fase 0~~ — repo creado; BD de Fase 0 aplicada (esquema doc 05 + RLS + triggers + seed). Migraciones en `supabase/migrations/`.
 4. **Siguiente:** correr el ETL de prueba sobre Puerto Varas para medir cuántos lugares reales salen de OSM (valida la Fase 1 antes de escribir UI).

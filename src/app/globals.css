@@ -1,6 +1,17 @@
-@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/*
- * Personaliza tu tema aquí
- * Documentación: https://tailwindcss.com/docs/theme
- */
+/* Tokens de marca Goospe (también disponibles como utilidades Tailwind: text-goospe-green, bg-goospe-gradient, etc.) */
+:root {
+  --goospe-green: #2dc186;
+  --goospe-green-light: #27f1a0;
+  --goospe-green-dark: #28af79;
+  --goospe-gray: #636363;
+}
+
+@layer base {
+  body {
+    @apply font-sans text-goospe-gray antialiased;
+  }
+}
