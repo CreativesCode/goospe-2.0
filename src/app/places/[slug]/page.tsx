@@ -184,6 +184,30 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
           </dl>
         </section>
 
+        {/* mapa */}
+        {ll && (
+          <section className="mt-8">
+            <h2 className="mb-2 text-sm font-medium uppercase tracking-wide text-goospe-gray/40">Ubicación</h2>
+            <div className="overflow-hidden rounded-2xl border border-black/5">
+              <iframe
+                title="Mapa"
+                className="h-64 w-full"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${ll.lng - 0.004}%2C${ll.lat - 0.0025}%2C${ll.lng + 0.004}%2C${ll.lat + 0.0025}&layer=mapnik&marker=${ll.lat}%2C${ll.lng}`}
+              />
+            </div>
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${ll.lat},${ll.lng}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-block text-sm text-goospe-green hover:underline"
+            >
+              🧭 Cómo llegar
+            </a>
+          </section>
+        )}
+
         {/* eventos */}
         {upcoming.length > 0 && (
           <section className="mt-10 border-t border-black/5 pt-8">

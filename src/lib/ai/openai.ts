@@ -21,6 +21,55 @@ export async function embedQuery(text: string): Promise<number[]> {
   return data.data[0].embedding as number[]
 }
 
+export type Usage = { input_tokens: number; output_tokens: number }
+const usageOf = (data: { usage?: { prompt_tokens?: number; completion_tokens?: number } }): Usage => ({
+  input_tokens: data.usage?.prompt_tokens ?? 0,
+  output_tokens: data.usage?.completion_tokens ?? 0,
+})
+
+// Texto libre (promos, respuestas a reseñas, informes).
+export async function complete(
+  system: string, user: string, opts: { temperature?: number; maxTokens?: number } = {}
+): Promise<{ text: string; usage: Usage }> {
+  const data = await openai('chat/completions', {
+    model: TEXT_MODEL,
+    temperature: opts.temperature ?? 0.7,
+    max_tokens: opts.maxTokens ?? 700,
+    messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+  })
+  return { text: data.choices[0].message.content ?? '', usage: usageOf(data) }
+}
+
+// Salida estructurada (json_schema).
+export async function completeJson(
+  system: string, user: string, schema: object
+): Promise<{ data: unknown; usage: Usage }> {
+  const data = await openai('chat/completions', {
+    model: TEXT_MODEL, temperature: 0.4,
+    messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+    response_format: { type: 'json_schema', json_schema: schema },
+  })
+  return { data: JSON.parse(data.choices[0].message.content), usage: usageOf(data) }
+}
+
+// Visión: extrae estructura de una imagen (ej. carta/menú). gpt-4o soporta imágenes.
+export async function visionJson(
+  imageUrl: string, system: string, prompt: string, schema: object
+): Promise<{ data: unknown; usage: Usage }> {
+  const data = await openai('chat/completions', {
+    model: TEXT_MODEL, temperature: 0,
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: [
+        { type: 'text', text: prompt },
+        { type: 'image_url', image_url: { url: imageUrl } },
+      ] },
+    ],
+    response_format: { type: 'json_schema', json_schema: schema },
+  })
+  return { data: JSON.parse(data.choices[0].message.content), usage: usageOf(data) }
+}
+
 export type Candidate = {
   id: string
   name: string
@@ -59,8 +108,6 @@ const PICK_SCHEMA = {
     required: ['picks'],
   },
 }
-
-export type Usage = { input_tokens: number; output_tokens: number }
 
 export async function pickPlaces(
   query: string,

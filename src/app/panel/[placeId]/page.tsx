@@ -6,6 +6,7 @@ import { ListingForm } from '@/features/business/ListingForm'
 import { EventManager } from '@/features/business/EventManager'
 import { BoostControl } from '@/features/business/BoostControl'
 import { StatsPanel } from '@/features/business/StatsPanel'
+import { ReviewReplies } from '@/features/business/ReviewReplies'
 
 const toMetricsMap = (rows: { kind: string; n: number }[] | null) =>
   Object.fromEntries((rows ?? []).map((r) => [r.kind, Number(r.n)]))
@@ -93,6 +94,16 @@ export default async function EditListingPage({
   const d7 = toMetricsMap(m7 as { kind: string; n: number }[] | null)
   const st = (stats ?? {}) as { saves_count?: number; rating?: number; reviews_count?: number }
 
+  const { data: revRows } = await admin
+    .from('reviews')
+    .select('id, rating, body, created_at')
+    .eq('place_id', placeId)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false })
+    .limit(10)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const reviews = (revRows ?? []) as any[]
+
   return (
     <main className="min-h-screen bg-gray-50">
       <header className="border-b border-black/5 bg-white">
@@ -132,6 +143,8 @@ export default async function EditListingPage({
           </div>
 
           <EventManager placeId={place.id} events={events} />
+
+          <ReviewReplies placeId={place.id} reviews={reviews} />
         </div>
       </div>
     </main>
