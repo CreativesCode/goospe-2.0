@@ -73,6 +73,13 @@ export function AccountMenu() {
           >
             📅 Eventos
           </Link>
+          <Link
+            href="/onboarding"
+            className="block px-4 py-2.5 text-sm text-goospe-gray transition hover:bg-goospe-green/10"
+            onClick={() => setOpen(false)}
+          >
+            ✨ Mis gustos
+          </Link>
           {profile?.is_admin && (
             <Link
               href="/admin/fotos"

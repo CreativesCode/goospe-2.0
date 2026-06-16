@@ -25,8 +25,8 @@ export async function signup(formData: FormData) {
   })
   if (error) return { error: error.message }
   revalidatePath('/', 'layout')
-  // Si la confirmación de email está desactivada, ya hay sesión → al feed; si no, a check-email.
-  if (data.session) redirect('/feed')
+  // Si la confirmación de email está desactivada, ya hay sesión → al onboarding; si no, a check-email.
+  if (data.session) redirect('/onboarding')
   redirect('/check-email')
 }
 
