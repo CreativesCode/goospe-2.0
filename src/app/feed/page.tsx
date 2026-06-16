@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { getPosition } from '@/lib/geo'
+import { useFavorites } from '@/hooks/useFavorites'
+import { AccountMenu } from '@/features/auth/components'
 
 type FeedItem = {
   id: string
@@ -25,24 +27,12 @@ type FeedItem = {
 
 const fmtDist = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`)
 
-const SAVED_KEY = 'goospe:saved'
-const loadSaved = (): Set<string> => {
-  if (typeof window === 'undefined') return new Set()
-  try {
-    return new Set(JSON.parse(localStorage.getItem(SAVED_KEY) ?? '[]'))
-  } catch {
-    return new Set()
-  }
-}
-
 export default function FeedPage() {
   const [items, setItems] = useState<FeedItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [saved, setSaved] = useState<Set<string>>(new Set())
+  const { isSaved, toggle } = useFavorites()
   const supabase = useMemo(() => createClient(), [])
-
-  useEffect(() => setSaved(loadSaved()), [])
 
   const fetchFeed = useCallback(async (lat: number, lng: number) => {
     // `as never` en los args: workaround del tipado de rpc de supabase-js para funciones
@@ -63,15 +53,6 @@ export default function FeedPage() {
     getPosition().then(({ lat, lng }) => fetchFeed(lat, lng))
   }, [fetchFeed])
 
-  const toggleSave = (id: string) => {
-    setSaved((prev) => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      localStorage.setItem(SAVED_KEY, JSON.stringify([...next]))
-      return next
-    })
-  }
-
   if (loading) {
     return (
       <div className="flex h-[100dvh] flex-col items-center justify-center gap-4 bg-goospe-gradient">
@@ -88,6 +69,11 @@ export default function FeedPage() {
       <Link href="/places" className="fixed left-4 top-4 z-20">
         <img src="/brand/logo-white.svg" alt="Goospe" className="h-6 drop-shadow" />
       </Link>
+
+      {/* cuenta */}
+      <div className="fixed right-4 top-4 z-20">
+        <AccountMenu />
+      </div>
 
       {/* conserje (FAB) */}
       <Link
@@ -113,9 +99,9 @@ export default function FeedPage() {
 
           {/* acciones laterales */}
           <div className="absolute bottom-40 right-4 z-10 flex flex-col gap-5 text-white">
-            <button onClick={() => toggleSave(p.id)} className="flex flex-col items-center gap-1">
-              <span className={`flex h-12 w-12 items-center justify-center rounded-full text-2xl backdrop-blur transition ${saved.has(p.id) ? 'bg-goospe-green' : 'bg-white/20'}`}>
-                {saved.has(p.id) ? '❤️' : '🤍'}
+            <button onClick={() => toggle(p.id)} className="flex flex-col items-center gap-1">
+              <span className={`flex h-12 w-12 items-center justify-center rounded-full text-2xl backdrop-blur transition ${isSaved(p.id) ? 'bg-goospe-green' : 'bg-white/20'}`}>
+                {isSaved(p.id) ? '❤️' : '🤍'}
               </span>
               <span className="text-xs">Guardar</span>
             </button>
