@@ -1029,6 +1029,30 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_member: { Args: { b: string }; Returns: boolean }
       is_owner: { Args: { b: string }; Returns: boolean }
+      match_places: {
+        Args: {
+          p_embedding: string
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+          p_radius_m?: number
+        }
+        Returns: {
+          category_name: string
+          description: string
+          distance_m: number
+          id: string
+          lat: number
+          lng: number
+          name: string
+          photo_url: string
+          price_level: number
+          similarity: number
+          slug: string
+          tags: string[]
+          vibe_line: string
+        }[]
+      }
       places_lnglat: {
         Args: { ids: string[] }
         Returns: {

@@ -96,6 +96,14 @@ export default function FeedPage() {
         <img src="/brand/logo-white.svg" alt="Goospe" className="h-6 drop-shadow" />
       </Link>
 
+      {/* conserje (FAB) */}
+      <Link
+        href="/concierge"
+        className="fixed bottom-6 left-1/2 z-20 -translate-x-1/2 rounded-full bg-goospe-gradient px-6 py-3 text-sm font-medium text-white shadow-xl ring-1 ring-white/30"
+      >
+        ✨ Decídeme
+      </Link>
+
       {items.map((p) => (
         <section key={p.id} className="relative h-[100dvh] w-full snap-start snap-always">
           {/* foto */}
