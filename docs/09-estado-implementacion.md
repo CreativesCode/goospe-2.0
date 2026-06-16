@@ -82,18 +82,19 @@ siguen diferidos según lo acordado.
 - [ ] ~50 lugares **ancla** con fotos reales tomadas para el proyecto y datos verificados.
 - [ ] Métricas de calidad formales (% con foto / horario / descripción) en un panel.
 
-### Fase 2 — Feed y ficha  ⬅️ **aquí están las brechas más importantes**
-- [ ] **Registro de `interactions`** (view>3s, save, dismiss, directions, share…). **Crítico**:
-      es la materia prima de la personalización (lado C) y de las estadísticas e informe
-      semanal (lado B). Hoy **no se registra nada de comportamiento**.
-- [ ] Acción **"no me interesa" / descartar** en el feed (señal negativa para el ranking).
-- [ ] **Búsqueda** fuzzy (trgm) + **filtros** por categoría / precio / abierto.
-- [ ] **"Abierto ahora"** timezone-aware (parsear `hours`/`opening_hours`).
-- [ ] **Onboarding ≤3 preguntas** → `profiles.onboarding` + afinidad inicial.
-- [ ] **Personalización en el ranking**: usar `taste_profiles.embedding` del usuario en
-      `get_feed` (hoy el feed es cercanía + trending + diversidad, sin gusto personal).
-- [ ] Mapa estático en la ficha; moderación IA de reseñas (hoy auto-aprobadas).
-- [ ] Perfil anónimo por **device** → merge al registrarse (hoy solo migran los favoritos).
+### Fase 2 — Feed y ficha  ✅ **brechas principales cerradas (2026-06-16)**
+- [x] **Registro de `interactions`** — `lib/track.ts` + `/api/track` (view_card≥2s, save,
+      unsave, dismiss, directions, share, view_detail, concierge_pick, rsvp). Funciona con
+      y sin sesión (anónimo por id de dispositivo). Base de personalización y stats.
+- [x] Acción **"no me interesa" / descartar** en el feed (oculta + suprime a futuro).
+- [x] **Búsqueda** fuzzy + **filtros** por categoría / precio / abierto (`/buscar`, RPC `search_places`).
+- [x] **"Abierto ahora"** timezone-aware (`lib/hours.ts`, América/Santiago).
+- [x] **Onboarding ≤3 preguntas** (`/onboarding`) → `profiles.onboarding` + `taste_profiles`.
+- [x] **Personalización en el ranking**: `get_feed` usa `taste_profiles.embedding` (afinidad
+      coseno) cuando hay onboarding; anónimos mantienen cercanía+trending+diversidad+boost.
+- [ ] Pendiente menor: mapa estático en la ficha; moderación IA de reseñas (hoy auto-aprobadas);
+      merge completo del perfil anónimo por device al registrarse (hoy migran favoritos; las
+      interacciones anónimas quedan ligadas por `anon_id` en `context`, sin merge retroactivo).
 
 ### Fase 3 — Conserje + eventos
 - [ ] **Cuota free** del conserje (`concierge_quota`) + **telemetría de coste** (`ai_usage`)
@@ -136,11 +137,11 @@ siguen diferidos según lo acordado.
 
 Para que el equipo pruebe un MVP que **demuestre la tesis** (personalización + valor B2B):
 
-1. **`interactions` (telemetría de comportamiento)** — desbloquea personalización y stats.
-   Es la pieza más estructural que falta. Bajo esfuerzo, alto impacto.
-2. **Búsqueda + filtros + "abierto ahora"** — completa el descubrimiento del lado C.
+1. ✅ **`interactions` (telemetría)** — hecho.
+2. ✅ **Búsqueda + filtros + "abierto ahora"** — hecho.
 3. **Estadísticas del negocio en el panel** (sobre `interactions`) — el valor visible del lado B.
-4. **Onboarding + gusto en el ranking** (`taste_profiles` en `get_feed`) — el diferenciador.
+   **Siguiente recomendado**: ya hay datos que mostrar.
+4. ✅ **Onboarding + gusto en el ranking** — hecho.
 5. **Cuota + telemetría del conserje** y **moderación de eventos/reseñas** — robustez.
 6. Cuando el equipo dé el OK → **pagos** (lo único que falta para monetizar).
 
