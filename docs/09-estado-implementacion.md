@@ -97,8 +97,10 @@ siguen diferidos según lo acordado.
       interacciones anónimas quedan ligadas por `anon_id` en `context`, sin merge retroactivo).
 
 ### Fase 3 — Conserje + eventos
-- [ ] **Cuota free** del conserje (`concierge_quota`) + **telemetría de coste** (`ai_usage`)
-      en la ruta del conserje (hoy sin límite ni registro de uso).
+- [x] **Cuota free** del conserje (`concierge_quota`, 20/mes autenticados, 429 con upsell) +
+      **telemetría de coste** (`ai_usage`, tokens reales + coste). Migración 0018.
+- [x] **Moderación de eventos** (y reseñas): cola admin reactiva en `/admin/contenido`
+      (ocultar/restaurar). El contenido sigue auto-aprobado para el demo.
 - [ ] **Streaming** de la respuesta del conserje.
 - [ ] **Resultado compartible** (deep link + imagen OG) — el gancho viral.
 - [ ] **Cards de evento dentro del feed** (hoy los eventos viven aparte en `/eventos` y la ficha).
@@ -109,7 +111,9 @@ siguen diferidos según lo acordado.
 - [ ] **Verificación al reclamar** (OTP al teléfono de la ficha o foto del local). Hoy es instantáneo.
 - [ ] **Subir menú** (foto → visión IA → menú estructurado).
 - [ ] **Asistente IA de promo/evento** ("escríbeme la promo del jueves", con `brand_voice`).
-- [ ] **Estadísticas del negocio** (visitas, guardados, clics) — depende de `interactions`.
+- [x] **Estadísticas del negocio** (visitas de ficha, apariciones en feed, guardados, cómo
+      llego, compartidos, elegido-por-conserje; 7d/30d) — `StatsPanel` + RPC `place_metrics`
+      (migración 0017), en `/panel/[placeId]`.
 - [ ] **Informe semanal IA** (batch + email) — el gancho de retención B2B.
 - [ ] **Respuestas sugeridas a reseñas**.
 - [ ] **Gates por plan** (free=1 evento activo, Impulso=3, etc.) — hoy sin límites por plan.
@@ -139,11 +143,14 @@ Para que el equipo pruebe un MVP que **demuestre la tesis** (personalización + 
 
 1. ✅ **`interactions` (telemetría)** — hecho.
 2. ✅ **Búsqueda + filtros + "abierto ahora"** — hecho.
-3. **Estadísticas del negocio en el panel** (sobre `interactions`) — el valor visible del lado B.
-   **Siguiente recomendado**: ya hay datos que mostrar.
+3. ✅ **Estadísticas del negocio en el panel** — hecho.
 4. ✅ **Onboarding + gusto en el ranking** — hecho.
-5. **Cuota + telemetría del conserje** y **moderación de eventos/reseñas** — robustez.
+5. ✅ **Cuota + telemetría del conserje** y **moderación de eventos/reseñas** — hecho.
 6. Cuando el equipo dé el OK → **pagos** (lo único que falta para monetizar).
+
+**Estado:** todas las brechas no-pago prioritarias del MVP están cerradas. Lo que queda son
+mejoras (streaming del conserje, subir menú con IA, informe semanal, verificación al reclamar,
+mapa en ficha, landing/SEO, mobile) y **pagos** (a la espera del OK del equipo).
 
 ---
 
