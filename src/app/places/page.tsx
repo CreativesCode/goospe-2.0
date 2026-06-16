@@ -60,7 +60,7 @@ export default async function PlacesPage({
           <div className="flex items-center gap-4 text-sm text-goospe-gray/70">
             <span>
               Puerto Varas · <strong className="text-goospe-gray">{places.length}</strong> lugares ·{' '}
-              <span className="text-goospe-green">{withPhoto}</span> con fachada
+              <span className="text-goospe-green">{withPhoto}</span> con foto
             </span>
             <a
               href={showPhotos ? '/places' : '/places?photos=1'}
