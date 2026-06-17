@@ -1,6 +1,28 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const sb = createAdminClient()
+  const { data } = await sb
+    .from('places')
+    .select('name, vibe_line, description, place_photos(url, status)')
+    .eq('slug', slug)
+    .maybeSingle()
+  if (!data) return { title: 'Lugar — Goospe' }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const photo = ((data as any).place_photos ?? []).find((p: any) => p.status === 'approved')?.url
+  const title = `${data.name} — Puerto Varas | Goospe`
+  const description = data.vibe_line || data.description || `Descubre ${data.name} en Puerto Varas con Goospe.`
+  return {
+    title,
+    description,
+    alternates: { canonical: `/places/${slug}` },
+    openGraph: { title, description, images: photo ? [photo] : undefined, type: 'website' },
+  }
+}
 import { deletePhoto } from './actions'
 import { PlaceReviews } from '@/features/reviews/PlaceReviews'
 import { PhotoUpload } from '@/features/photos/PhotoUpload'

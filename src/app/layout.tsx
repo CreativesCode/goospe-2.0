@@ -15,8 +15,13 @@ const roboto = localFont({
 })
 
 export const metadata: Metadata = {
-  title: 'Goospe — ¿dónde voy hoy?',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://goospe.com'),
+  title: {
+    default: 'Goospe — ¿dónde voy hoy?',
+    template: '%s',
+  },
   description: 'Goospe sugiere dónde ir: lugares y eventos cerca de ti, decididos en 30 segundos.',
+  openGraph: { siteName: 'Goospe', locale: 'es_CL', type: 'website' },
 }
 
 export default function RootLayout({
