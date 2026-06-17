@@ -8,6 +8,7 @@ import { BoostControl } from '@/features/business/BoostControl'
 import { StatsPanel } from '@/features/business/StatsPanel'
 import { ReviewReplies } from '@/features/business/ReviewReplies'
 import { MenuUpload } from '@/features/business/MenuUpload'
+import { WeeklyReport } from '@/features/business/WeeklyReport'
 
 const toMetricsMap = (rows: { kind: string; n: number }[] | null) =>
   Object.fromEntries((rows ?? []).map((r) => [r.kind, Number(r.n)]))
@@ -106,6 +107,20 @@ export default async function EditListingPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const reviews = (revRows ?? []) as any[]
 
+  // Último informe semanal de ESTE lugar (filtrado por place_id dentro del content).
+  const { data: reportRows } = await admin
+    .from('business_reports')
+    .select('content, created_at')
+    .eq('business_id', place.business_id as string)
+    .eq('kind', 'weekly')
+    .order('created_at', { ascending: false })
+    .limit(10)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const latestReportRow = ((reportRows ?? []) as any[]).find((r) => r.content?.place_id === placeId)
+  const latestReport = latestReportRow
+    ? { summary: latestReportRow.content.summary as string, created_at: latestReportRow.created_at as string }
+    : null
+
   return (
     <main className="min-h-screen bg-gray-50">
       <header className="border-b border-black/5 bg-white">
@@ -137,6 +152,8 @@ export default async function EditListingPage({
             rating={st.rating ?? 0}
             reviewsCount={st.reviews_count ?? 0}
           />
+
+          <WeeklyReport placeId={place.id} latest={latestReport} />
 
           <BoostControl placeId={place.id} active={activeBoost} />
 
