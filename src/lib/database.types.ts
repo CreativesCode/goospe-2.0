@@ -624,6 +624,47 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string | null
+          event_id: string | null
+          id: string
+          kind: string
+          read: boolean | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          kind: string
+          read?: boolean | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          kind?: string
+          read?: boolean | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       place_categories: {
         Row: {
           category_id: number
@@ -1005,6 +1046,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      enqueue_event_reminders: { Args: never; Returns: undefined }
       get_feed: {
         Args: {
           p_lat: number

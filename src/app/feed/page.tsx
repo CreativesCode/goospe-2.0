@@ -7,6 +7,7 @@ import { getPosition } from '@/lib/geo'
 import { useFavorites } from '@/hooks/useFavorites'
 import { AccountMenu } from '@/features/auth/components'
 import { EventFeedCard, type FeedEvent } from '@/features/events/EventFeedCard'
+import { Notifications } from '@/features/notifications/Notifications'
 import { track } from '@/lib/track'
 
 const DISMISSED_KEY = 'goospe:dismissed'
@@ -144,8 +145,9 @@ export default function FeedPage() {
         </Link>
       </div>
 
-      {/* cuenta */}
-      <div className="fixed right-4 top-4 z-20">
+      {/* cuenta + notificaciones */}
+      <div className="fixed right-4 top-4 z-20 flex items-center gap-2">
+        <Notifications />
         <AccountMenu />
       </div>
 
