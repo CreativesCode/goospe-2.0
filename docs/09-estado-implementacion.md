@@ -103,8 +103,11 @@ siguen diferidos según lo acordado.
       (ocultar/restaurar). El contenido sigue auto-aprobado para el demo.
 - [x] **Streaming** de la respuesta del conserje (SSE, las recomendaciones aparecen una a una).
 - [ ] **Resultado compartible**: el deep link a la ficha ya existe; falta la **imagen OG** generada. *(Mejora menor.)*
-- [ ] **Cards de evento dentro del feed** (hoy los eventos viven aparte en `/eventos` y la ficha).
-- [ ] Push recordatorio del evento (depende de mobile/FCM, diferido).
+- [x] **Cards de evento dentro del feed** — RPC `get_feed_events` + `EventFeedCard`, intercaladas
+      cada 5 lugares (migración 0020). Boost de eventos también (migración + `boostEvent`).
+- [x] **Recordatorio del evento** — vía **Supabase Realtime** (tabla `notifications` +
+      `enqueue_event_reminders` por pg_cron horario + campana en vivo en el feed). Migración 0021.
+      Sustituye al push FCM (diferido por mobile).
 
 ### Fase 4 — Panel de negocio
 - [ ] **Verificación al reclamar** (OTP al teléfono o foto del local). Hoy instantáneo.
