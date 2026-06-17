@@ -7,6 +7,7 @@ import { EventManager } from '@/features/business/EventManager'
 import { BoostControl } from '@/features/business/BoostControl'
 import { StatsPanel } from '@/features/business/StatsPanel'
 import { ReviewReplies } from '@/features/business/ReviewReplies'
+import { MenuUpload } from '@/features/business/MenuUpload'
 
 const toMetricsMap = (rows: { kind: string; n: number }[] | null) =>
   Object.fromEntries((rows ?? []).map((r) => [r.kind, Number(r.n)]))
@@ -26,6 +27,7 @@ type PlaceEdit = {
   instagram: string | null
   price_level: number | null
   tags: string[] | null
+  menu: unknown | null
 }
 
 export default async function EditListingPage({
@@ -41,7 +43,7 @@ export default async function EditListingPage({
   const admin = createAdminClient()
   const { data } = await admin
     .from('places')
-    .select('id, slug, name, business_id, description, vibe_line, phone, whatsapp, website, instagram, price_level, tags')
+    .select('id, slug, name, business_id, description, vibe_line, phone, whatsapp, website, instagram, price_level, tags, menu')
     .eq('id', placeId)
     .single()
   const place = data as unknown as PlaceEdit | null
@@ -141,6 +143,8 @@ export default async function EditListingPage({
           <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
             <ListingForm place={place} />
           </div>
+
+          <MenuUpload placeId={place.id} hasMenu={!!place.menu} />
 
           <EventManager placeId={place.id} events={events} />
 

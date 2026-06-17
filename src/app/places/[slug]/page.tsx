@@ -37,7 +37,7 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
   const { data: place } = await sb
     .from('places')
     .select(
-      'id, slug, name, address, phone, whatsapp, website, instagram, email, hours, price_level, description, vibe_line, tags, ai_enriched_at, embedding_model, source, claimed, business_id, is_published, cover_url, logo_url, created_at, updated_at, place_photos(id, url, status, source, storage_path), place_categories(categories(emoji, name, slug))'
+      'id, slug, name, address, phone, whatsapp, website, instagram, email, hours, price_level, description, vibe_line, tags, menu, ai_enriched_at, embedding_model, source, claimed, business_id, is_published, cover_url, logo_url, created_at, updated_at, place_photos(id, url, status, source, storage_path), place_categories(categories(emoji, name, slug))'
     )
     .eq('slug', slug)
     .maybeSingle()
@@ -62,6 +62,7 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
   const cats = (place.place_categories ?? []).map((pc: any) => pc.categories).filter(Boolean)
   const addr = place.address as { street?: string; number?: string; city?: string; formatted?: string } | null
   const hours = place.hours as { osm_raw?: string } | null
+  const menu = place.menu as { sections?: { name: string; items: { name: string; price: string | null; description: string | null }[] }[] } | null
 
   return (
     <main className="min-h-screen bg-white">
@@ -183,6 +184,31 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
             <Field label="Creado">{new Date(place.created_at!).toLocaleString('es-CL')}</Field>
           </dl>
         </section>
+
+        {/* menú */}
+        {menu?.sections && menu.sections.length > 0 && (
+          <section className="mt-8">
+            <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-goospe-gray/40">Carta</h2>
+            <div className="space-y-5">
+              {menu.sections.map((sec, i) => (
+                <div key={i}>
+                  <h3 className="mb-2 font-medium text-goospe-green-dark">{sec.name}</h3>
+                  <ul className="divide-y divide-black/5">
+                    {sec.items.map((it, j) => (
+                      <li key={j} className="flex items-baseline justify-between gap-4 py-1.5">
+                        <div className="min-w-0">
+                          <span className="text-sm text-goospe-gray">{it.name}</span>
+                          {it.description && <span className="ml-2 text-xs text-goospe-gray/50">{it.description}</span>}
+                        </div>
+                        {it.price && <span className="shrink-0 text-sm font-medium text-goospe-gray">{it.price}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* mapa */}
         {ll && (

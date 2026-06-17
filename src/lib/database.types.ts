@@ -764,6 +764,8 @@ export type Database = {
           is_published: boolean | null
           location: unknown
           logo_url: string | null
+          menu: Json | null
+          menu_updated_at: string | null
           name: string
           phone: string | null
           price_level: number | null
@@ -793,6 +795,8 @@ export type Database = {
           is_published?: boolean | null
           location: unknown
           logo_url?: string | null
+          menu?: Json | null
+          menu_updated_at?: string | null
           name: string
           phone?: string | null
           price_level?: number | null
@@ -822,6 +826,8 @@ export type Database = {
           is_published?: boolean | null
           location?: unknown
           logo_url?: string | null
+          menu?: Json | null
+          menu_updated_at?: string | null
           name?: string
           phone?: string | null
           price_level?: number | null
