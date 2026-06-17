@@ -66,7 +66,7 @@ export default async function EditListingPage({
   // Eventos del lugar + boost activo (para los controles del dueño).
   const { data: evRows } = await admin
     .from('events')
-    .select('id, name, starts_at, description')
+    .select('id, name, starts_at, description, is_boosted')
     .eq('place_id', placeId)
     .order('starts_at', { ascending: false })
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -4,8 +4,9 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createEvent, deleteEvent } from '@/actions/events'
 import { generatePromo } from '@/actions/ai-assist'
+import { boostEvent, endEventBoost } from '@/actions/boosts'
 
-type Ev = { id: string; name: string; starts_at: string; description: string | null }
+type Ev = { id: string; name: string; starts_at: string; description: string | null; is_boosted: boolean | null }
 
 const fmt = (s: string) =>
   new Date(s).toLocaleString('es-CL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -45,6 +46,14 @@ export function EventManager({ placeId, events }: { placeId: string; events: Ev[
     fd.set('event_id', id)
     fd.set('place_id', placeId)
     await deleteEvent(fd)
+    router.refresh()
+  }
+
+  async function onToggleBoost(ev: Ev) {
+    const fd = new FormData()
+    fd.set('event_id', ev.id)
+    const res = ev.is_boosted ? await endEventBoost(fd) : await boostEvent(fd)
+    if (res?.error) { alert(res.error); return }
     router.refresh()
   }
 
@@ -106,10 +115,17 @@ export function EventManager({ placeId, events }: { placeId: string; events: Ev[
           {events.map((ev) => (
             <li key={ev.id} className="flex items-center justify-between gap-3 rounded-lg border border-black/5 px-3 py-2">
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-goospe-gray">{ev.name}</p>
+                <p className="truncate text-sm font-medium text-goospe-gray">
+                  {ev.name}{ev.is_boosted && <span className="ml-2 rounded-full bg-goospe-green/15 px-2 py-0.5 text-[10px] font-medium text-goospe-green-dark">✨ Destacado</span>}
+                </p>
                 <p className="text-xs text-goospe-green">{fmt(ev.starts_at)}</p>
               </div>
-              <button onClick={() => onDelete(ev.id)} className="shrink-0 text-sm text-red-600 hover:underline">Eliminar</button>
+              <div className="flex shrink-0 items-center gap-3">
+                <button onClick={() => onToggleBoost(ev)} className="text-sm font-medium text-goospe-green hover:underline">
+                  {ev.is_boosted ? 'Quitar' : '✨ Destacar'}
+                </button>
+                <button onClick={() => onDelete(ev.id)} className="text-sm text-red-600 hover:underline">Eliminar</button>
+              </div>
             </li>
           ))}
         </ul>
