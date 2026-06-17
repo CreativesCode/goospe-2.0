@@ -101,30 +101,33 @@ siguen diferidos según lo acordado.
       **telemetría de coste** (`ai_usage`, tokens reales + coste). Migración 0018.
 - [x] **Moderación de eventos** (y reseñas): cola admin reactiva en `/admin/contenido`
       (ocultar/restaurar). El contenido sigue auto-aprobado para el demo.
-- [ ] **Streaming** de la respuesta del conserje.
-- [ ] **Resultado compartible** (deep link + imagen OG) — el gancho viral.
+- [x] **Streaming** de la respuesta del conserje (SSE, las recomendaciones aparecen una a una).
+- [ ] **Resultado compartible**: el deep link a la ficha ya existe; falta la **imagen OG** generada. *(Mejora menor.)*
 - [ ] **Cards de evento dentro del feed** (hoy los eventos viven aparte en `/eventos` y la ficha).
-- [ ] **Moderación de eventos** (cola admin; hoy se auto-aprueban).
 - [ ] Push recordatorio del evento (depende de mobile/FCM, diferido).
 
 ### Fase 4 — Panel de negocio
-- [ ] **Verificación al reclamar** (OTP al teléfono de la ficha o foto del local). Hoy es instantáneo.
-- [ ] **Subir menú** (foto → visión IA → menú estructurado).
-- [ ] **Asistente IA de promo/evento** ("escríbeme la promo del jueves", con `brand_voice`).
+- [ ] **Verificación al reclamar** (OTP al teléfono o foto del local). Hoy instantáneo.
+      *(Diferido: el OTP necesita proveedor SMS de pago.)*
+- [x] **Subir menú** (foto → visión IA → menú estructurado) — `actions/menu.ts` (migración 0019).
+- [x] **Asistente IA de promo/evento** (con `brand_voice`) — en EventManager.
+- [x] **Respuestas sugeridas a reseñas** (IA) — en el panel.
+- [x] **Informe semanal IA** "tu semana en 5 líneas" — en el panel (`business_reports`).
+      *(Sin email: Resend diferido.)*
 - [x] **Estadísticas del negocio** (visitas de ficha, apariciones en feed, guardados, cómo
       llego, compartidos, elegido-por-conserje; 7d/30d) — `StatsPanel` + RPC `place_metrics`
       (migración 0017), en `/panel/[placeId]`.
-- [ ] **Informe semanal IA** (batch + email) — el gancho de retención B2B.
-- [ ] **Respuestas sugeridas a reseñas**.
-- [ ] **Gates por plan** (free=1 evento activo, Impulso=3, etc.) — hoy sin límites por plan.
+- [ ] **Gates por plan** (free=1 evento activo, Impulso=3, etc.) — hoy sin límites por plan
+      (se activan junto con pagos).
 - [ ] 🔒 **Pagos (diferido por decisión de equipo)**: checkout de planes + webhook →
       `subscriptions`; boost de pago. La estructura (`businesses.plan`, `subscriptions`,
       `boosts.amount_usd`) ya existe; solo falta la pasarela.
 
 ### Fase 5 — Pulido y lanzamiento
+- [x] **Landing pública** + SEO de fichas (`generateMetadata`, `sitemap.ts`, `robots.ts`).
 - [ ] Push de re-engagement, performance (AVIF/WebP responsivo), QA checklist heredada.
-- [ ] **Landing pública** (goospe.com) + SEO de fichas (sitemap por ciudad).
-- [ ] **Panel admin** de métricas norte + dashboard de coste IA.
+- [ ] **Panel admin** de métricas norte + dashboard de coste IA (los datos ya están en
+      `ai_usage` e `interactions`; falta la vista agregada).
 - [ ] Play Store / mobile (Capacitor) — diferido.
 
 ---
@@ -146,11 +149,16 @@ Para que el equipo pruebe un MVP que **demuestre la tesis** (personalización + 
 3. ✅ **Estadísticas del negocio en el panel** — hecho.
 4. ✅ **Onboarding + gusto en el ranking** — hecho.
 5. ✅ **Cuota + telemetría del conserje** y **moderación de eventos/reseñas** — hecho.
-6. Cuando el equipo dé el OK → **pagos** (lo único que falta para monetizar).
+6. ✅ **Mejoras B2B + descubrimiento** — mapa en ficha, generador de promo IA, respuestas a
+   reseñas IA, menú con visión IA, informe semanal IA, landing+SEO, streaming del conserje.
+7. Cuando el equipo dé el OK → **pagos** (lo único que falta para monetizar).
 
-**Estado:** todas las brechas no-pago prioritarias del MVP están cerradas. Lo que queda son
-mejoras (streaming del conserje, subir menú con IA, informe semanal, verificación al reclamar,
-mapa en ficha, landing/SEO, mobile) y **pagos** (a la espera del OK del equipo).
+**Estado:** prácticamente **todo el producto no-pago está construido**. Lo que queda son:
+(a) **pagos** (esperando OK del equipo) y los **gates por plan** que se activan con ellos;
+(b) cosas que dependen de infra de pago/diferida: **OTP al reclamar** (SMS), **mobile/Capacitor**,
+**envío de emails** (Resend), **Sentry/PostHog**, **push FCM**;
+(c) pulidos opcionales: imagen OG del conserje, cards de evento en el feed, dashboard admin de
+coste IA agregado, performance/QA de lanzamiento.
 
 ---
 
