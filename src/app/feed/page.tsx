@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { getPosition } from '@/lib/geo'
 import { useFavorites } from '@/hooks/useFavorites'
 import { AccountMenu } from '@/features/auth/components'
+import { EventFeedCard, type FeedEvent } from '@/features/events/EventFeedCard'
 import { track } from '@/lib/track'
 
 const DISMISSED_KEY = 'goospe:dismissed'
@@ -35,8 +36,23 @@ type FeedItem = {
 
 const fmtDist = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`)
 
+type FeedRow = { kind: 'place'; place: FeedItem } | { kind: 'event'; event: FeedEvent }
+
+// Intercala un evento cada `gap` lugares (los eventos vienen priorizados por boost/fecha).
+function interleave(places: FeedItem[], events: FeedEvent[], gap = 5): FeedRow[] {
+  const out: FeedRow[] = []
+  let ei = 0
+  places.forEach((p, i) => {
+    out.push({ kind: 'place', place: p })
+    if ((i + 1) % gap === 0 && ei < events.length) out.push({ kind: 'event', event: events[ei++] })
+  })
+  while (ei < events.length) out.push({ kind: 'event', event: events[ei++] }) // los que sobren, al final
+  return out
+}
+
 export default function FeedPage() {
   const [items, setItems] = useState<FeedItem[]>([])
+  const [events, setEvents] = useState<FeedEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { isSaved, toggle } = useFavorites()
@@ -48,17 +64,17 @@ export default function FeedPage() {
   const fetchFeed = useCallback(async (lat: number, lng: number) => {
     // `as never` en los args: workaround del tipado de rpc de supabase-js para funciones
     // que retornan tabla (infiere los args como undefined). El runtime es correcto.
-    const { data, error } = await supabase.rpc('get_feed', {
-      p_lat: lat,
-      p_lng: lng,
-      p_radius_m: 25000,
-      p_limit: 40,
-      p_offset: 0,
-    } as never)
-    if (error) setError(error.message)
-    else setItems(((data ?? []) as FeedItem[]).filter((p) => !dismissed.current.has(p.id)))
+    const [places, evs] = await Promise.all([
+      supabase.rpc('get_feed', { p_lat: lat, p_lng: lng, p_radius_m: 25000, p_limit: 40, p_offset: 0 } as never),
+      supabase.rpc('get_feed_events', { p_lat: lat, p_lng: lng, p_radius_m: 25000, p_limit: 8 } as never),
+    ])
+    if (places.error) setError(places.error.message)
+    else setItems(((places.data ?? []) as FeedItem[]).filter((p) => !dismissed.current.has(p.id)))
+    setEvents((evs.data ?? []) as FeedEvent[])
     setLoading(false)
   }, [supabase])
+
+  const feedList = useMemo(() => interleave(items, events), [items, events])
 
   useEffect(() => {
     dismissed.current = loadDismissed()
@@ -67,17 +83,19 @@ export default function FeedPage() {
 
   // view_card: registra una vista cuando la card permanece visible ≥2s (señal de interés).
   useEffect(() => {
-    if (!items.length || !containerRef.current) return
+    if (!feedList.length || !containerRef.current) return
     const timers = new Map<string, ReturnType<typeof setTimeout>>()
     const obs = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
-          const id = (e.target as HTMLElement).dataset.placeId
+          const el = e.target as HTMLElement
+          const id = el.dataset.trackId
           if (!id) continue
           if (e.isIntersecting && e.intersectionRatio >= 0.6) {
             if (seenCards.current.has(id) || timers.has(id)) continue
+            const isEvent = el.dataset.kind === 'event'
             timers.set(id, setTimeout(() => {
-              track('view_card', { placeId: id })
+              track('view_card', isEvent ? { eventId: id } : { placeId: id })
               seenCards.current.add(id)
               timers.delete(id)
             }, 2000))
@@ -89,9 +107,9 @@ export default function FeedPage() {
       },
       { threshold: [0, 0.6, 1] }
     )
-    containerRef.current.querySelectorAll('section[data-place-id]').forEach((n) => obs.observe(n))
+    containerRef.current.querySelectorAll('section[data-track-id]').forEach((n) => obs.observe(n))
     return () => { timers.forEach(clearTimeout); obs.disconnect() }
-  }, [items])
+  }, [feedList])
 
   const onSave = (p: FeedItem) => { track(isSaved(p.id) ? 'unsave' : 'save', { placeId: p.id }); toggle(p.id) }
   const onDismiss = (id: string) => {
@@ -139,8 +157,11 @@ export default function FeedPage() {
         ✨ Decídeme
       </Link>
 
-      {items.map((p) => (
-        <section key={p.id} data-place-id={p.id} className="relative h-[100dvh] w-full snap-start snap-always">
+      {feedList.map((row) => {
+        if (row.kind === 'event') return <EventFeedCard key={`e-${row.event.id}`} ev={row.event} />
+        const p = row.place
+        return (
+        <section key={p.id} data-track-id={p.id} data-kind="place" className="relative h-[100dvh] w-full snap-start snap-always">
           {/* foto */}
           {p.photo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -217,7 +238,8 @@ export default function FeedPage() {
             )}
           </div>
         </section>
-      ))}
+        )
+      })}
 
       {/* fin */}
       <section className="flex h-[40vh] snap-start flex-col items-center justify-center gap-2 bg-black text-white/60">

@@ -1033,6 +1033,29 @@ export type Database = {
           vibe_line: string
         }[]
       }
+      get_feed_events: {
+        Args: {
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+          p_radius_m?: number
+        }
+        Returns: {
+          boosted: boolean
+          description: string
+          distance_m: number
+          id: string
+          image_url: string
+          lat: number
+          lng: number
+          name: string
+          photo_url: string
+          place_id: string
+          place_name: string
+          place_slug: string
+          starts_at: string
+        }[]
+      }
       increment_concierge_quota: {
         Args: { p_month: string; p_user: string }
         Returns: undefined
