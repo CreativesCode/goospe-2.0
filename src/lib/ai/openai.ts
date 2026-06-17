@@ -109,6 +109,76 @@ const PICK_SCHEMA = {
   },
 }
 
+// Variante en streaming: emite cada pick {id, reason} en cuanto el modelo completa su línea
+// (NDJSON), para render incremental en el conserje. Devuelve el usage al final.
+export async function pickPlacesStream(
+  query: string,
+  candidates: Candidate[],
+  onPick: (pick: { id: string; reason: string }) => void
+): Promise<Usage> {
+  if (!KEY) throw new Error('Falta OPENAI_API_KEY')
+  const compact = candidates.map((c) => ({
+    id: c.id, nombre: c.name, vibe: c.vibe_line, categoria: c.category_name,
+    precio: c.price_level, distancia_m: Math.round(c.distance_m), tags: c.tags,
+  }))
+  const system = `${SYSTEM}
+FORMATO DE SALIDA: exactamente 3 líneas. Cada línea es un objeto JSON {"id":"...","reason":"..."}.
+Una sola línea por pick, sin comas finales, sin markdown, sin texto fuera de los objetos.`
+
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${KEY}` },
+    body: JSON.stringify({
+      model: TEXT_MODEL, temperature: 0.5, stream: true, stream_options: { include_usage: true },
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: `Pedido del usuario: "${query}"\n\nCandidatos:\n${JSON.stringify(compact)}` },
+      ],
+    }),
+  })
+  if (!res.ok || !res.body) throw new Error(`OpenAI stream ${res.status}`)
+
+  const reader = res.body.getReader()
+  const dec = new TextDecoder()
+  let sse = ''   // buffer de líneas SSE
+  let text = ''  // contenido acumulado del modelo
+  let emitted = 0
+  let usage: Usage = { input_tokens: 0, output_tokens: 0 }
+
+  const flushLines = () => {
+    let nl: number
+    while ((nl = text.indexOf('\n')) >= 0) {
+      const line = text.slice(0, nl).trim()
+      text = text.slice(nl + 1)
+      if (!line || emitted >= 3) continue
+      try { const p = JSON.parse(line); if (p?.id && p?.reason) { onPick({ id: p.id, reason: p.reason }); emitted++ } } catch { /* línea incompleta/no-json */ }
+    }
+  }
+
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    sse += dec.decode(value, { stream: true })
+    let idx: number
+    while ((idx = sse.indexOf('\n')) >= 0) {
+      const raw = sse.slice(0, idx).trim()
+      sse = sse.slice(idx + 1)
+      if (!raw.startsWith('data:')) continue
+      const data = raw.slice(5).trim()
+      if (data === '[DONE]') continue
+      try {
+        const json = JSON.parse(data)
+        const delta = json.choices?.[0]?.delta?.content
+        if (delta) { text += delta; flushLines() }
+        if (json.usage) usage = { input_tokens: json.usage.prompt_tokens ?? 0, output_tokens: json.usage.completion_tokens ?? 0 }
+      } catch { /* chunk parcial */ }
+    }
+  }
+  // por si el último pick no terminó en salto de línea
+  text += '\n'; flushLines()
+  return usage
+}
+
 export async function pickPlaces(
   query: string,
   candidates: Candidate[]

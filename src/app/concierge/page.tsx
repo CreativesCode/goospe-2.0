@@ -44,11 +44,36 @@ export default function ConciergePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: q, lat, lng }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Error')
-      setPicks(data.picks)
-      for (const pk of (data.picks ?? []) as { id: string }[]) {
-        track('concierge_pick', { placeId: pk.id, context: { query: q } })
+      // Cuota agotada u otro error → respuesta JSON, no stream.
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error ?? 'Error')
+      }
+
+      const reader = res.body.getReader()
+      const dec = new TextDecoder()
+      let buf = ''
+      const acc: Pick[] = []
+      setPicks([]) // empieza a mostrar resultados a medida que llegan
+
+      for (;;) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += dec.decode(value, { stream: true })
+        let i: number
+        while ((i = buf.indexOf('\n\n')) >= 0) {
+          const chunk = buf.slice(0, i).trim()
+          buf = buf.slice(i + 2)
+          if (!chunk.startsWith('data:')) continue
+          const evt = JSON.parse(chunk.slice(5).trim())
+          if (evt.type === 'pick') {
+            acc.push(evt.pick)
+            setPicks([...acc])
+            track('concierge_pick', { placeId: evt.pick.id, context: { query: q } })
+          } else if (evt.type === 'error') {
+            throw new Error(evt.error)
+          }
+        }
       }
     } catch (e) {
       setError((e as Error).message)
@@ -100,7 +125,7 @@ export default function ConciergePage() {
           </div>
         )}
 
-        {loading && (
+        {loading && (!picks || picks.length === 0) && (
           <div className="mt-10 flex flex-col items-center gap-3 text-white/90">
             <img src="/brand/isotipo-white.svg" alt="" className="h-12 w-12 animate-pulse" />
             <p>Pensando en tus mejores opciones…</p>
@@ -111,7 +136,7 @@ export default function ConciergePage() {
 
         {picks && (
           <div className="mt-8 space-y-4">
-            {picks.length === 0 && <p className="text-white/90">No encontré nada cerca para eso. Prueba otra cosa.</p>}
+            {!loading && picks.length === 0 && <p className="text-white/90">No encontré nada cerca para eso. Prueba otra cosa.</p>}
             {picks.map((p, i) => (
               <div key={p.id} className="overflow-hidden rounded-2xl bg-white shadow-xl">
                 <div className="flex">

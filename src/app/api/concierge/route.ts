@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { embedQuery, pickPlaces, type Candidate } from '@/lib/ai/openai'
+import { embedQuery, pickPlacesStream, type Candidate, type Usage } from '@/lib/ai/openai'
 
 const FALLBACK = { lat: -41.3195, lng: -72.9854 } // Puerto Varas
 const FREE_LIMIT = 20 // consultas/mes para usuarios autenticados en el piloto
 // gpt-4o (aprox, USD por millón de tokens) + embeddings (despreciable, estimado).
-const COST = (u: { input_tokens: number; output_tokens: number }) =>
-  (u.input_tokens / 1e6) * 2.5 + (u.output_tokens / 1e6) * 10 + 0.00002
+const COST = (u: Usage) => (u.input_tokens / 1e6) * 2.5 + (u.output_tokens / 1e6) * 10 + 0.00002
 
 const firstOfMonth = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01` }
 
@@ -42,39 +41,47 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // 1) embedding → candidatos
+  let cands: (Candidate & { slug: string; lat: number; lng: number; photo_url: string | null })[]
   try {
-    // 1) embedding de la consulta → candidatos por similitud + cercanía
     const embedding = await embedQuery(query)
     const { data: candidates, error } = await admin.rpc('match_places', {
       p_embedding: JSON.stringify(embedding),
-      p_lat: lat,
-      p_lng: lng,
-      p_radius_m: 25000,
-      p_limit: 12,
+      p_lat: lat, p_lng: lng, p_radius_m: 25000, p_limit: 12,
     } as never)
     if (error) throw new Error(error.message)
-    const cands = (candidates ?? []) as (Candidate & {
-      slug: string; lat: number; lng: number; photo_url: string | null
-    })[]
-    if (!cands.length) return NextResponse.json({ picks: [] })
-
-    // 2) el LLM elige 3 con su porqué
-    const { picks, usage } = await pickPlaces(query, cands)
-    const byId = new Map(cands.map((c) => [c.id, c]))
-    const result = picks
-      .map((p) => { const c = byId.get(p.id); return c ? { ...c, reason: p.reason } : null })
-      .filter(Boolean)
-
-    // 3) telemetría de coste + incremento atómico de cuota (no bloquea la respuesta)
-    void admin.from('ai_usage').insert({
-      feature: 'concierge', model: process.env.OPENAI_TEXT_MODEL ?? 'gpt-4o',
-      input_tokens: usage.input_tokens, output_tokens: usage.output_tokens,
-      cost_usd: COST(usage), user_id: user?.id ?? null,
-    } as never)
-    if (user) void admin.rpc('increment_concierge_quota', { p_user: user.id, p_month: month } as never)
-
-    return NextResponse.json({ picks: result })
+    cands = (candidates ?? []) as typeof cands
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 })
   }
+
+  // 2) stream SSE: primero los candidatos (para que el cliente arme las cards), luego cada pick
+  const byId = new Map(cands.map((c) => [c.id, c]))
+  const stream = new ReadableStream({
+    async start(controller) {
+      const enc = new TextEncoder()
+      const send = (obj: unknown) => controller.enqueue(enc.encode(`data: ${JSON.stringify(obj)}\n\n`))
+      try {
+        if (!cands.length) { send({ type: 'done' }); controller.close(); return }
+        const usage = await pickPlacesStream(query, cands, (pick) => {
+          const c = byId.get(pick.id)
+          if (c) send({ type: 'pick', pick: { ...c, reason: pick.reason } })
+        })
+        void admin.from('ai_usage').insert({
+          feature: 'concierge', model: process.env.OPENAI_TEXT_MODEL ?? 'gpt-4o',
+          input_tokens: usage.input_tokens, output_tokens: usage.output_tokens,
+          cost_usd: COST(usage), user_id: user?.id ?? null,
+        } as never)
+        if (user) void admin.rpc('increment_concierge_quota', { p_user: user.id, p_month: month } as never)
+        send({ type: 'done' })
+      } catch (e) {
+        send({ type: 'error', error: (e as Error).message })
+      }
+      controller.close()
+    },
+  })
+
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive' },
+  })
 }
