@@ -1,10 +1,17 @@
+import { RsvpButton } from '@/features/events/RsvpButton'
+import { PhotoGallery } from '@/features/photos/PhotoGallery'
+import { PhotoUpload } from '@/features/photos/PhotoUpload'
+import { DetailTracker } from '@/features/places/DetailTracker'
+import { DirectionsLink } from '@/features/places/DirectionsLink'
+import { PlaceActions } from '@/features/places/PlaceActions'
+import { PlaceReviews } from '@/features/reviews/PlaceReviews'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { AppFooter } from '@/shared/components/app-footer'
+import { AppNav } from '@/shared/components/app-nav'
+import { BackButton } from '@/shared/components/back-button'
+import { categoryIcon } from '@/shared/lib/icons'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { categoryIcon } from '@/shared/lib/icons'
-import { AppNav } from '@/shared/components/app-nav'
-import { AppFooter } from '@/shared/components/app-footer'
-import { BackButton } from '@/shared/components/back-button'
-import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
@@ -36,13 +43,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     },
   }
 }
-import { PlaceReviews } from '@/features/reviews/PlaceReviews'
-import { PhotoUpload } from '@/features/photos/PhotoUpload'
-import { PhotoGallery } from '@/features/photos/PhotoGallery'
-import { RsvpButton } from '@/features/events/RsvpButton'
-import { DetailTracker } from '@/features/places/DetailTracker'
-import { PlaceActions } from '@/features/places/PlaceActions'
-import { DirectionsLink } from '@/features/places/DirectionsLink'
 
 const fmtEventDate = (s: string) =>
   new Date(s).toLocaleString('es-CL', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -122,7 +122,7 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
         </div>
 
         {/* precio + acciones: guardar / cómo llegar / compartir (registran interacciones) */}
-        <div className="mb-8 flex flex-wrap items-center gap-3">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
           {place.price_level && (
             <span className="text-lg font-medium">
               <span className="text-fg">{'$'.repeat(place.price_level)}</span>

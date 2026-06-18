@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Smartphone, Search, Calendar, Heart, Sparkles, User, type LucideIcon } from 'lucide-react'
+import { Smartphone, Search, Calendar, Heart, Sparkles, User, LogIn, type LucideIcon } from 'lucide-react'
 import { ThemeToggle } from './theme-toggle'
 import { Notifications } from '@/features/notifications/Notifications'
 import { AccountMenu } from '@/features/auth/components'
+import { useAuth } from '@/hooks/useAuth'
 
 type NavLink = { href: string; label: string; icon: LucideIcon }
 
@@ -18,14 +19,15 @@ const TOP_LINKS: NavLink[] = [
   { href: '/concierge', label: 'Decídeme', icon: Sparkles },
 ]
 
-// Pestañas de la barra inferior (móvil).
-const TABS: NavLink[] = [
+// Pestañas de la barra inferior (móvil). La última depende de la sesión.
+const BASE_TABS: NavLink[] = [
   { href: '/feed', label: 'Feed', icon: Smartphone },
   { href: '/buscar', label: 'Buscar', icon: Search },
   { href: '/concierge', label: 'Decídeme', icon: Sparkles },
   { href: '/eventos', label: 'Eventos', icon: Calendar },
-  { href: '/perfil', label: 'Perfil', icon: User },
 ]
+const PROFILE_TAB: NavLink = { href: '/perfil', label: 'Perfil', icon: User }
+const LOGIN_TAB: NavLink = { href: '/login', label: 'Entrar', icon: LogIn }
 
 const isActive = (pathname: string, href: string) =>
   pathname === href || (href !== '/feed' && pathname.startsWith(href))
@@ -39,6 +41,9 @@ const isActive = (pathname: string, href: string) =>
  */
 export function AppNav() {
   const pathname = usePathname()
+  const { user, loading } = useAuth()
+  // Mientras carga la sesión mantenemos "Perfil" para no parpadear de Entrar→Perfil.
+  const TABS: NavLink[] = [...BASE_TABS, loading || user ? PROFILE_TAB : LOGIN_TAB]
 
   return (
     <>
