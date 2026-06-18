@@ -1,7 +1,7 @@
 'use client'
 
 import { Moon, Sun } from 'lucide-react'
-import { useTheme } from './theme-provider'
+import { useTheme } from '@/shared/components/theme-provider'
 
 /** Botón pill para alternar claro/oscuro. Vive en Perfil y en el menú de cuenta. */
 export function ThemeToggle({ className = '' }: { className?: string }) {

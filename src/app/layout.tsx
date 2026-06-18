@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
+import Script from 'next/script'
 import './globals.css'
 import { ThemeProvider, themeInitScript } from '@/shared/components/theme-provider'
 
@@ -32,10 +33,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={roboto.variable} suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-      </head>
       <body>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {themeInitScript}
+        </Script>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
