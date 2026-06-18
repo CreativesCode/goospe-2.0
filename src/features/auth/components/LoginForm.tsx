@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { login } from '@/actions/auth'
 import { fieldClass, primaryBtn } from '@/shared/lib/ui'
+import { PasswordField } from './PasswordField'
 
 export function LoginForm() {
   const next = useSearchParams().get('next') ?? '/feed'
@@ -24,10 +25,7 @@ export function LoginForm() {
         <label htmlFor="email" className="block text-sm font-medium text-fg">Email</label>
         <input id="email" name="email" type="email" required className={fieldClass} />
       </div>
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium text-fg">Contraseña</label>
-        <input id="password" name="password" type="password" required className={fieldClass} />
-      </div>
+      <PasswordField required />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button type="submit" disabled={loading} className={primaryBtn}>
         {loading ? 'Entrando…' : 'Entrar'}

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { signup } from '@/actions/auth'
 import { fieldClass, primaryBtn } from '@/shared/lib/ui'
+import { PasswordField } from './PasswordField'
 
 export function SignupForm() {
   const [error, setError] = useState<string | null>(null)
@@ -24,10 +25,7 @@ export function SignupForm() {
         <label htmlFor="email" className="block text-sm font-medium text-fg">Email</label>
         <input id="email" name="email" type="email" required className={fieldClass} />
       </div>
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium text-fg">Contraseña</label>
-        <input id="password" name="password" type="password" required minLength={6} className={fieldClass} />
-      </div>
+      <PasswordField required minLength={6} />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button type="submit" disabled={loading} className={primaryBtn}>
         {loading ? 'Creando cuenta…' : 'Crear cuenta'}
