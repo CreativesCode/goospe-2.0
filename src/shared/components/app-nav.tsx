@@ -45,7 +45,7 @@ export function AppNav() {
       {/* ===== barra superior ===== */}
       <header className="sticky top-0 z-30 border-b border-line bg-surface/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-5 py-3">
-          <Link href="/feed" className="shrink-0">
+          <Link href="/" className="shrink-0">
             <img src="/brand/logo-color.svg" alt="Goospe" className="h-7 dark:hidden" />
             <img src="/brand/logo-white.svg" alt="Goospe" className="hidden h-7 dark:block" />
           </Link>
