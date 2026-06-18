@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Sparkles } from 'lucide-react'
 import { createBoost, endBoost } from '@/actions/boosts'
 
 type Boost = { id: string; ends_at: string }
@@ -39,13 +40,13 @@ export function BoostControl({ placeId, active }: { placeId: string; active: Boo
   return (
     <section className="rounded-2xl border border-goospe-green/20 bg-goospe-green/[0.04] p-6">
       <div className="flex items-center gap-2">
-        <h2 className="font-medium text-goospe-gray">✨ Destacar en el feed</h2>
+        <h2 className="inline-flex items-center gap-2 font-medium text-fg"><Sparkles size={18} strokeWidth={1.75} className="text-goospe-green" /> Destacar en el feed</h2>
         <span className="rounded-full bg-goospe-green/15 px-2 py-0.5 text-[10px] font-medium text-goospe-green-dark">Gratis en el piloto</span>
       </div>
 
       {active ? (
         <div className="mt-3 flex items-center justify-between gap-4">
-          <p className="text-sm text-goospe-gray">
+          <p className="text-sm text-fg">
             Tu lugar está <strong className="text-goospe-green-dark">destacado</strong> hasta el {fmt(active.ends_at)}.
           </p>
           <button onClick={onEnd} disabled={busy} className="shrink-0 text-sm text-red-600 hover:underline disabled:opacity-60">
@@ -54,9 +55,9 @@ export function BoostControl({ placeId, active }: { placeId: string; active: Boo
         </div>
       ) : (
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          <p className="text-sm text-goospe-gray/70">Súbelo al tope del feed por</p>
+          <p className="text-sm text-fg-soft">Súbelo al tope del feed por</p>
           <select value={days} onChange={(e) => setDays(Number(e.target.value))}
-            className="rounded-lg border border-black/10 px-3 py-1.5 text-sm outline-none focus:border-goospe-green">
+            className="select-chevron rounded-lg border border-line bg-card px-3 py-1.5 text-sm text-fg outline-none focus:border-goospe-green">
             <option value={3}>3 días</option>
             <option value={7}>7 días</option>
             <option value={14}>14 días</option>

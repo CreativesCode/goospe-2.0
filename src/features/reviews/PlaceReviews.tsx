@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Star } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { submitReview, deleteOwnReview } from '@/actions/reviews'
 
@@ -10,12 +11,21 @@ type Stats = { rating: number; reviews_count: number }
 
 const fmtDate = (s: string) => new Date(s).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })
 
-function Stars({ value, size = 'text-base' }: { value: number; size?: string }) {
+function Stars({ value, size = 16 }: { value: number; size?: number }) {
   return (
-    <span className={`${size} leading-none tracking-tight`}>
-      {[1, 2, 3, 4, 5].map((n) => (
-        <span key={n} className={n <= Math.round(value) ? 'text-goospe-green' : 'text-goospe-gray/25'}>★</span>
-      ))}
+    <span className="inline-flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => {
+        const on = n <= Math.round(value)
+        return (
+          <Star
+            key={n}
+            size={size}
+            strokeWidth={1.75}
+            className={on ? 'text-goospe-green' : 'text-muted/40'}
+            fill={on ? 'currentColor' : 'none'}
+          />
+        )
+      })}
     </span>
   )
 }
@@ -96,39 +106,42 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
   }
 
   return (
-    <section className="mt-10 border-t border-black/5 pt-8">
+    <section className="mt-10 border-t border-line pt-8">
       <div className="mb-5 flex items-center gap-3">
-        <h2 className="text-sm font-medium uppercase tracking-wide text-goospe-gray/40">Reseñas</h2>
+        <h2 className="text-xs font-medium uppercase tracking-[0.08em] text-muted">Reseñas</h2>
         {stats.reviews_count > 0 && (
-          <span className="flex items-center gap-1.5 text-sm text-goospe-gray">
+          <span className="flex items-center gap-1.5 text-sm text-fg">
             <Stars value={stats.rating} />
             <strong>{Number(stats.rating).toFixed(1)}</strong>
-            <span className="text-goospe-gray/50">· {stats.reviews_count} {stats.reviews_count === 1 ? 'reseña' : 'reseñas'}</span>
+            <span className="text-muted">· {stats.reviews_count} {stats.reviews_count === 1 ? 'reseña' : 'reseñas'}</span>
           </span>
         )}
       </div>
 
       {/* formulario / login */}
       {userId === null && !loading ? (
-        <div className="mb-6 rounded-xl bg-goospe-green/5 p-4 text-sm text-goospe-gray">
+        <div className="mb-6 rounded-xl bg-goospe-green/5 p-4 text-sm text-fg">
           <Link href={`/login?next=/places`} className="font-medium text-goospe-green hover:underline">Inicia sesión</Link> para dejar tu reseña.
         </div>
       ) : userId ? (
-        <form onSubmit={onSubmit} className="mb-8 rounded-xl border border-black/5 bg-white p-4 shadow-sm">
-          <p className="mb-2 text-sm font-medium text-goospe-gray">{own ? 'Tu reseña' : 'Deja tu reseña'}</p>
+        <form onSubmit={onSubmit} className="mb-8 rounded-xl border border-line bg-card p-4 shadow-sm">
+          <p className="mb-2 text-sm font-medium text-fg">{own ? 'Tu reseña' : 'Deja tu reseña'}</p>
           <div className="mb-3 flex items-center gap-1" onMouseLeave={() => setHover(0)}>
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                type="button"
-                onMouseEnter={() => setHover(n)}
-                onClick={() => setRating(n)}
-                className={`text-2xl leading-none transition ${n <= (hover || rating) ? 'text-goospe-green' : 'text-goospe-gray/25'}`}
-                aria-label={`${n} estrellas`}
-              >
-                ★
-              </button>
-            ))}
+            {[1, 2, 3, 4, 5].map((n) => {
+              const on = n <= (hover || rating)
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  onMouseEnter={() => setHover(n)}
+                  onClick={() => setRating(n)}
+                  className={`transition ${on ? 'text-goospe-green' : 'text-muted/40'}`}
+                  aria-label={`${n} estrellas`}
+                >
+                  <Star size={26} strokeWidth={1.75} fill={on ? 'currentColor' : 'none'} />
+                </button>
+              )
+            })}
           </div>
           <textarea
             value={body}
@@ -136,7 +149,7 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
             maxLength={500}
             rows={3}
             placeholder="¿Cómo fue tu experiencia? (opcional)"
-            className="w-full rounded-lg border border-black/10 px-3 py-2 text-sm text-goospe-gray outline-none focus:border-goospe-green focus:ring-2 focus:ring-goospe-green/30"
+            className="w-full rounded-lg border border-line bg-card px-3 py-2 text-sm text-fg outline-none transition placeholder:text-muted focus:border-goospe-green focus:ring-2 focus:ring-goospe-green/30"
           />
           <div className="mt-3 flex items-center gap-3">
             <button type="submit" disabled={saving}
@@ -153,21 +166,21 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
 
       {/* lista */}
       {loading ? (
-        <p className="text-sm text-goospe-gray/50">Cargando reseñas…</p>
+        <p className="text-sm text-muted">Cargando reseñas…</p>
       ) : reviews.length === 0 ? (
-        <p className="text-sm text-goospe-gray/50">Aún no hay reseñas. ¡Sé el primero!</p>
+        <p className="text-sm text-muted">Aún no hay reseñas. ¡Sé el primero!</p>
       ) : (
         <ul className="space-y-4">
           {reviews.map((r) => (
-            <li key={r.id} className="rounded-xl border border-black/5 bg-white p-4">
+            <li key={r.id} className="rounded-xl border border-line bg-card p-4">
               <div className="mb-1 flex items-center justify-between gap-2">
-                <span className="text-sm font-medium text-goospe-gray">
+                <span className="text-sm font-medium text-fg">
                   {names[r.user_id] ?? 'Usuario'}{r.user_id === userId && <span className="ml-1 text-xs text-goospe-green">(tú)</span>}
                 </span>
-                <span className="text-xs text-goospe-gray/40">{fmtDate(r.created_at)}</span>
+                <span className="text-xs text-muted">{fmtDate(r.created_at)}</span>
               </div>
-              <Stars value={r.rating} size="text-sm" />
-              {r.body && <p className="mt-2 text-sm text-goospe-gray/80">{r.body}</p>}
+              <Stars value={r.rating} size={14} />
+              {r.body && <p className="mt-2 text-sm text-fg-soft">{r.body}</p>}
             </li>
           ))}
         </ul>

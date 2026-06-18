@@ -1,5 +1,8 @@
 import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
+import { ArrowRight } from 'lucide-react'
+import { AppNav } from '@/shared/components/app-nav'
+import { AppFooter } from '@/shared/components/app-footer'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ListingForm } from '@/features/business/ListingForm'
@@ -63,6 +66,22 @@ export default async function EditListingPage({
   }
   if (!allowed) redirect('/panel')
 
+  // Maestro-detalle (tablet/web): lista de lugares del dueño para la barra lateral.
+  const { data: memberships } = await admin
+    .from('business_members')
+    .select('business_id')
+    .eq('user_id', user.id)
+  const businessIds = ((memberships ?? []) as { business_id: string }[]).map((m) => m.business_id)
+  let siblings: { id: string; name: string; is_published: boolean }[] = []
+  if (businessIds.length) {
+    const { data: sib } = await admin
+      .from('places')
+      .select('id, name, is_published')
+      .in('business_id', businessIds)
+      .order('name')
+    siblings = (sib ?? []) as unknown as { id: string; name: string; is_published: boolean }[]
+  }
+
   // Eventos del lugar + boost activo (para los controles del dueño).
   const { data: evRows } = await admin
     .from('events')
@@ -122,25 +141,46 @@ export default async function EditListingPage({
     : null
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <header className="border-b border-black/5 bg-white">
-        <div className="mx-auto flex max-w-3xl items-center gap-3 px-5 py-4">
-          <Link href="/panel" className="text-goospe-gray/60 hover:text-goospe-gray">←</Link>
-          <Link href="/feed"><img src="/brand/logo-color.svg" alt="Goospe" className="h-7" /></Link>
-        </div>
-      </header>
+    <main className="flex min-h-screen flex-col bg-surface">
+      <AppNav />
 
-      <div className="mx-auto max-w-3xl px-5 py-8">
+      <div className="mx-auto flex max-w-6xl gap-8 px-5 py-8">
+        {/* maestro: lista de lugares (solo tablet/web) */}
+        {siblings.length > 1 && (
+          <aside className="hidden w-64 shrink-0 lg:block">
+            <h2 className="mb-3 px-1 text-xs font-medium uppercase tracking-[0.08em] text-muted">Mis lugares</h2>
+            <nav className="flex flex-col gap-2">
+              {siblings.map((s) => {
+                const current = s.id === place.id
+                return (
+                  <Link
+                    key={s.id}
+                    href={`/panel/${s.id}`}
+                    className={`rounded-2xl border bg-card px-4 py-3 transition ${current ? 'border-goospe-green ring-1 ring-goospe-green' : 'border-line hover:border-goospe-green/40'}`}
+                  >
+                    <div className="truncate text-sm font-medium text-fg">{s.name}</div>
+                    <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${s.is_published ? 'bg-goospe-green/10 text-goospe-green-dark' : 'bg-line text-muted'}`}>
+                      {s.is_published ? 'Publicado' : 'Oculto'}
+                    </span>
+                  </Link>
+                )
+              })}
+            </nav>
+          </aside>
+        )}
+
+        {/* detalle */}
+        <div className="min-w-0 flex-1">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-medium text-goospe-gray">{place.name}</h1>
-            <p className="text-sm text-goospe-gray/50">Edita cómo se ve tu ficha en Goospe</p>
+            <h1 className="text-2xl font-medium text-fg">{place.name}</h1>
+            <p className="text-sm text-muted">Edita cómo se ve tu ficha en Goospe</p>
           </div>
           <Link
             href={`/places/${place.slug}`}
-            className="shrink-0 rounded-full border border-goospe-green/40 px-4 py-2 text-sm font-medium text-goospe-green-dark hover:bg-goospe-green/10"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-goospe-green/40 px-4 py-2 text-sm font-medium text-goospe-green-dark hover:bg-goospe-green/10"
           >
-            Ver ficha pública →
+            Ver ficha pública <ArrowRight size={14} strokeWidth={1.75} />
           </Link>
         </div>
 
@@ -157,7 +197,7 @@ export default async function EditListingPage({
 
           <BoostControl placeId={place.id} active={activeBoost} />
 
-          <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-line bg-card p-6 shadow-sm">
             <ListingForm place={place} />
           </div>
 
@@ -167,7 +207,10 @@ export default async function EditListingPage({
 
           <ReviewReplies placeId={place.id} reviews={reviews} />
         </div>
+        </div>
       </div>
+
+      <AppFooter />
     </main>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { toggleRsvp } from '@/actions/events'
 import { track } from '@/lib/track'
@@ -42,13 +43,13 @@ export function RsvpButton({ eventId }: { eventId: string }) {
     <button
       onClick={onClick}
       disabled={busy}
-      className={`rounded-full px-4 py-1.5 text-sm font-medium transition disabled:opacity-60 ${
+      className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition disabled:opacity-60 ${
         going
           ? 'bg-goospe-green text-white'
           : 'border border-goospe-green/40 text-goospe-green-dark hover:bg-goospe-green/10'
       }`}
     >
-      {going ? '✓ Asistiré' : 'Me interesa'}
+      {going ? <><Check size={15} strokeWidth={2} /> Asistiré</> : 'Me interesa'}
     </button>
   )
 }

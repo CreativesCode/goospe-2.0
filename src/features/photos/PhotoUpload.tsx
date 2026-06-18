@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { Camera } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { uploadPlacePhoto } from '@/actions/photos'
 
@@ -33,7 +34,7 @@ export function PhotoUpload({ placeId }: { placeId: string }) {
 
   if (authed === false) {
     return (
-      <p className="mt-3 text-sm text-goospe-gray/60">
+      <p className="mt-3 text-sm text-fg-soft">
         <Link href="/login?next=/places" className="font-medium text-goospe-green hover:underline">Inicia sesión</Link> para aportar fotos de este lugar.
       </p>
     )
@@ -50,7 +51,7 @@ export function PhotoUpload({ placeId }: { placeId: string }) {
           disabled={busy}
           className="hidden"
         />
-        {busy ? 'Subiendo…' : '📷 Aportar una foto'}
+        {busy ? 'Subiendo…' : <><Camera size={16} strokeWidth={1.75} /> Aportar una foto</>}
       </label>
       {msg && (
         <p className={`mt-2 text-sm ${msg.ok ? 'text-goospe-green-dark' : 'text-red-600'}`}>{msg.text}</p>

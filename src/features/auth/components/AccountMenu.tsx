@@ -2,13 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { User, Heart, Store, Calendar, Sparkles, ShieldCheck, Sun, Moon, LogOut, type LucideIcon } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { signout } from '@/actions/auth'
+import { useTheme } from '@/shared/components/theme-provider'
 
-// Indicador de sesión para el feed: avatar con inicial + menú (Guardados / Cerrar sesión).
+// Indicador de sesión para el feed: avatar con inicial + menú (Guardados / tema / Cerrar sesión).
 // Sin sesión muestra un botón "Entrar". Pensado sobre fondos oscuros (feed).
 export function AccountMenu() {
   const { user, profile, loading } = useAuth()
+  const { theme, toggle } = useTheme()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -26,7 +29,7 @@ export function AccountMenu() {
     return (
       <Link
         href="/login"
-        className="rounded-full bg-white/20 px-4 py-1.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/30"
+        className="rounded-full bg-goospe-green px-4 py-1.5 text-sm font-medium text-white transition hover:bg-goospe-green-dark"
       >
         Entrar
       </Link>
@@ -35,6 +38,16 @@ export function AccountMenu() {
 
   const label = profile?.display_name || user.email || 'Tú'
   const initial = label.charAt(0).toUpperCase()
+
+  const Item = ({ href, icon: Icon, children }: { href: string; icon: LucideIcon; children: React.ReactNode }) => (
+    <Link
+      href={href}
+      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-fg transition hover:bg-goospe-green/10"
+      onClick={() => setOpen(false)}
+    >
+      <Icon size={17} strokeWidth={1.75} className="text-fg-soft" /> {children}
+    </Link>
+  )
 
   return (
     <div ref={ref} className="relative">
@@ -47,63 +60,37 @@ export function AccountMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-52 overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5">
-          <div className="border-b border-black/5 px-4 py-3">
-            <p className="truncate text-sm font-medium text-goospe-gray">{label}</p>
-            <p className="truncate text-xs text-goospe-gray/50">{user.email}</p>
+        <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl bg-card shadow-2xl ring-1 ring-line">
+          <div className="border-b border-line px-4 py-3">
+            <p className="truncate text-sm font-medium text-fg">{label}</p>
+            <p className="truncate text-xs text-muted">{user.email}</p>
           </div>
-          <Link
-            href="/saved"
-            className="block px-4 py-2.5 text-sm text-goospe-gray transition hover:bg-goospe-green/10"
-            onClick={() => setOpen(false)}
-          >
-            ❤️ Mis guardados
-          </Link>
-          <Link
-            href="/panel"
-            className="block px-4 py-2.5 text-sm text-goospe-gray transition hover:bg-goospe-green/10"
-            onClick={() => setOpen(false)}
-          >
-            🏪 Panel de negocio
-          </Link>
-          <Link
-            href="/eventos"
-            className="block px-4 py-2.5 text-sm text-goospe-gray transition hover:bg-goospe-green/10"
-            onClick={() => setOpen(false)}
-          >
-            📅 Eventos
-          </Link>
-          <Link
-            href="/onboarding"
-            className="block px-4 py-2.5 text-sm text-goospe-gray transition hover:bg-goospe-green/10"
-            onClick={() => setOpen(false)}
-          >
-            ✨ Mis gustos
-          </Link>
+          <Item href="/perfil" icon={User}>Mi perfil</Item>
+          <Item href="/saved" icon={Heart}>Mis guardados</Item>
+          <Item href="/panel" icon={Store}>Panel de negocio</Item>
+          <Item href="/eventos" icon={Calendar}>Eventos</Item>
+          <Item href="/onboarding" icon={Sparkles}>Mis gustos</Item>
           {profile?.is_admin && (
             <>
-              <Link
-                href="/admin/fotos"
-                className="block px-4 py-2.5 text-sm text-goospe-gray transition hover:bg-goospe-green/10"
-                onClick={() => setOpen(false)}
-              >
-                🛡️ Moderar fotos
-              </Link>
-              <Link
-                href="/admin/contenido"
-                className="block px-4 py-2.5 text-sm text-goospe-gray transition hover:bg-goospe-green/10"
-                onClick={() => setOpen(false)}
-              >
-                🛡️ Moderar contenido
-              </Link>
+              <Item href="/admin/fotos" icon={ShieldCheck}>Moderar fotos</Item>
+              <Item href="/admin/contenido" icon={ShieldCheck}>Moderar contenido</Item>
             </>
           )}
+          <button
+            type="button"
+            onClick={toggle}
+            className="flex w-full items-center gap-2.5 border-t border-line px-4 py-2.5 text-left text-sm text-fg transition hover:bg-goospe-green/10"
+          >
+            {theme === 'dark'
+              ? <><Sun size={17} strokeWidth={1.75} className="text-fg-soft" /> Modo claro</>
+              : <><Moon size={17} strokeWidth={1.75} className="text-fg-soft" /> Modo oscuro</>}
+          </button>
           <form action={signout}>
             <button
               type="submit"
-              className="w-full px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50"
+              className="flex w-full items-center gap-2.5 border-t border-line px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-500/10"
             >
-              Cerrar sesión
+              <LogOut size={17} strokeWidth={1.75} /> Cerrar sesión
             </button>
           </form>
         </div>

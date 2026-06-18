@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { BarChart3 } from 'lucide-react'
 import { generateWeeklyReport } from '@/actions/reports'
 
 export function WeeklyReport({
@@ -28,7 +29,7 @@ export function WeeklyReport({
     <section className="rounded-2xl border border-goospe-green/20 bg-goospe-green/[0.04] p-6">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h2 className="font-medium text-goospe-gray">📊 Tu semana en 5 líneas</h2>
+          <h2 className="inline-flex items-center gap-2 font-medium text-fg"><BarChart3 size={18} strokeWidth={1.75} className="text-goospe-green" /> Tu semana en 5 líneas</h2>
           <span className="rounded-full bg-goospe-green/15 px-2 py-0.5 text-[10px] font-medium text-goospe-green-dark">IA</span>
         </div>
         <button onClick={generate} disabled={busy}
@@ -40,9 +41,9 @@ export function WeeklyReport({
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
       {summary ? (
-        <div className="mt-3 whitespace-pre-line text-sm leading-relaxed text-goospe-gray/90">{summary}</div>
+        <div className="mt-3 whitespace-pre-line text-sm leading-relaxed text-fg">{summary}</div>
       ) : (
-        <p className="mt-3 text-sm text-goospe-gray/60">
+        <p className="mt-3 text-sm text-fg-soft">
           Genera un resumen de cómo le fue a tu lugar esta semana: vistas, guardados y qué dijo la gente.
         </p>
       )}

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import './globals.css'
+import { ThemeProvider, themeInitScript } from '@/shared/components/theme-provider'
 
 // Tipografía de marca: Roboto (Light 300 / Regular 400 / Medium 500).
 // Auto-alojada desde los .ttf originales en src/app/fonts/ (sin dependencia de Google Fonts).
@@ -30,8 +31,13 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es" className={roboto.variable}>
-      <body>{children}</body>
+    <html lang="es" className={roboto.variable} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   )
 }

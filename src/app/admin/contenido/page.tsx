@@ -1,5 +1,8 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { Star } from 'lucide-react'
+import { AppNav } from '@/shared/components/app-nav'
+import { AppFooter } from '@/shared/components/app-footer'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdmin } from '@/lib/ownership'
@@ -34,32 +37,34 @@ export default async function AdminContenidoPage() {
   const ev = (events ?? []) as any[]
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <header className="border-b border-black/5 bg-white">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-4">
-          <Link href="/feed"><img src="/brand/logo-color.svg" alt="Goospe" className="h-7" /></Link>
-          <div className="flex items-center gap-3 text-sm">
-            <Link href="/admin/fotos" className="text-goospe-gray/60 hover:text-goospe-green">Fotos</Link>
-            <span className="rounded-full bg-goospe-green/10 px-3 py-1 text-xs font-medium text-goospe-green-dark">Contenido</span>
-          </div>
-        </div>
-      </header>
+    <main className="flex min-h-screen flex-col bg-surface">
+      <AppNav />
 
       <div className="mx-auto max-w-4xl space-y-10 px-5 py-8">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-medium text-fg">Moderación</h1>
+          <nav className="flex items-center gap-1 rounded-full border border-line bg-card p-1 text-sm">
+            <Link href="/admin/fotos" className="rounded-full px-3 py-1 text-fg-soft hover:text-fg">Fotos</Link>
+            <span className="rounded-full bg-goospe-green/10 px-3 py-1 font-medium text-goospe-green-dark">Contenido</span>
+          </nav>
+        </div>
+
         <section>
-          <h1 className="mb-4 text-xl font-medium text-goospe-gray">Reseñas recientes</h1>
-          {rv.length === 0 ? <p className="text-sm text-goospe-gray/50">Sin reseñas.</p> : (
+          <h1 className="mb-4 text-xl font-medium text-fg">Reseñas recientes</h1>
+          {rv.length === 0 ? <p className="text-sm text-muted">Sin reseñas.</p> : (
             <ul className="space-y-2">
               {rv.map((r) => (
-                <li key={r.id} className="flex items-start justify-between gap-4 rounded-xl border border-black/5 bg-white p-4">
+                <li key={r.id} className="flex items-start justify-between gap-4 rounded-xl border border-line bg-card p-4">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-goospe-green">{'★'.repeat(r.rating)}</span>
-                      {r.places && <Link href={`/places/${r.places.slug}`} className="text-sm font-medium text-goospe-gray hover:text-goospe-green">{r.places.name}</Link>}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-1 text-sm text-goospe-green">
+                        <Star size={13} strokeWidth={1.75} fill="currentColor" /> {r.rating}
+                      </span>
+                      {r.places && <Link href={`/places/${r.places.slug}`} className="text-sm font-medium text-fg hover:text-goospe-green">{r.places.name}</Link>}
                       {badge(r.status)}
-                      <span className="text-xs text-goospe-gray/40">{fmt(r.created_at)}</span>
+                      <span className="text-xs text-muted">{fmt(r.created_at)}</span>
                     </div>
-                    {r.body && <p className="mt-1 text-sm text-goospe-gray/70">{r.body}</p>}
+                    {r.body && <p className="mt-1 text-sm text-fg-soft">{r.body}</p>}
                   </div>
                   <ModStatusButtons type="review" id={r.id} status={r.status} />
                 </li>
@@ -69,17 +74,17 @@ export default async function AdminContenidoPage() {
         </section>
 
         <section>
-          <h1 className="mb-4 text-xl font-medium text-goospe-gray">Eventos recientes</h1>
-          {ev.length === 0 ? <p className="text-sm text-goospe-gray/50">Sin eventos.</p> : (
+          <h1 className="mb-4 text-xl font-medium text-fg">Eventos recientes</h1>
+          {ev.length === 0 ? <p className="text-sm text-muted">Sin eventos.</p> : (
             <ul className="space-y-2">
               {ev.map((e) => (
-                <li key={e.id} className="flex items-center justify-between gap-4 rounded-xl border border-black/5 bg-white p-4">
+                <li key={e.id} className="flex items-center justify-between gap-4 rounded-xl border border-line bg-card p-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="truncate text-sm font-medium text-goospe-gray">{e.name}</span>
+                      <span className="truncate text-sm font-medium text-fg">{e.name}</span>
                       {badge(e.status)}
                     </div>
-                    <p className="text-xs text-goospe-gray/50">
+                    <p className="text-xs text-muted">
                       {e.places?.name} · {fmt(e.starts_at)}
                     </p>
                   </div>
@@ -90,6 +95,8 @@ export default async function AdminContenidoPage() {
           )}
         </section>
       </div>
+
+      <AppFooter />
     </main>
   )
 }

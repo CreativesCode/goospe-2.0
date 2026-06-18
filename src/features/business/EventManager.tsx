@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Sparkles, Plus } from 'lucide-react'
 import { createEvent, deleteEvent } from '@/actions/events'
 import { generatePromo } from '@/actions/ai-assist'
 import { boostEvent, endEventBoost } from '@/actions/boosts'
@@ -10,6 +11,8 @@ type Ev = { id: string; name: string; starts_at: string; description: string | n
 
 const fmt = (s: string) =>
   new Date(s).toLocaleString('es-CL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+
+const inp = 'w-full rounded-lg border border-line bg-card px-3 py-2 text-sm text-fg outline-none transition placeholder:text-muted focus:border-goospe-green'
 
 export function EventManager({ placeId, events }: { placeId: string; events: Ev[] }) {
   const router = useRouter()
@@ -58,16 +61,16 @@ export function EventManager({ placeId, events }: { placeId: string; events: Ev[
   }
 
   return (
-    <section className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl border border-line bg-card p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="font-medium text-goospe-gray">Eventos</h2>
-        <button onClick={() => setOpen((v) => !v)} className="text-sm font-medium text-goospe-green hover:underline">
-          {open ? 'Cancelar' : '+ Nuevo evento'}
+        <h2 className="font-medium text-fg">Eventos</h2>
+        <button onClick={() => setOpen((v) => !v)} className="inline-flex items-center gap-1 text-sm font-medium text-goospe-green hover:underline">
+          {open ? 'Cancelar' : <><Plus size={15} strokeWidth={2} /> Nuevo evento</>}
         </button>
       </div>
 
       {open && (
-        <form action={onCreate} className="mb-5 space-y-3 rounded-xl bg-gray-50 p-4">
+        <form action={onCreate} className="mb-5 space-y-3 rounded-xl bg-surface p-4">
           <input type="hidden" name="place_id" value={placeId} />
 
           {/* asistente IA */}
@@ -76,28 +79,24 @@ export function EventManager({ placeId, events }: { placeId: string; events: Ev[
               value={brief}
               onChange={(e) => setBrief(e.target.value)}
               placeholder="Idea para la IA (ej: noche de jazz el viernes)"
-              className="flex-1 rounded-lg border border-black/10 px-3 py-2 text-sm outline-none focus:border-goospe-green"
+              className={inp}
             />
             <button type="button" onClick={onGenerate} disabled={genning}
-              className="shrink-0 rounded-lg bg-goospe-gradient px-3 py-2 text-sm font-medium text-white disabled:opacity-60">
-              {genning ? '…' : '✨ Generar'}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-goospe-gradient px-3 py-2 text-sm font-medium text-white disabled:opacity-60">
+              {genning ? '…' : <><Sparkles size={15} strokeWidth={1.75} /> Generar</>}
             </button>
           </div>
 
-          <input name="name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del evento"
-            className="w-full rounded-lg border border-black/10 px-3 py-2 text-sm outline-none focus:border-goospe-green" />
+          <input name="name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del evento" className={inp} />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="text-xs text-goospe-gray/60">Inicio
-              <input name="starts_at" type="datetime-local" required
-                className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2 text-sm outline-none focus:border-goospe-green" />
+            <label className="text-xs text-fg-soft">Inicio
+              <input name="starts_at" type="datetime-local" required className={`mt-1 ${inp}`} />
             </label>
-            <label className="text-xs text-goospe-gray/60">Fin (opcional)
-              <input name="ends_at" type="datetime-local"
-                className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2 text-sm outline-none focus:border-goospe-green" />
+            <label className="text-xs text-fg-soft">Fin (opcional)
+              <input name="ends_at" type="datetime-local" className={`mt-1 ${inp}`} />
             </label>
           </div>
-          <textarea name="description" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descripción (opcional)"
-            className="w-full rounded-lg border border-black/10 px-3 py-2 text-sm outline-none focus:border-goospe-green" />
+          <textarea name="description" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descripción (opcional)" className={inp} />
           <div className="flex items-center gap-3">
             <button type="submit" disabled={saving}
               className="rounded-full bg-goospe-gradient px-5 py-2 text-sm font-medium text-white shadow disabled:opacity-60">
@@ -109,20 +108,20 @@ export function EventManager({ placeId, events }: { placeId: string; events: Ev[
       )}
 
       {events.length === 0 ? (
-        <p className="text-sm text-goospe-gray/50">Aún no tienes eventos.</p>
+        <p className="text-sm text-muted">Aún no tienes eventos.</p>
       ) : (
         <ul className="space-y-2">
           {events.map((ev) => (
-            <li key={ev.id} className="flex items-center justify-between gap-3 rounded-lg border border-black/5 px-3 py-2">
+            <li key={ev.id} className="flex items-center justify-between gap-3 rounded-lg border border-line px-3 py-2">
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-goospe-gray">
-                  {ev.name}{ev.is_boosted && <span className="ml-2 rounded-full bg-goospe-green/15 px-2 py-0.5 text-[10px] font-medium text-goospe-green-dark">✨ Destacado</span>}
+                <p className="truncate text-sm font-medium text-fg">
+                  {ev.name}{ev.is_boosted && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-goospe-green/15 px-2 py-0.5 text-[10px] font-medium text-goospe-green-dark"><Sparkles size={10} strokeWidth={2} /> Destacado</span>}
                 </p>
                 <p className="text-xs text-goospe-green">{fmt(ev.starts_at)}</p>
               </div>
               <div className="flex shrink-0 items-center gap-3">
-                <button onClick={() => onToggleBoost(ev)} className="text-sm font-medium text-goospe-green hover:underline">
-                  {ev.is_boosted ? 'Quitar' : '✨ Destacar'}
+                <button onClick={() => onToggleBoost(ev)} className="inline-flex items-center gap-1 text-sm font-medium text-goospe-green hover:underline">
+                  {ev.is_boosted ? 'Quitar' : <><Sparkles size={14} strokeWidth={1.75} /> Destacar</>}
                 </button>
                 <button onClick={() => onDelete(ev.id)} className="text-sm text-red-600 hover:underline">Eliminar</button>
               </div>

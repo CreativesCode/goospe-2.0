@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Check } from 'lucide-react'
 import { updateListing } from '@/actions/business'
 
 type Place = {
@@ -15,8 +16,8 @@ type Place = {
   tags: string[] | null
 }
 
-const field = 'mt-1 w-full rounded-lg border border-black/10 px-3 py-2 text-goospe-gray outline-none focus:border-goospe-green focus:ring-2 focus:ring-goospe-green/30'
-const lbl = 'block text-sm font-medium text-goospe-gray'
+const field = 'mt-1 w-full rounded-lg border border-line bg-card px-3 py-2 text-fg outline-none transition placeholder:text-muted focus:border-goospe-green focus:ring-2 focus:ring-goospe-green/30'
+const lbl = 'block text-sm font-medium text-fg'
 
 export function ListingForm({ place }: { place: Place }) {
   const [saving, setSaving] = useState(false)
@@ -28,7 +29,7 @@ export function ListingForm({ place }: { place: Place }) {
     const res = await updateListing(formData)
     setSaving(false)
     if (res?.error) setMsg({ ok: false, text: res.error })
-    else setMsg({ ok: true, text: 'Cambios guardados ✓' })
+    else setMsg({ ok: true, text: 'Cambios guardados' })
   }
 
   return (
@@ -70,7 +71,7 @@ export function ListingForm({ place }: { place: Place }) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className={lbl} htmlFor="price_level">Rango de precio</label>
-          <select id="price_level" name="price_level" defaultValue={place.price_level ?? ''} className={field}>
+          <select id="price_level" name="price_level" defaultValue={place.price_level ?? ''} className={`${field} select-chevron`}>
             <option value="">Sin especificar</option>
             <option value="1">$ — económico</option>
             <option value="2">$$ — moderado</option>
@@ -91,7 +92,9 @@ export function ListingForm({ place }: { place: Place }) {
           {saving ? 'Guardando…' : 'Guardar cambios'}
         </button>
         {msg && (
-          <span className={`text-sm ${msg.ok ? 'text-goospe-green-dark' : 'text-red-600'}`}>{msg.text}</span>
+          <span className={`inline-flex items-center gap-1 text-sm ${msg.ok ? 'text-goospe-green-dark' : 'text-red-600'}`}>
+            {msg.ok && <Check size={15} strokeWidth={2} />}{msg.text}
+          </span>
         )}
       </div>
     </form>

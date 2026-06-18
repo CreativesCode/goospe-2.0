@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Calendar, Sparkles, Check, Ticket, Compass, MapPin } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { toggleRsvp } from '@/actions/events'
 import { track } from '@/lib/track'
@@ -66,17 +67,17 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
 
       {/* etiquetas */}
       <div className="absolute left-4 top-16 z-10 flex flex-col gap-2">
-        <span className="w-fit rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white backdrop-blur">📅 Evento</span>
+        <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white backdrop-blur"><Calendar size={13} strokeWidth={2} /> Evento</span>
         {ev.boosted && (
-          <span className="w-fit rounded-full bg-goospe-gradient px-3 py-1 text-xs font-semibold text-white shadow-lg ring-1 ring-white/40">✨ Destacado</span>
+          <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-goospe-gradient px-3 py-1 text-xs font-semibold text-white shadow-lg ring-1 ring-white/40"><Sparkles size={13} strokeWidth={2} /> Destacado</span>
         )}
       </div>
 
       {/* acciones laterales */}
       <div className="absolute bottom-40 right-4 z-10 flex flex-col gap-5 text-white">
         <button onClick={onRsvp} disabled={busy} className="flex flex-col items-center gap-1">
-          <span className={`flex h-12 w-12 items-center justify-center rounded-full text-2xl backdrop-blur transition ${going ? 'bg-goospe-green' : 'bg-white/20'}`}>
-            {going ? '✅' : '🎟️'}
+          <span className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur transition ${going ? 'bg-goospe-green' : 'bg-white/20'}`}>
+            {going ? <Check size={22} strokeWidth={2} /> : <Ticket size={22} strokeWidth={1.75} />}
           </span>
           <span className="text-xs">{going ? 'Asistiré' : 'Me interesa'}</span>
         </button>
@@ -86,11 +87,11 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
           onClick={() => track('directions', { placeId: ev.place_id, eventId: ev.id })}
           className="flex flex-col items-center gap-1"
         >
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-2xl backdrop-blur">🧭</span>
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur"><Compass size={22} strokeWidth={1.75} /></span>
           <span className="text-xs">Cómo llego</span>
         </a>
         <Link href={`/places/${ev.place_slug}`} className="flex flex-col items-center gap-1">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-2xl backdrop-blur">📍</span>
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur"><MapPin size={22} strokeWidth={1.75} /></span>
           <span className="text-xs">El lugar</span>
         </Link>
       </div>

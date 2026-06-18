@@ -1,6 +1,10 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { ArrowLeft, X } from 'lucide-react'
+import { categoryIcon } from '@/shared/lib/icons'
+import { AppNav } from '@/shared/components/app-nav'
+import { AppFooter } from '@/shared/components/app-footer'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -28,6 +32,8 @@ import { PlaceReviews } from '@/features/reviews/PlaceReviews'
 import { PhotoUpload } from '@/features/photos/PhotoUpload'
 import { RsvpButton } from '@/features/events/RsvpButton'
 import { DetailTracker } from '@/features/places/DetailTracker'
+import { PlaceActions } from '@/features/places/PlaceActions'
+import { DirectionsLink } from '@/features/places/DirectionsLink'
 
 const fmtEventDate = (s: string) =>
   new Date(s).toLocaleString('es-CL', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -46,8 +52,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   if (children == null || children === '') return null
   return (
     <div className="flex gap-3 py-2 text-sm">
-      <dt className="w-32 shrink-0 text-goospe-gray/50">{label}</dt>
-      <dd className="text-goospe-gray break-words">{children}</dd>
+      <dt className="w-32 shrink-0 text-muted">{label}</dt>
+      <dd className="break-words text-fg">{children}</dd>
     </div>
   )
 }
@@ -87,35 +93,45 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
   const menu = place.menu as { sections?: { name: string; items: { name: string; price: string | null; description: string | null }[] }[] } | null
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="flex min-h-screen flex-col bg-surface">
       <DetailTracker placeId={place.id} />
-      <header className="sticky top-0 z-10 border-b border-black/5 bg-white/80 px-5 py-4 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <Link href="/places" className="flex items-center gap-2 text-sm text-goospe-gray/70 hover:text-goospe-green">
-            ← Volver
-          </Link>
-          <img src="/brand/logo-color.svg" alt="Goospe" className="h-6" />
-        </div>
-      </header>
+      <AppNav />
 
       <div className="mx-auto max-w-5xl px-5 py-8">
+        <Link href="/feed" className="mb-5 inline-flex items-center gap-1.5 text-sm text-fg-soft transition hover:text-goospe-green">
+          <ArrowLeft size={16} strokeWidth={1.75} /> Volver al feed
+        </Link>
+
         {/* título */}
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="mb-1 flex items-center gap-2 text-sm text-goospe-gray/60">
-              {cats.map((c) => (
-                <span key={c.slug}>{c.emoji} {c.name}</span>
-              ))}
+            <div className="mb-1 flex items-center gap-3 text-sm text-fg-soft">
+              {cats.map((c) => {
+                const Cat = categoryIcon(c.emoji)
+                return <span key={c.slug} className="inline-flex items-center gap-1"><Cat size={14} strokeWidth={1.75} /> {c.name}</span>
+              })}
             </div>
-            <h1 className="text-3xl font-medium text-goospe-gray">{place.name}</h1>
+            <h1 className="text-3xl font-medium text-fg">{place.name}</h1>
             {place.vibe_line && <p className="mt-1 text-lg font-medium text-goospe-green">{place.vibe_line}</p>}
           </div>
           {place.price_level && (
             <span className="text-lg font-medium">
-              <span className="text-goospe-gray">{'$'.repeat(place.price_level)}</span>
-              <span className="text-goospe-gray/25">{'$'.repeat(4 - place.price_level)}</span>
+              <span className="text-fg">{'$'.repeat(place.price_level)}</span>
+              <span className="text-muted/50">{'$'.repeat(4 - place.price_level)}</span>
             </span>
           )}
+        </div>
+
+        {/* acciones: guardar / cómo llegar / compartir (registran interacciones) */}
+        <div className="mb-8">
+          <PlaceActions
+            placeId={place.id}
+            slug={place.slug}
+            name={place.name}
+            vibeLine={place.vibe_line}
+            lat={ll?.lat ?? null}
+            lng={ll?.lng ?? null}
+          />
         </div>
 
         {/* fotos */}
@@ -138,7 +154,7 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
                       title="Eliminar foto"
                       className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/55 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100"
                     >
-                      ✕
+                      <X size={15} strokeWidth={2} />
                     </button>
                   </form>
                 </div>
@@ -155,8 +171,8 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
         <div className="grid gap-8 md:grid-cols-2">
           {/* descripción + tags */}
           <section>
-            <h2 className="mb-2 text-sm font-medium uppercase tracking-wide text-goospe-gray/40">Resumen (IA)</h2>
-            <p className="text-goospe-gray/80">{place.description ?? '—'}</p>
+            <h2 className="mb-2 text-xs font-medium uppercase tracking-[0.08em] text-muted">Resumen (IA)</h2>
+            <p className="text-fg-soft">{place.description ?? '—'}</p>
             {place.tags && place.tags.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {place.tags.map((t) => (
@@ -170,8 +186,8 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
 
           {/* datos */}
           <section>
-            <h2 className="mb-2 text-sm font-medium uppercase tracking-wide text-goospe-gray/40">Datos</h2>
-            <dl className="divide-y divide-black/5">
+            <h2 className="mb-2 text-xs font-medium uppercase tracking-[0.08em] text-muted">Datos</h2>
+            <dl className="divide-y divide-line">
               <Field label="Dirección">{addr?.formatted ?? ([addr?.street, addr?.number].filter(Boolean).join(' ') || null)}</Field>
               <Field label="Ciudad">{addr?.city}</Field>
               <Field label="Teléfono">{place.phone}</Field>
@@ -193,8 +209,8 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
         </div>
 
         {/* meta técnica */}
-        <section className="mt-8 rounded-xl bg-black/[0.02] p-4">
-          <h2 className="mb-2 text-sm font-medium uppercase tracking-wide text-goospe-gray/40">Meta</h2>
+        <section className="mt-8 rounded-xl border border-line bg-card p-4">
+          <h2 className="mb-2 text-xs font-medium uppercase tracking-[0.08em] text-muted">Meta</h2>
           <dl className="grid gap-x-6 sm:grid-cols-2">
             <Field label="Slug">{place.slug}</Field>
             <Field label="Fuente">{place.source}</Field>
@@ -210,19 +226,19 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
         {/* menú */}
         {menu?.sections && menu.sections.length > 0 && (
           <section className="mt-8">
-            <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-goospe-gray/40">Carta</h2>
+            <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-muted">Carta</h2>
             <div className="space-y-5">
               {menu.sections.map((sec, i) => (
                 <div key={i}>
                   <h3 className="mb-2 font-medium text-goospe-green-dark">{sec.name}</h3>
-                  <ul className="divide-y divide-black/5">
+                  <ul className="divide-y divide-line">
                     {sec.items.map((it, j) => (
                       <li key={j} className="flex items-baseline justify-between gap-4 py-1.5">
                         <div className="min-w-0">
-                          <span className="text-sm text-goospe-gray">{it.name}</span>
-                          {it.description && <span className="ml-2 text-xs text-goospe-gray/50">{it.description}</span>}
+                          <span className="text-sm text-fg">{it.name}</span>
+                          {it.description && <span className="ml-2 text-xs text-muted">{it.description}</span>}
                         </div>
-                        {it.price && <span className="shrink-0 text-sm font-medium text-goospe-gray">{it.price}</span>}
+                        {it.price && <span className="shrink-0 text-sm font-medium text-fg">{it.price}</span>}
                       </li>
                     ))}
                   </ul>
@@ -235,8 +251,8 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
         {/* mapa */}
         {ll && (
           <section className="mt-8">
-            <h2 className="mb-2 text-sm font-medium uppercase tracking-wide text-goospe-gray/40">Ubicación</h2>
-            <div className="overflow-hidden rounded-2xl border border-black/5">
+            <h2 className="mb-2 text-xs font-medium uppercase tracking-[0.08em] text-muted">Ubicación</h2>
+            <div className="overflow-hidden rounded-2xl border border-line">
               <iframe
                 title="Mapa"
                 className="h-64 w-full"
@@ -245,32 +261,26 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
                 src={`https://www.openstreetmap.org/export/embed.html?bbox=${ll.lng - 0.004}%2C${ll.lat - 0.0025}%2C${ll.lng + 0.004}%2C${ll.lat + 0.0025}&layer=mapnik&marker=${ll.lat}%2C${ll.lng}`}
               />
             </div>
-            <a
-              href={`https://www.google.com/maps/dir/?api=1&destination=${ll.lat},${ll.lng}`}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-2 inline-block text-sm text-goospe-green hover:underline"
-            >
-              🧭 Cómo llegar
-            </a>
+            <DirectionsLink placeId={place.id} lat={ll.lat} lng={ll.lng} className="mt-2 inline-flex items-center gap-1.5 text-sm text-goospe-green hover:underline" />
+
           </section>
         )}
 
         {/* eventos */}
         {upcoming.length > 0 && (
-          <section className="mt-10 border-t border-black/5 pt-8">
-            <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-goospe-gray/40">Próximos eventos</h2>
+          <section className="mt-10 border-t border-line pt-8">
+            <h2 className="mb-4 text-xs font-medium uppercase tracking-[0.08em] text-muted">Próximos eventos</h2>
             <ul className="space-y-3">
               {upcoming.map((ev) => (
-                <li key={ev.id} className="flex items-center gap-4 rounded-xl border border-black/5 bg-white p-4 shadow-sm">
+                <li key={ev.id} className="flex items-center gap-4 rounded-xl border border-line bg-card p-4 shadow-sm">
                   {ev.image_url && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={ev.image_url} alt={ev.name} className="h-16 w-16 shrink-0 rounded-lg object-cover" />
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium uppercase text-goospe-green">{fmtEventDate(ev.starts_at)}</p>
-                    <h3 className="font-medium text-goospe-gray">{ev.name}</h3>
-                    {ev.description && <p className="line-clamp-1 text-sm text-goospe-gray/60">{ev.description}</p>}
+                    <h3 className="font-medium text-fg">{ev.name}</h3>
+                    {ev.description && <p className="line-clamp-1 text-sm text-fg-soft">{ev.description}</p>}
                   </div>
                   <RsvpButton eventId={ev.id} />
                 </li>
@@ -282,6 +292,8 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
         {/* reseñas */}
         <PlaceReviews placeId={place.id} />
       </div>
+
+      <AppFooter />
     </main>
   )
 }

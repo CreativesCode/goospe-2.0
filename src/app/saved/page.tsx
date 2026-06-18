@@ -1,5 +1,9 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { Heart } from 'lucide-react'
+import { categoryIcon } from '@/shared/lib/icons'
+import { AppNav } from '@/shared/components/app-nav'
+import { AppFooter } from '@/shared/components/app-footer'
 import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -34,24 +38,24 @@ export default async function SavedPage() {
   const places = rows.map((r) => r.places).filter(Boolean) as NonNullable<SavedRow['places']>[]
 
   return (
-    <main className="min-h-screen bg-white">
-      <header className="sticky top-0 z-10 border-b border-black/5 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-4">
-          <Link href="/feed"><img src="/brand/logo-color.svg" alt="Goospe" className="h-7" /></Link>
-          <span className="text-sm text-goospe-gray/70">
-            Mis guardados · <strong className="text-goospe-gray">{places.length}</strong>
-          </span>
-        </div>
-      </header>
+    <main className="flex min-h-screen flex-col bg-surface">
+      <AppNav />
 
       <div className="mx-auto max-w-5xl px-5 py-8">
+        <h1 className="mb-6 inline-flex items-center gap-2 text-2xl font-medium text-fg">
+          <Heart size={22} strokeWidth={1.75} className="text-goospe-green" /> Mis guardados
+          <span className="text-base font-normal text-muted">· {places.length}</span>
+        </h1>
+
         {error && <p className="text-red-600">Error: {error.message}</p>}
 
         {!error && places.length === 0 && (
           <div className="flex flex-col items-center gap-4 py-24 text-center">
-            <img src="/brand/isotipo-color.svg" alt="" className="h-16 w-16 opacity-80" />
-            <p className="text-lg font-medium text-goospe-gray">Aún no guardas nada</p>
-            <p className="max-w-sm text-sm text-goospe-gray/60">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-goospe-green/10 text-goospe-green">
+              <Heart size={30} strokeWidth={1.5} />
+            </span>
+            <p className="text-lg font-medium text-fg">Aún no guardas nada</p>
+            <p className="max-w-sm text-sm text-fg-soft">
               Toca el corazón en cualquier lugar del feed y aparecerá aquí.
             </p>
             <Link
@@ -66,12 +70,12 @@ export default async function SavedPage() {
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {places.map((p) => {
             const photo = p.place_photos?.find((ph) => ph.status === 'approved')?.url
-            const emoji = p.place_categories?.[0]?.categories?.emoji ?? '📍'
+            const Cat = categoryIcon(p.place_categories?.[0]?.categories?.emoji)
             return (
               <Link
                 href={`/places/${p.slug}`}
                 key={p.id}
-                className="group block overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm transition hover:shadow-md"
+                className="group block overflow-hidden rounded-2xl border border-line bg-card shadow-sm transition hover:shadow-md"
               >
                 <div className="relative aspect-[4/3] overflow-hidden">
                   {photo ? (
@@ -82,16 +86,16 @@ export default async function SavedPage() {
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-goospe-gradient">
-                      <span className="text-5xl drop-shadow-sm">{emoji}</span>
+                    <div className="flex h-full w-full items-center justify-center bg-goospe-gradient text-white">
+                      <Cat size={44} strokeWidth={1.5} />
                     </div>
                   )}
                 </div>
                 <div className="space-y-1.5 p-4">
-                  <h2 className="font-medium leading-tight text-goospe-gray">{p.name}</h2>
+                  <h2 className="font-medium leading-tight text-fg">{p.name}</h2>
                   {p.vibe_line && <p className="text-sm font-medium text-goospe-green">{p.vibe_line}</p>}
                   {p.description && (
-                    <p className="line-clamp-2 text-sm leading-snug text-goospe-gray/70">{p.description}</p>
+                    <p className="line-clamp-2 text-sm leading-snug text-fg-soft">{p.description}</p>
                   )}
                 </div>
               </Link>
@@ -99,6 +103,8 @@ export default async function SavedPage() {
           })}
         </div>
       </div>
+
+      <AppFooter />
     </main>
   )
 }

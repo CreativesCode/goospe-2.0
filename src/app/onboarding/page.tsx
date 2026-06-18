@@ -3,21 +3,23 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveOnboarding } from '@/actions/onboarding'
+import { Chip } from '@/shared/components/chip'
+import { LIKE_ICON, VIBE_ICON } from '@/shared/lib/icons'
 
 const LIKES = [
-  { v: 'comer', label: '🍽️ Comer' },
-  { v: 'cafe', label: '☕ Café' },
-  { v: 'beber', label: '🍸 Bares' },
-  { v: 'noche', label: '🌙 Salir de noche' },
-  { v: 'eventos', label: '🎫 Eventos' },
+  { v: 'comer', label: 'Comer' },
+  { v: 'cafe', label: 'Café' },
+  { v: 'beber', label: 'Bares' },
+  { v: 'noche', label: 'Salir de noche' },
+  { v: 'eventos', label: 'Eventos' },
 ]
 const VIBES = [
-  { v: 'tranquilo', label: '🧘 Tranquilo' },
-  { v: 'romántico', label: '💕 Romántico' },
-  { v: 'carrete', label: '🎉 Carrete' },
-  { v: 'familiar', label: '👨‍👩‍👧 Familiar' },
-  { v: 'para trabajar', label: '💻 Para trabajar' },
-  { v: 'al aire libre', label: '🌲 Al aire libre' },
+  { v: 'tranquilo', label: 'Tranquilo' },
+  { v: 'romántico', label: 'Romántico' },
+  { v: 'carrete', label: 'Carrete' },
+  { v: 'familiar', label: 'Familiar' },
+  { v: 'para trabajar', label: 'Para trabajar' },
+  { v: 'al aire libre', label: 'Al aire libre' },
 ]
 const BUDGETS = [
   { v: '1', label: '$' }, { v: '2', label: '$$' }, { v: '3', label: '$$$' }, { v: '4', label: '$$$$' },
@@ -33,18 +35,6 @@ export default function OnboardingPage() {
   const toggle = (v: string) =>
     setLikes((prev) => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n })
 
-  const Chip = ({ v, label }: { v: string; label: string }) => (
-    <button
-      type="button"
-      onClick={() => toggle(v)}
-      className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-        likes.has(v) ? 'bg-white text-goospe-green-dark shadow' : 'bg-white/15 text-white hover:bg-white/25'
-      }`}
-    >
-      {label}
-    </button>
-  )
-
   async function onSubmit() {
     if (likes.size === 0) { setError('Elige al menos una cosa'); return }
     setSaving(true); setError(null)
@@ -57,52 +47,59 @@ export default function OnboardingPage() {
     else router.push('/feed')
   }
 
+  const sectionLabel = 'mb-3 text-xs font-medium uppercase tracking-[0.08em] text-muted'
+
   return (
-    <main className="min-h-[100dvh] bg-goospe-gradient">
+    <main className="min-h-[100dvh] bg-goospe-paper">
       <div className="mx-auto max-w-xl px-5 py-12">
-        <img src="/brand/logo-white.svg" alt="Goospe" className="mb-8 h-7" />
-        <h1 className="text-3xl font-medium text-white">Cuéntanos qué te gusta</h1>
-        <p className="mt-1 text-white/80">Para decidirte mejor a dónde ir. Toma 10 segundos.</p>
+        <div className="flex items-center justify-between">
+          <img src="/brand/isotipo-color.svg" alt="Goospe" className="h-6" />
+          <span className="rounded-full bg-goospe-green/10 px-3 py-1.5 text-xs font-medium text-goospe-green-dark">10 segundos</span>
+        </div>
+
+        <h1 className="mt-6 text-3xl font-light leading-tight text-fg sm:text-4xl">
+          Cuéntanos <span className="font-medium">qué te gusta</span>
+        </h1>
+        <p className="mt-2 text-fg-soft">Para decidirte mejor a dónde ir.</p>
 
         <section className="mt-8">
-          <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-white/70">¿Qué te gusta hacer?</h2>
-          <div className="flex flex-wrap gap-2">{LIKES.map((c) => <Chip key={c.v} {...c} />)}</div>
-        </section>
-
-        <section className="mt-7">
-          <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-white/70">¿Qué ambiente buscas?</h2>
-          <div className="flex flex-wrap gap-2">{VIBES.map((c) => <Chip key={c.v} {...c} />)}</div>
-        </section>
-
-        <section className="mt-7">
-          <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-white/70">¿Presupuesto típico?</h2>
-          <div className="flex gap-2">
-            {BUDGETS.map((b) => (
-              <button
-                key={b.v}
-                type="button"
-                onClick={() => setBudget(budget === b.v ? '' : b.v)}
-                className={`rounded-full px-5 py-2 text-sm font-medium transition ${
-                  budget === b.v ? 'bg-white text-goospe-green-dark shadow' : 'bg-white/15 text-white hover:bg-white/25'
-                }`}
-              >
-                {b.label}
-              </button>
+          <h2 className={sectionLabel}>¿Qué te gusta hacer?</h2>
+          <div className="flex flex-wrap gap-2">
+            {LIKES.map((c) => (
+              <Chip key={c.v} label={c.label} icon={LIKE_ICON[c.v]} active={likes.has(c.v)} onClick={() => toggle(c.v)} />
             ))}
           </div>
         </section>
 
-        {error && <p className="mt-6 rounded-lg bg-red-500/20 p-3 text-white">{error}</p>}
+        <section className="mt-7">
+          <h2 className={sectionLabel}>¿Qué ambiente buscas?</h2>
+          <div className="flex flex-wrap gap-2">
+            {VIBES.map((c) => (
+              <Chip key={c.v} label={c.label} icon={VIBE_ICON[c.v]} active={likes.has(c.v)} onClick={() => toggle(c.v)} />
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-7">
+          <h2 className={sectionLabel}>¿Presupuesto típico?</h2>
+          <div className="flex gap-2">
+            {BUDGETS.map((b) => (
+              <Chip key={b.v} label={b.label} active={budget === b.v} onClick={() => setBudget(budget === b.v ? '' : b.v)} />
+            ))}
+          </div>
+        </section>
+
+        {error && <p className="mt-6 rounded-xl bg-red-500/10 p-3 text-sm text-red-600">{error}</p>}
 
         <div className="mt-10 flex items-center gap-4">
           <button
             onClick={onSubmit}
             disabled={saving}
-            className="rounded-full bg-white px-8 py-3 font-medium text-goospe-green-dark shadow-lg transition hover:bg-white/90 disabled:opacity-60"
+            className="rounded-full bg-goospe-green px-8 py-3 font-medium text-white shadow-sm transition hover:bg-goospe-green-dark disabled:opacity-60"
           >
             {saving ? 'Guardando…' : 'Empezar a descubrir'}
           </button>
-          <button onClick={() => router.push('/feed')} className="text-sm text-white/70 hover:text-white">
+          <button onClick={() => router.push('/feed')} className="text-sm text-fg-soft hover:text-fg">
             Omitir
           </button>
         </div>

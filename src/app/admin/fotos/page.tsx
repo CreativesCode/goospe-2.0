@@ -1,5 +1,8 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { CheckCircle2 } from 'lucide-react'
+import { AppNav } from '@/shared/components/app-nav'
+import { AppFooter } from '@/shared/components/app-footer'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdmin } from '@/lib/ownership'
@@ -24,41 +27,39 @@ export default async function AdminFotosPage() {
   const pending = (data ?? []) as any[]
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <header className="border-b border-black/5 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
-          <Link href="/feed"><img src="/brand/logo-color.svg" alt="Goospe" className="h-7" /></Link>
-          <div className="flex items-center gap-3 text-sm">
-            <span className="rounded-full bg-goospe-green/10 px-3 py-1 text-xs font-medium text-goospe-green-dark">
-              Fotos · {pending.length} pendientes
-            </span>
-            <Link href="/admin/contenido" className="text-goospe-gray/60 hover:text-goospe-green">Contenido</Link>
-          </div>
-        </div>
-      </header>
+    <main className="flex min-h-screen flex-col bg-surface">
+      <AppNav />
 
       <div className="mx-auto max-w-5xl px-5 py-8">
-        <h1 className="mb-6 text-2xl font-medium text-goospe-gray">Fotos por revisar</h1>
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-medium text-fg">Moderación</h1>
+          <nav className="flex items-center gap-1 rounded-full border border-line bg-card p-1 text-sm">
+            <span className="rounded-full bg-goospe-green/10 px-3 py-1 font-medium text-goospe-green-dark">Fotos · {pending.length}</span>
+            <Link href="/admin/contenido" className="rounded-full px-3 py-1 text-fg-soft hover:text-fg">Contenido</Link>
+          </nav>
+        </div>
 
         {pending.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-black/10 bg-white py-20 text-center">
-            <img src="/brand/isotipo-color.svg" alt="" className="h-14 w-14 opacity-80" />
-            <p className="text-goospe-gray/60">No hay fotos pendientes. Todo al día ✨</p>
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line bg-card py-20 text-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-goospe-green/10 text-goospe-green">
+              <CheckCircle2 size={28} strokeWidth={1.5} />
+            </span>
+            <p className="text-fg-soft">No hay fotos pendientes. Todo al día.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {pending.map((ph) => (
-              <div key={ph.id} className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm">
+              <div key={ph.id} className="overflow-hidden rounded-2xl border border-line bg-card shadow-sm">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={ph.url} alt="" className="aspect-[4/3] w-full object-cover" />
                 <div className="space-y-3 p-4">
                   <div className="flex items-center justify-between text-sm">
                     {ph.places ? (
-                      <Link href={`/places/${ph.places.slug}`} className="font-medium text-goospe-gray hover:text-goospe-green">
+                      <Link href={`/places/${ph.places.slug}`} className="font-medium text-fg hover:text-goospe-green">
                         {ph.places.name}
                       </Link>
-                    ) : <span className="text-goospe-gray/50">—</span>}
-                    <span className="rounded bg-gray-100 px-2 py-0.5 text-[10px] text-goospe-gray/50">{ph.source ?? '?'}</span>
+                    ) : <span className="text-muted">—</span>}
+                    <span className="rounded bg-surface px-2 py-0.5 text-[10px] text-muted">{ph.source ?? '?'}</span>
                   </div>
                   <ModerationActions photoId={ph.id} />
                 </div>
@@ -67,6 +68,8 @@ export default async function AdminFotosPage() {
           </div>
         )}
       </div>
+
+      <AppFooter />
     </main>
   )
 }

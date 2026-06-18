@@ -8,10 +8,50 @@
   --goospe-green-light: #27f1a0;
   --goospe-green-dark: #28af79;
   --goospe-gray: #636363;
+
+  /* Tokens semánticos de superficie — tema CLARO ("papel cálido").
+     Formato R G B (sin coma) para soportar opacidad de Tailwind: bg-surface/80. */
+  --surface: 251 249 245;  /* #FBF9F5 papel */
+  --card: 255 255 255;     /* #FFFFFF */
+  --line: 236 231 222;     /* #ECE7DE */
+  --fg: 28 28 26;          /* #1C1C1A */
+  --fg-soft: 99 99 99;     /* #636363 */
+  --muted: 154 150 141;    /* #9A968D */
+}
+
+/* Tema OSCURO ("negro cálido") */
+.dark {
+  --surface: 19 18 16;     /* #131210 */
+  --card: 32 28 23;        /* #201C17 */
+  --line: 46 42 36;        /* #2E2A24 */
+  --fg: 243 239 232;       /* #F3EFE8 */
+  --fg-soft: 199 193 183;  /* aclarado para contraste sobre superficie oscura */
+  --muted: 138 130 120;    /* #8A8278 */
 }
 
 @layer base {
+  html {
+    background: rgb(var(--surface));
+  }
   body {
-    @apply font-sans text-goospe-gray antialiased;
+    @apply bg-surface font-sans text-fg-soft antialiased;
+  }
+}
+
+@layer components {
+  /* Selects con chevron propio (Lucide) y espacio a la derecha — reemplaza la flecha
+     nativa que queda pegada al borde. Aplicar `select-chevron` a cualquier <select>. */
+  .select-chevron {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239A968D' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    background-size: 1rem;
+    padding-right: 2.25rem !important;
+  }
+  .dark .select-chevron {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238A8278' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   }
 }

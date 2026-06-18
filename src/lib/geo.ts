@@ -6,9 +6,11 @@ export const PUERTO_VARAS = { lat: -41.3195, lng: -72.9854 }
 // de NEXT_PUBLIC_FORCE_LAT / NEXT_PUBLIC_FORCE_LNG). Útil cuando pruebas desde
 // otra ciudad o detrás de una VPN: así el feed/conserje siempre tienen lugares cerca.
 const FORCE = process.env.NEXT_PUBLIC_FORCE_LOCATION === '1'
+// Posición GPS por defecto para desarrollo: 41°19'29.4"S 72°58'22.1"W.
+const FORCE_DEFAULT = { lat: -41.324833, lng: -72.972806 }
 const FORCED = {
-  lat: Number(process.env.NEXT_PUBLIC_FORCE_LAT) || PUERTO_VARAS.lat,
-  lng: Number(process.env.NEXT_PUBLIC_FORCE_LNG) || PUERTO_VARAS.lng,
+  lat: Number(process.env.NEXT_PUBLIC_FORCE_LAT) || FORCE_DEFAULT.lat,
+  lng: Number(process.env.NEXT_PUBLIC_FORCE_LNG) || FORCE_DEFAULT.lng,
 }
 
 // Resuelve la ubicación del usuario: override de dev → geolocalización → fallback.

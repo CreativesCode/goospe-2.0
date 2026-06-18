@@ -34,7 +34,7 @@ export function ModStatusButtons({
     </button>
   ) : (
     <button onClick={() => set(hideValue)} disabled={busy}
-      className="rounded-full border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60">
+      className="rounded-full border border-red-400/50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-500/10 disabled:opacity-60">
       Ocultar
     </button>
   )
