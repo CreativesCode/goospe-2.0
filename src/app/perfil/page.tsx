@@ -41,7 +41,7 @@ export default async function PerfilPage() {
     { label: 'Mis guardados', href: '/saved', icon: Heart },
     { label: 'Eventos', href: '/eventos', icon: Calendar },
     { label: 'Mis gustos', href: '/onboarding', icon: Sparkles },
-    ...(isAdmin ? [{ label: 'Moderar contenido', href: '/admin/contenido', icon: ShieldCheck as LucideIcon }] : []),
+    ...(isAdmin ? [{ label: 'Moderar contenido', href: '/admin/content', icon: ShieldCheck as LucideIcon }] : []),
   ]
 
   return (

@@ -71,6 +71,6 @@ export async function moderatePhoto(formData: FormData) {
     if (path) await admin.storage.from('places').remove([path])
   }
 
-  revalidatePath('/admin/fotos')
+  revalidatePath('/admin/photos')
   return { success: true }
 }

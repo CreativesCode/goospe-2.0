@@ -63,7 +63,7 @@ siguen diferidos según lo acordado.
 
 ### Fotos de usuario + moderación
 - Subida de foto por usuarios autenticados → Supabase Storage → `status='pending'`.
-- `/admin/fotos`: cola de moderación (aprobar / rechazar+borrar objeto). Solo `is_admin`.
+- `/admin/photos`: cola de moderación (aprobar / rechazar+borrar objeto). Solo `is_admin`.
 
 ### Autenticación e infraestructura
 - Auth email/contraseña (Supabase SSR, `proxy.ts` Next 16); páginas branded login/signup/
@@ -99,7 +99,7 @@ siguen diferidos según lo acordado.
 ### Fase 3 — Conserje + eventos
 - [x] **Cuota free** del conserje (`concierge_quota`, 20/mes autenticados, 429 con upsell) +
       **telemetría de coste** (`ai_usage`, tokens reales + coste). Migración 0018.
-- [x] **Moderación de eventos** (y reseñas): cola admin reactiva en `/admin/contenido`
+- [x] **Moderación de eventos** (y reseñas): cola admin reactiva en `/admin/content`
       (ocultar/restaurar). El contenido sigue auto-aprobado para el demo.
 - [x] **Streaming** de la respuesta del conserje (SSE, las recomendaciones aparecen una a una).
 - [ ] **Resultado compartible**: el deep link a la ficha ya existe; falta la **imagen OG** generada. *(Mejora menor.)*

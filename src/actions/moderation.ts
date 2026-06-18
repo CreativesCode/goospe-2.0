@@ -26,7 +26,7 @@ export async function setReviewStatus(formData: FormData) {
   // Recalcular el rating (el trigger sólo cuenta 'approved').
   const placeId = (r as { place_id: string } | null)?.place_id
   if (placeId) await admin.rpc('recompute_place_stats', { p_place: placeId } as never)
-  revalidatePath('/admin/contenido')
+  revalidatePath('/admin/content')
   return { success: true }
 }
 
@@ -40,7 +40,7 @@ export async function setEventStatus(formData: FormData) {
   const admin = createAdminClient()
   const { error } = await admin.from('events').update({ status } as never).eq('id', id)
   if (error) return { error: error.message }
-  revalidatePath('/admin/contenido')
+  revalidatePath('/admin/content')
   revalidatePath('/eventos')
   return { success: true }
 }

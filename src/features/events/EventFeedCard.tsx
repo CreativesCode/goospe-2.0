@@ -66,7 +66,7 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/40" />
 
       {/* etiquetas */}
-      <div className="absolute left-4 top-16 z-10 flex flex-col gap-2">
+      <div className="absolute left-4 top-32 z-10 flex flex-col gap-2">
         <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white backdrop-blur"><Calendar size={13} strokeWidth={2} /> Evento</span>
         {ev.boosted && (
           <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-goospe-gradient px-3 py-1 text-xs font-semibold text-white shadow-lg ring-1 ring-white/40"><Sparkles size={13} strokeWidth={2} /> Destacado</span>
@@ -74,7 +74,7 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
       </div>
 
       {/* acciones laterales */}
-      <div className="absolute bottom-40 right-4 z-10 flex flex-col gap-5 text-white">
+      <div className="text-shadow-photo absolute bottom-40 right-4 z-10 flex flex-col gap-5 text-white">
         <button onClick={onRsvp} disabled={busy} className="flex flex-col items-center gap-1">
           <span className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur transition ${going ? 'bg-goospe-green' : 'bg-white/20'}`}>
             {going ? <Check size={22} strokeWidth={2} /> : <Ticket size={22} strokeWidth={1.75} />}
@@ -96,8 +96,8 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
         </Link>
       </div>
 
-      {/* info */}
-      <div className="absolute inset-x-0 bottom-0 z-10 space-y-2 p-5 pb-10 text-white">
+      {/* info — pr-20 deja espacio a las acciones laterales; pb-28 a la barra Decídeme */}
+      <div className="text-shadow-photo absolute inset-x-0 bottom-0 z-10 space-y-2 p-5 pb-28 pr-20 text-white">
         <p className="text-sm font-medium capitalize text-goospe-green-light drop-shadow">{fmtWhen(ev.starts_at)}</p>
         <h2 className="text-3xl font-medium leading-tight drop-shadow">{ev.name}</h2>
         <Link href={`/places/${ev.place_slug}`} className="block text-white/80">

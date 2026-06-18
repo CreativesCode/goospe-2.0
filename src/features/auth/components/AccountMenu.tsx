@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { User, Heart, Store, Calendar, Sparkles, ShieldCheck, Sun, Moon, LogOut, type LucideIcon } from 'lucide-react'
+import { User, Heart, Store, Calendar, Sparkles, LayoutDashboard, Sun, Moon, LogOut, type LucideIcon } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { signout } from '@/actions/auth'
 import { useTheme } from '@/shared/components/theme-provider'
@@ -71,10 +71,13 @@ export function AccountMenu() {
           <Item href="/eventos" icon={Calendar}>Eventos</Item>
           <Item href="/onboarding" icon={Sparkles}>Mis gustos</Item>
           {profile?.is_admin && (
-            <>
-              <Item href="/admin/fotos" icon={ShieldCheck}>Moderar fotos</Item>
-              <Item href="/admin/contenido" icon={ShieldCheck}>Moderar contenido</Item>
-            </>
+            <Link
+              href="/admin"
+              className="flex items-center gap-2.5 border-t border-line px-4 py-2.5 text-sm font-medium text-goospe-green-dark transition hover:bg-goospe-green/10"
+              onClick={() => setOpen(false)}
+            >
+              <LayoutDashboard size={17} strokeWidth={1.75} className="text-goospe-green" /> Panel de administración
+            </Link>
           )}
           <button
             type="button"

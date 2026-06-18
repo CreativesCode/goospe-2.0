@@ -181,8 +181,8 @@ Estados transversales: vacíos (guardados, panel, eventos, fotos), carga (feed s
 - ✅ `tsc --noEmit` limpio · sin emojis.
 
 **Fase 5 — Admin** ✅ **TERMINADA** (vistas 24-25)
-- ✅ Moderación de fotos (`/admin/fotos`): estado vacío con `CheckCircle2`, `ModerationActions` con `Check`/`X`, tokens semánticos.
-- ✅ Moderación de contenido (`/admin/contenido`): reseñas con `Star`, badges visible/oculto, `ModStatusButtons` con hover dark-safe, tokens.
+- ✅ Moderación de fotos (`/admin/photos`): estado vacío con `CheckCircle2`, `ModerationActions` con `Check`/`X`, tokens semánticos.
+- ✅ Moderación de contenido (`/admin/content`): reseñas con `Star`, badges visible/oculto, `ModStatusButtons` con hover dark-safe, tokens.
 - ✅ Bonus: página de validación `/places` también migrada (tokens + `categoryIcon` + `ArrowLeft`/`ArrowRight`).
 - ✅ **0 emojis** en todo `src/**/*.tsx`.
 

@@ -38,6 +38,14 @@
   }
 }
 
+@layer utilities {
+  /* Sombra de texto para leer sobre fotos (el feed superpone texto blanco sobre
+     imágenes que pueden ser claras). text-shadow se hereda → aplicar al contenedor. */
+  .text-shadow-photo {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6), 0 2px 10px rgba(0, 0, 0, 0.4);
+  }
+}
+
 @layer components {
   /* Selects con chevron propio (Lucide) y espacio a la derecha — reemplaza la flecha
      nativa que queda pegada al borde. Aplicar `select-chevron` a cualquier <select>. */

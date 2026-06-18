@@ -1046,6 +1046,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_save_place: {
+        Args: {
+          p_category_ids: number[]
+          p_description: string
+          p_email: string
+          p_id: string
+          p_instagram: string
+          p_is_published: boolean
+          p_lat: number
+          p_lng: number
+          p_name: string
+          p_phone: string
+          p_price_level: number
+          p_slug: string
+          p_tags: string[]
+          p_vibe_line: string
+          p_website: string
+          p_whatsapp: string
+        }
+        Returns: string
+      }
       enqueue_event_reminders: { Args: never; Returns: undefined }
       get_feed: {
         Args: {

@@ -1,11 +1,6 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { Star } from 'lucide-react'
-import { AppNav } from '@/shared/components/app-nav'
-import { AppFooter } from '@/shared/components/app-footer'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { isAdmin } from '@/lib/ownership'
 import { ModStatusButtons } from '@/features/admin/ModStatusButtons'
 
 export const dynamic = 'force-dynamic'
@@ -21,11 +16,6 @@ const badge = (status: string) => {
 }
 
 export default async function AdminContenidoPage() {
-  const sb = await createClient()
-  const { data: { user } } = await sb.auth.getUser()
-  if (!user) redirect('/login?next=/admin/contenido')
-  if (!(await isAdmin(user.id))) redirect('/feed')
-
   const admin = createAdminClient()
   const [{ data: reviews }, { data: events }] = await Promise.all([
     admin.from('reviews').select('id, rating, body, status, created_at, places(name, slug)').order('created_at', { ascending: false }).limit(40),
@@ -37,20 +27,11 @@ export default async function AdminContenidoPage() {
   const ev = (events ?? []) as any[]
 
   return (
-    <main className="flex min-h-screen flex-col bg-surface">
-      <AppNav />
+    <div className="space-y-10">
+      <h1 className="text-2xl font-medium text-fg">Moderación de contenido</h1>
 
-      <div className="mx-auto max-w-4xl space-y-10 px-5 py-8">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-medium text-fg">Moderación</h1>
-          <nav className="flex items-center gap-1 rounded-full border border-line bg-card p-1 text-sm">
-            <Link href="/admin/fotos" className="rounded-full px-3 py-1 text-fg-soft hover:text-fg">Fotos</Link>
-            <span className="rounded-full bg-goospe-green/10 px-3 py-1 font-medium text-goospe-green-dark">Contenido</span>
-          </nav>
-        </div>
-
-        <section>
-          <h1 className="mb-4 text-xl font-medium text-fg">Reseñas recientes</h1>
+      <section>
+          <h2 className="mb-4 text-xl font-medium text-fg">Reseñas recientes</h2>
           {rv.length === 0 ? <p className="text-sm text-muted">Sin reseñas.</p> : (
             <ul className="space-y-2">
               {rv.map((r) => (
@@ -94,9 +75,6 @@ export default async function AdminContenidoPage() {
             </ul>
           )}
         </section>
-      </div>
-
-      <AppFooter />
-    </main>
+    </div>
   )
 }
