@@ -5,6 +5,8 @@ const FOOTER_LINKS = [
   { href: '/eventos', label: 'Eventos' },
   { href: '/concierge', label: 'Decídeme' },
   { href: '/panel', label: '¿Tienes un negocio?' },
+  { href: '/terminos', label: 'Términos' },
+  { href: '/privacidad', label: 'Privacidad' },
 ]
 
 /**

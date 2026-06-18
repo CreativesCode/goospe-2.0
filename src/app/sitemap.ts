@@ -21,10 +21,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }))
 
-  const statics = ['', '/eventos', '/buscar', '/concierge'].map((path) => ({
+  const statics = ['', '/eventos', '/buscar', '/concierge', '/terminos', '/privacidad'].map((path) => ({
     url: `${BASE}${path}`,
     changeFrequency: 'daily' as const,
-    priority: path === '' ? 1 : 0.8,
+    priority: path === '' ? 1 : path === '/terminos' || path === '/privacidad' ? 0.3 : 0.8,
   }))
 
   return [...statics, ...places]

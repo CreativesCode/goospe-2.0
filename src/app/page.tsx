@@ -11,12 +11,6 @@ export const metadata: Metadata = {
   description:
     'Descubre dónde ir en Puerto Varas: cafés, restaurantes, bares y eventos cerca de ti, con un conserje IA que decide por ti en 30 segundos.',
   alternates: { canonical: '/' },
-  openGraph: {
-    title: 'Goospe — ¿dónde voy hoy?',
-    description: 'Descubre dónde ir en Puerto Varas: lugares y eventos cerca de ti, decididos en 30 segundos.',
-    url: '/',
-    type: 'website',
-  },
 }
 
 const STEPS = [
@@ -160,8 +154,14 @@ export default async function Landing() {
         </Link>
       </section>
 
-      <footer className="border-t border-line px-5 py-6 text-center text-sm text-muted">
-        <div className="mx-auto max-w-6xl">Goospe · Puerto Varas, Chile</div>
+      <footer className="border-t border-line px-5 py-6 text-sm text-muted">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
+          <span>Goospe · Puerto Varas, Chile</span>
+          <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            <Link href="/terminos" className="transition hover:text-fg">Términos</Link>
+            <Link href="/privacidad" className="transition hover:text-fg">Privacidad</Link>
+          </nav>
+        </div>
       </footer>
     </main>
   )

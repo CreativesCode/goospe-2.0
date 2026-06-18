@@ -31,6 +31,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     openGraph: {
       title,
       description,
+      siteName: 'Goospe',
       type: 'website',
       ...(ogPhoto ? { images: [{ url: ogPhoto, alt: data.name }] } : {}),
     },
