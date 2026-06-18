@@ -1,10 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
-import { Sparkles, Compass } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
+import { PlaceCard } from '@/features/places/PlaceCard'
 import { getPosition } from '@/lib/geo'
 import { track } from '@/lib/track'
 
@@ -28,8 +28,6 @@ type Pick = {
   photo_url: string | null
   reason: string
 }
-
-const fmtDist = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`)
 
 export default function ConciergePage() {
   const [query, setQuery] = useState('')
@@ -138,43 +136,19 @@ export default function ConciergePage() {
         {error && <p className="mt-6 rounded-xl bg-red-500/10 p-3 text-red-600">{error}</p>}
 
         {picks && (
-          <div className="mt-8 space-y-4">
+          <div className="mt-8">
             {!loading && picks.length === 0 && <p className="text-fg-soft">No encontré nada cerca para eso. Prueba otra cosa.</p>}
-            {picks.map((p, i) => (
-              <div key={p.id} className="overflow-hidden rounded-2xl border border-line bg-card shadow-sm">
-                <div className="flex">
-                  <div className="relative h-32 w-32 shrink-0 bg-goospe-gradient">
-                    {p.photo_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.photo_url} alt={p.name} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <img src="/brand/isotipo-white.svg" alt="" className="h-8 w-8 opacity-90" />
-                      </div>
-                    )}
-                    <span className="absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-goospe-green text-xs font-bold text-white">
-                      {i + 1}
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1 p-4">
-                    <div className="flex items-center gap-2 text-xs text-muted">
-                      <span>{p.category_name}</span><span>·</span><span>{fmtDist(p.distance_m)}</span>
-                      {p.price_level ? <><span>·</span><span>{'$'.repeat(p.price_level)}</span></> : null}
-                    </div>
-                    <Link href={`/places/${p.slug}`}><h3 className="font-medium text-fg">{p.name}</h3></Link>
-                    <p className="mt-1 text-sm font-medium text-goospe-green-dark">“{p.reason}”</p>
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`}
-                      target="_blank" rel="noreferrer"
-                      onClick={() => track('directions', { placeId: p.id })}
-                      className="mt-2 inline-flex items-center gap-1.5 text-sm text-goospe-green hover:underline"
-                    >
-                      <Compass size={15} strokeWidth={1.75} /> Cómo llego
-                    </a>
-                  </div>
-                </div>
-              </div>
-            ))}
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {picks.map((p, i) => (
+                <PlaceCard
+                  key={p.id}
+                  place={p}
+                  rank={i + 1}
+                  reason={p.reason}
+                  directions={{ lat: p.lat, lng: p.lng, onClick: () => track('directions', { placeId: p.id }) }}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>

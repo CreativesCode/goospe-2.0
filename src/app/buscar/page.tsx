@@ -1,11 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import Link from 'next/link'
-import { Search, Clock, Star, Utensils, Coffee, Martini, Moon, Ticket, MapPin, type LucideIcon } from 'lucide-react'
-import { categoryIcon } from '@/shared/lib/icons'
+import { Search, Clock, Utensils, Coffee, Martini, Moon, Ticket, type LucideIcon } from 'lucide-react'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
+import { PlaceCard } from '@/features/places/PlaceCard'
 import { getPosition } from '@/lib/geo'
 
 type Result = {
@@ -29,8 +28,6 @@ const CATEGORIES: { id: number; label: string; icon: LucideIcon }[] = [
   { id: 4, label: 'Noche', icon: Moon },
   { id: 5, label: 'Eventos', icon: Ticket },
 ]
-const fmtDist = (m: number | null) => (m == null ? '' : m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`)
-
 export default function BuscarPage() {
   const [q, setQ] = useState('')
   const [cat, setCat] = useState<number | null>(null)
@@ -115,42 +112,9 @@ export default function BuscarPage() {
           <p className="py-16 text-center text-muted">Sin resultados. Prueba con otros filtros.</p>
         )}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {results.map((p) => {
-            const Cat = categoryIcon(p.category_emoji)
-            return (
-            <Link
-              href={`/places/${p.slug}`}
-              key={p.id}
-              className="group block overflow-hidden rounded-2xl border border-line bg-card shadow-sm transition hover:shadow-md"
-            >
-              <div className="relative aspect-[4/3] overflow-hidden">
-                {p.photo_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.photo_url} alt={p.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-goospe-gradient text-white">
-                    <Cat size={44} strokeWidth={1.5} />
-                  </div>
-                )}
-                {p.open_now === true && (
-                  <span className="absolute left-2 top-2 rounded-full bg-goospe-green px-2 py-0.5 text-[10px] font-medium text-white shadow">Abierto</span>
-                )}
-              </div>
-              <div className="space-y-1 p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <h2 className="font-medium leading-tight text-fg">{p.name}</h2>
-                  {p.price_level ? <span className="shrink-0 text-sm text-muted">{'$'.repeat(p.price_level)}</span> : null}
-                </div>
-                {p.vibe_line && <p className="text-sm font-medium text-goospe-green">{p.vibe_line}</p>}
-                <p className="flex items-center gap-2 pt-1 text-xs text-muted">
-                  <span className="inline-flex items-center gap-1"><Cat size={13} strokeWidth={1.75} /> {p.category_name}</span>
-                  {p.distance_m != null && <><span>·</span><span className="inline-flex items-center gap-1"><MapPin size={12} strokeWidth={1.75} /> {fmtDist(p.distance_m)}</span></>}
-                  {p.rating > 0 && <><span>·</span><span className="inline-flex items-center gap-1"><Star size={12} strokeWidth={1.75} fill="currentColor" /> {Number(p.rating).toFixed(1)}</span></>}
-                </p>
-              </div>
-            </Link>
-            )
-          })}
+          {results.map((p) => (
+            <PlaceCard key={p.id} place={p} />
+          ))}
         </div>
       </div>
 
