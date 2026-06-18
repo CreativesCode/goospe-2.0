@@ -46,6 +46,11 @@
   }
 }
 
+/* Animaciones del loader de marca (componente <Loader />, ver docs/design). */
+@keyframes gsGlow { 0%, 100% { opacity: .35; transform: scale(.9); } 42%, 50% { opacity: .7; transform: scale(1.08); } }
+@keyframes gsBreathe { 0%, 100% { transform: scale(.96); } 50% { transform: scale(1.04); } }
+@keyframes gsOrbit { to { transform: rotate(360deg); } }
+
 @layer components {
   /* Selects con chevron propio (Lucide) y espacio a la derecha — reemplaza la flecha
      nativa que queda pegada al borde. Aplicar `select-chevron` a cualquier <select>. */

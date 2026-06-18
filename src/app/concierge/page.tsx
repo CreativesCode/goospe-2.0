@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
+import { Loader } from '@/shared/components/loader'
 import { PlaceCard } from '@/features/places/PlaceCard'
 import { getPosition } from '@/lib/geo'
 import { track } from '@/lib/track'
@@ -128,7 +129,7 @@ export default function ConciergePage() {
 
         {loading && (!picks || picks.length === 0) && (
           <div className="mt-10 flex flex-col items-center gap-3 text-fg-soft">
-            <img src="/brand/isotipo-color.svg" alt="" className="h-12 w-12 animate-pulse" />
+            <Loader size={120} />
             <p>Pensando en tus mejores opciones…</p>
           </div>
         )}

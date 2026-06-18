@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Search, Clock, Utensils, Coffee, Martini, Moon, Ticket, type LucideIcon } from 'lucide-react'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
+import { Loader } from '@/shared/components/loader'
 import { PlaceCard } from '@/features/places/PlaceCard'
 import { getPosition } from '@/lib/geo'
 
@@ -107,15 +108,21 @@ export default function BuscarPage() {
       </div>
 
       <div className="mx-auto max-w-5xl px-5 py-8">
-        {loading && <p className="text-sm text-muted">Buscando…</p>}
+        {loading && (
+          <div className="flex justify-center py-16">
+            <Loader size={96} />
+          </div>
+        )}
         {!loading && results.length === 0 && (
           <p className="py-16 text-center text-muted">Sin resultados. Prueba con otros filtros.</p>
         )}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {results.map((p) => (
-            <PlaceCard key={p.id} place={p} />
-          ))}
-        </div>
+        {!loading && (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {results.map((p) => (
+              <PlaceCard key={p.id} place={p} />
+            ))}
+          </div>
+        )}
       </div>
 
       <AppFooter />

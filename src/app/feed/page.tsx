@@ -5,6 +5,7 @@ import { useBreakpoint } from '@/features/feed/use-breakpoint'
 import { FeedMobile } from '@/features/feed/feed-mobile'
 import { FeedTablet } from '@/features/feed/feed-tablet'
 import { FeedDesktop } from '@/features/feed/feed-desktop'
+import { Loader } from '@/shared/components/loader'
 
 /**
  * Feed de descubrimiento. Una sola carga de datos (`useFeed`) y tres layouts según
@@ -17,9 +18,8 @@ export default function FeedPage() {
 
   if (feed.loading || bp === null) {
     return (
-      <div className="flex h-[100dvh] flex-col items-center justify-center gap-4 bg-goospe-gradient">
-        <img src="/brand/isotipo-white.svg" alt="" className="h-14 w-14 animate-pulse" />
-        <p className="text-sm text-white/80">Buscando lugares cerca de ti…</p>
+      <div className="flex h-[100dvh] flex-col items-center justify-center bg-surface">
+        <Loader size={140} />
       </div>
     )
   }
