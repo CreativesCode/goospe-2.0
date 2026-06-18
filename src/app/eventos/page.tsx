@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { RsvpButton } from '@/features/events/RsvpButton'
 import Link from 'next/link'
@@ -5,6 +6,19 @@ import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: 'Eventos en Puerto Varas | Goospe',
+  description:
+    'Qué hacer esta semana en Puerto Varas: conciertos, ferias y panoramas cerca de ti. Confirma tu asistencia con un toque.',
+  alternates: { canonical: '/eventos' },
+  openGraph: {
+    title: 'Eventos en Puerto Varas | Goospe',
+    description: 'Qué hacer esta semana en Puerto Varas: conciertos, ferias y panoramas cerca de ti.',
+    url: '/eventos',
+    type: 'website',
+  },
+}
 
 const fmt = (s: string) =>
   new Date(s).toLocaleString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })

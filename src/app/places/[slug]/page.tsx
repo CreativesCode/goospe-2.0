@@ -17,14 +17,23 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     .maybeSingle()
   if (!data) return { title: 'Lugar — Goospe' }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const photo = ((data as any).place_photos ?? []).find((p: any) => p.status === 'approved')?.url
+  const photo: string | undefined = ((data as any).place_photos ?? []).find((p: any) => p.status === 'approved')?.url
   const title = `${data.name} — Puerto Varas | Goospe`
   const description = data.vibe_line || data.description || `Descubre ${data.name} en Puerto Varas con Goospe.`
+  // Foto de la ficha como imagen de compartir. El proxy /api/place-photo sirve a 800px por
+  // defecto; pedimos 1200px para una tarjeta OG nítida. Si no hay foto aprobada, omitimos
+  // `images` y Next usa la imagen de marca por defecto (src/app/opengraph-image.tsx).
+  const ogPhoto = photo?.startsWith('/api/place-photo') ? `${photo}&w=1200` : photo
   return {
     title,
     description,
     alternates: { canonical: `/places/${slug}` },
-    openGraph: { title, description, images: photo ? [photo] : undefined, type: 'website' },
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      ...(ogPhoto ? { images: [{ url: ogPhoto, alt: data.name }] } : {}),
+    },
   }
 }
 import { deletePhoto } from './actions'

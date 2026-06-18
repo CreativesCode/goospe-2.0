@@ -11,6 +11,12 @@ export const metadata: Metadata = {
   description:
     'Descubre dónde ir en Puerto Varas: cafés, restaurantes, bares y eventos cerca de ti, con un conserje IA que decide por ti en 30 segundos.',
   alternates: { canonical: '/' },
+  openGraph: {
+    title: 'Goospe — ¿dónde voy hoy?',
+    description: 'Descubre dónde ir en Puerto Varas: lugares y eventos cerca de ti, decididos en 30 segundos.',
+    url: '/',
+    type: 'website',
+  },
 }
 
 const STEPS = [

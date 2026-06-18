@@ -18,12 +18,19 @@ const roboto = localFont({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://goospe.com'),
+  applicationName: 'Goospe',
   title: {
     default: 'Goospe — ¿dónde voy hoy?',
     template: '%s',
   },
   description: 'Goospe sugiere dónde ir: lugares y eventos cerca de ti, decididos en 30 segundos.',
+  // La imagen OG por defecto la aporta src/app/opengraph-image.tsx (heredada por todo el sitio).
   openGraph: { siteName: 'Goospe', locale: 'es_CL', type: 'website' },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Goospe — ¿dónde voy hoy?',
+    description: 'Lugares y eventos cerca de ti en Puerto Varas, decididos en 30 segundos.',
+  },
 }
 
 export default function RootLayout({
