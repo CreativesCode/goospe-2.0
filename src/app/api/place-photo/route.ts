@@ -33,7 +33,16 @@ export async function GET(req: NextRequest) {
   const name = req.nextUrl.searchParams.get('name')
   const w = req.nextUrl.searchParams.get('w') ?? '800'
   const key = process.env.GOOGLE_MAPS_API_KEY
-  const fallback = () => Response.redirect(new URL('/brand/isotipo-color.svg', req.nextUrl.origin), 302)
+  // El fallback (foto rota / ref inválida) NO se cachea: un lugar puede ganar foto válida
+  // después, y no queremos que el CDN sirva el isotipo de forma permanente.
+  const fallback = () =>
+    new Response(null, {
+      status: 302,
+      headers: {
+        Location: new URL('/brand/isotipo-color.svg', req.nextUrl.origin).toString(),
+        'Cache-Control': 'no-store',
+      },
+    })
 
   if (!name || !name.startsWith('places/') || !key) return fallback()
 
@@ -44,8 +53,12 @@ export async function GET(req: NextRequest) {
   return new Response(res.body, {
     headers: {
       'Content-Type': res.headers.get('content-type') ?? 'image/jpeg',
-      // cache largo: una vez que carga bien, el navegador/CDN no vuelve a pegarle a Google
-      'Cache-Control': 'public, max-age=604800, immutable',
+      // Caché en dos niveles para no re-pegarle (ni re-pagarle) a Google en cada miss:
+      // - max-age (navegador, privado) 7 días
+      // - s-maxage (CDN compartido, p. ej. Vercel Edge) 30 días → la primera carga de
+      //   cada foto la sirve Google una sola vez; el resto de usuarios la toman del CDN
+      // - stale-while-revalidate: sirve la copia vieja mientras revalida en background
+      'Cache-Control': 'public, max-age=604800, s-maxage=2592000, stale-while-revalidate=86400, immutable',
     },
   })
 }

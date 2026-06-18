@@ -4,7 +4,8 @@ import { Smartphone, Sparkles, Calendar, Compass } from 'lucide-react'
 import { ThemeToggle } from '@/shared/components/theme-toggle'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-export const dynamic = 'force-dynamic'
+// ISR: la landing solo muestra un conteo de lugares; se regenera cada hora.
+export const revalidate = 3600
 
 export const metadata: Metadata = {
   title: 'Goospe — ¿dónde voy hoy? Lugares y eventos en Puerto Varas',

@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Star } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { submitReview, deleteOwnReview } from '@/actions/reviews'
+import { toast } from '@/shared/components/toast'
 
 type Review = { id: string; user_id: string; rating: number; body: string | null; created_at: string }
 type Stats = { rating: number; reviews_count: number }
@@ -13,7 +15,7 @@ const fmtDate = (s: string) => new Date(s).toLocaleDateString('es-CL', { day: 'n
 
 function Stars({ value, size = 16 }: { value: number; size?: number }) {
   return (
-    <span className="inline-flex items-center gap-0.5">
+    <span className="inline-flex items-center gap-0.5" role="img" aria-label={`${Number(value).toFixed(1)} de 5 estrellas`}>
       {[1, 2, 3, 4, 5].map((n) => {
         const on = n <= Math.round(value)
         return (
@@ -31,6 +33,7 @@ function Stars({ value, size = 16 }: { value: number; size?: number }) {
 }
 
 export function PlaceReviews({ placeId }: { placeId: string }) {
+  const pathname = usePathname()
   const [supabase] = useState(() => createClient())
   const [stats, setStats] = useState<Stats>({ rating: 0, reviews_count: 0 })
   const [reviews, setReviews] = useState<Review[]>([])
@@ -43,7 +46,6 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
   const [hover, setHover] = useState(0)
   const [body, setBody] = useState('')
   const [saving, setSaving] = useState(false)
-  const [msg, setMsg] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     const [{ data: st }, { data: rv }, { data: { user } }] = await Promise.all([
@@ -85,23 +87,27 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (rating < 1) { setMsg('Elige una calificación'); return }
-    setSaving(true); setMsg(null)
+    if (rating < 1) { toast.error('Elige una calificación'); return }
+    setSaving(true)
     const fd = new FormData()
     fd.set('place_id', placeId)
     fd.set('rating', String(rating))
     fd.set('body', body)
     const res = await submitReview(fd)
     setSaving(false)
-    if (res?.error) setMsg(res.error)
-    else { setMsg('¡Gracias por tu reseña!'); await load() }
+    if (res?.error) { toast.error(res.error); return }
+    toast.success('¡Gracias por tu reseña!')
+    await load()
   }
 
   async function onDelete() {
+    if (!window.confirm('¿Eliminar tu reseña?')) return
     const fd = new FormData()
     fd.set('place_id', placeId)
-    await deleteOwnReview(fd)
-    setRating(0); setBody(''); setMsg(null)
+    const res = await deleteOwnReview(fd)
+    if (res?.error) { toast.error(res.error); return }
+    setRating(0); setBody('')
+    toast.success('Reseña eliminada')
     await load()
   }
 
@@ -121,7 +127,7 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
       {/* formulario / login */}
       {userId === null && !loading ? (
         <div className="mb-6 rounded-xl bg-goospe-green/5 p-4 text-sm text-fg">
-          <Link href={`/login?next=/places`} className="font-medium text-goospe-green hover:underline">Inicia sesión</Link> para dejar tu reseña.
+          <Link href={`/login?next=${encodeURIComponent(pathname)}`} className="font-medium text-goospe-green hover:underline">Inicia sesión</Link> para dejar tu reseña.
         </div>
       ) : userId ? (
         <form onSubmit={onSubmit} className="mb-8 rounded-xl border border-line bg-card p-4 shadow-sm">
@@ -136,7 +142,8 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
                   onMouseEnter={() => setHover(n)}
                   onClick={() => setRating(n)}
                   className={`transition ${on ? 'text-goospe-green' : 'text-muted/40'}`}
-                  aria-label={`${n} estrellas`}
+                  aria-label={`${n} ${n === 1 ? 'estrella' : 'estrellas'}`}
+                  aria-pressed={n === rating}
                 >
                   <Star size={26} strokeWidth={1.75} fill={on ? 'currentColor' : 'none'} />
                 </button>
@@ -159,7 +166,6 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
             {own && (
               <button type="button" onClick={onDelete} className="text-sm text-red-600 hover:underline">Eliminar</button>
             )}
-            {msg && <span className="text-sm text-goospe-green-dark">{msg}</span>}
           </div>
         </form>
       ) : null}

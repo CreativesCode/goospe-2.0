@@ -13,14 +13,15 @@ const fmtTok = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(
 
 export default async function AdminDashboard() {
   const admin = createAdminClient()
+  // RPCs nuevas (0023) aún no están en database.types.ts → helper sin tipado estricto.
+  const arpc = admin.rpc.bind(admin) as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown }>
   const since7 = new Date(Date.now() - 7 * DAY).toISOString()
-  const since30 = new Date(Date.now() - 30 * DAY).toISOString()
 
   const [
     places, published, claimed,
     users, usersNew,
     reviewsPending, eventsPending, photosPending,
-    interactions, ai, photoRows,
+    interTotal, kindCounts, aiSummary, withPhotoRes, topRes, dailyRes,
   ] = await Promise.all([
     admin.from('places').select('*', { count: 'exact', head: true }),
     admin.from('places').select('*', { count: 'exact', head: true }).eq('is_published', true),
@@ -30,49 +31,36 @@ export default async function AdminDashboard() {
     admin.from('reviews').select('*', { count: 'exact', head: true }).eq('status', 'blocked'),
     admin.from('events').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     admin.from('place_photos').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-    admin.from('interactions').select('kind, place_id, created_at'),
-    admin.from('ai_usage').select('cost_usd, input_tokens, output_tokens, cached_tokens, created_at'),
-    admin.from('place_photos').select('place_id').eq('status', 'approved'),
+    admin.from('interactions').select('*', { count: 'exact', head: true }),
+    arpc('admin_interaction_counts'),
+    arpc('admin_ai_usage_summary'),
+    arpc('admin_places_with_photo'),
+    arpc('admin_top_places', { p_limit: 5, p_value_only: false }),
+    arpc('admin_interaction_daily', { p_days: 14 }),
   ])
 
-  // interacciones por tipo
-  const inter = (interactions.data ?? []) as { kind: string; place_id: string | null; created_at: string }[]
-  const byKind = inter.reduce<Record<string, number>>((a, r) => ((a[r.kind] = (a[r.kind] ?? 0) + 1), a), {})
+  // interacciones por tipo (agregado en SQL, no se descarga la tabla)
+  const kindRows = (kindCounts.data ?? []) as { kind: string; total: number }[]
+  const byKind = Object.fromEntries(kindRows.map((r) => [r.kind, Number(r.total)])) as Record<string, number>
+  const totalInteractions = interTotal.count ?? 0
 
-  // top 5 lugares por interacciones
-  const byPlace = inter.reduce<Record<string, number>>((a, r) => {
-    if (r.place_id) a[r.place_id] = (a[r.place_id] ?? 0) + 1
-    return a
-  }, {})
-  const topIds = Object.entries(byPlace).sort((a, b) => b[1] - a[1]).slice(0, 5)
-  const { data: topPlacesData } = topIds.length
-    ? await admin.from('places').select('id, name, slug').in('id', topIds.map(([id]) => id))
-    : { data: [] }
-  const topNames = Object.fromEntries(((topPlacesData ?? []) as { id: string; name: string; slug: string }[]).map((p) => [p.id, p]))
-  const top = topIds.map(([id, n]) => ({ place: topNames[id], n })).filter((t) => t.place)
+  // top 5 lugares (agregado + join en SQL)
+  const top = ((topRes.data ?? []) as { id: string; name: string; slug: string; n: number }[])
+    .map((r) => ({ place: { id: r.id, name: r.name, slug: r.slug }, n: Number(r.n) }))
 
-  // con foto (distinct)
-  const withPhoto = new Set(((photoRows.data ?? []) as { place_id: string }[]).map((r) => r.place_id)).size
+  // con foto (distinct, en SQL)
+  const withPhoto = Number(withPhotoRes.data ?? 0)
 
-  // gasto IA
-  const usage = (ai.data ?? []) as { cost_usd: number; input_tokens: number; output_tokens: number; cached_tokens: number | null; created_at: string }[]
-  const sum = (rows: typeof usage) => ({
-    usd: rows.reduce((s, r) => s + Number(r.cost_usd ?? 0), 0),
-    tok: rows.reduce((s, r) => s + (r.input_tokens ?? 0) + (r.output_tokens ?? 0), 0),
-    n: rows.length,
-  })
-  const aiTotal = sum(usage)
-  const ai30 = sum(usage.filter((r) => r.created_at >= since30))
-  const ai7 = sum(usage.filter((r) => r.created_at >= since7))
+  // gasto IA (sumado en SQL: total / 30d / 7d)
+  const aiRows = (aiSummary.data ?? []) as { scope: string; usd: string | number; tokens: number; calls: number }[]
+  const aiBy = (scope: string) => {
+    const r = aiRows.find((x) => x.scope === scope)
+    return { usd: Number(r?.usd ?? 0), tok: Number(r?.tokens ?? 0), n: Number(r?.calls ?? 0) }
+  }
+  const aiTotal = aiBy('total'); const ai30 = aiBy('d30'); const ai7 = aiBy('d7')
 
-  // actividad diaria (últimos 14 días): interacciones por día
-  const days14 = Array.from({ length: 14 }, (_, i) => new Date(Date.now() - (13 - i) * DAY).toISOString().slice(0, 10))
-  const interByDay = inter.reduce<Record<string, number>>((a, r) => {
-    const d = r.created_at.slice(0, 10)
-    a[d] = (a[d] ?? 0) + 1
-    return a
-  }, {})
-  const activity = days14.map((d) => ({ d, n: interByDay[d] ?? 0 }))
+  // actividad diaria (agregado en SQL, días sin datos vienen en 0)
+  const activity = ((dailyRes.data ?? []) as { day: string; n: number }[]).map((r) => ({ d: r.day, n: Number(r.n) }))
   const maxActivity = Math.max(1, ...activity.map((a) => a.n))
 
   // embudo de descubrimiento
@@ -105,7 +93,7 @@ export default async function AdminDashboard() {
         <Kpi icon={Store} label="Lugares" value={places.count ?? 0} hint={`${published.count ?? 0} publicados · ${withPhoto} con foto`} />
         <Kpi icon={Users} label="Usuarios" value={users.count ?? 0} hint={`+${usersNew.count ?? 0} en 7 días`} />
         <Kpi icon={Sparkles} label="Gasto IA" value={fmtUsd(aiTotal.usd)} hint={`${fmtTok(aiTotal.tok)} tokens · ${aiTotal.n} llamadas`} accent />
-        <Kpi icon={Eye} label="Interacciones" value={inter.length} hint="todas las acciones" />
+        <Kpi icon={Eye} label="Interacciones" value={totalInteractions} hint="todas las acciones" />
       </section>
 
       {/* moderación pendiente */}

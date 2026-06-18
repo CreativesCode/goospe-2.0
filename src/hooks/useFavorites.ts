@@ -22,6 +22,10 @@ export function useFavorites() {
   const [ready, setReady] = useState(false)
   const userId = useRef<string | null>(null)
   const supabase = useRef(createClient())
+  // Espejo de `ids` para que `toggle` lea el estado actual sin depender de `ids`
+  // (así su identidad es estable y no re-crea callbacks del feed en cada guardado).
+  const idsRef = useRef(ids)
+  useEffect(() => { idsRef.current = ids }, [ids])
 
   useEffect(() => {
     const sb = supabase.current
@@ -60,28 +64,29 @@ export function useFavorites() {
     return () => { active = false }
   }, [])
 
-  const toggle = useCallback(async (placeId: string) => {
+  // Estable (deps []): lee el estado vía `idsRef`. Devuelve `true` si quedó guardado.
+  const toggle = useCallback((placeId: string): boolean => {
     const uid = userId.current
-    const willSave = !ids.has(placeId)
+    const willSave = !idsRef.current.has(placeId)
 
-    // Optimista
+    // Optimista (sincroniza también la ref para toggles rápidos sucesivos).
     setIds((prev) => {
       const next = new Set(prev)
       willSave ? next.add(placeId) : next.delete(placeId)
       if (!uid) saveLocal([...next]) // anónimo: persistir local
+      idsRef.current = next
       return next
     })
 
-    if (!uid) return // anónimo termina en localStorage
-    const sb = supabase.current
-    if (willSave) {
-      await sb.from('favorites').upsert({ user_id: uid, place_id: placeId } as never, {
-        onConflict: 'user_id,place_id',
-      })
-    } else {
-      await sb.from('favorites').delete().eq('user_id', uid).eq('place_id', placeId)
+    if (uid) {
+      // Persistencia en DB en segundo plano (no bloquea la UI optimista).
+      const sb = supabase.current
+      void (willSave
+        ? sb.from('favorites').upsert({ user_id: uid, place_id: placeId } as never, { onConflict: 'user_id,place_id' })
+        : sb.from('favorites').delete().eq('user_id', uid).eq('place_id', placeId))
     }
-  }, [ids])
+    return willSave
+  }, [])
 
   return { ids, ready, isSaved: (id: string) => ids.has(id), toggle }
 }

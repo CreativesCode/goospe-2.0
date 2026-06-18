@@ -19,14 +19,24 @@ export function SignupForm() {
     <form action={handle} className="space-y-4">
       <div>
         <label htmlFor="display_name" className="block text-sm font-medium text-fg">Nombre</label>
-        <input id="display_name" name="display_name" type="text" className={fieldClass} placeholder="Cómo te llamas" />
+        <input id="display_name" name="display_name" type="text" autoComplete="name" className={fieldClass} placeholder="Cómo te llamas" />
       </div>
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-fg">Email</label>
-        <input id="email" name="email" type="email" required className={fieldClass} />
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          inputMode="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          className={fieldClass}
+        />
       </div>
-      <PasswordField required minLength={6} />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      <PasswordField required minLength={6} autoComplete="new-password" />
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       <button type="submit" disabled={loading} className={primaryBtn}>
         {loading ? 'Creando cuenta…' : 'Crear cuenta'}
       </button>

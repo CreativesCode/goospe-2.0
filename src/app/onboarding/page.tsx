@@ -89,12 +89,13 @@ export default function OnboardingPage() {
           </div>
         </section>
 
-        {error && <p className="mt-6 rounded-xl bg-red-500/10 p-3 text-sm text-red-600">{error}</p>}
+        {error && <p id="onb-error" role="alert" className="mt-6 rounded-xl bg-red-500/10 p-3 text-sm text-red-600">{error}</p>}
 
         <div className="mt-10 flex items-center gap-4">
           <button
             onClick={onSubmit}
             disabled={saving}
+            aria-describedby={error ? 'onb-error' : undefined}
             className="rounded-full bg-goospe-green px-8 py-3 font-medium text-white shadow-sm transition hover:bg-goospe-green-dark disabled:opacity-60"
           >
             {saving ? 'Guardando…' : 'Empezar a descubrir'}

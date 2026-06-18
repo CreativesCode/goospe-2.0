@@ -13,14 +13,25 @@ const FORCED = {
   lng: Number(process.env.NEXT_PUBLIC_FORCE_LNG) || FORCE_DEFAULT.lng,
 }
 
+// De dónde salió la ubicación:
+// - 'forced'  : override de desarrollo (NEXT_PUBLIC_FORCE_LOCATION) → no avisar.
+// - 'gps'     : geolocalización real del navegador.
+// - 'fallback': el usuario negó el permiso / expiró / sin soporte → caemos a Puerto Varas.
+//   En este caso las distancias se miden desde el centro de la ciudad, no del usuario,
+//   así que la UI debe avisarlo (ver <LocationNotice />).
+export type GeoSource = 'forced' | 'gps' | 'fallback'
+export type GeoResult = { lat: number; lng: number; source: GeoSource }
+
 // Resuelve la ubicación del usuario: override de dev → geolocalización → fallback.
-export function getPosition(): Promise<{ lat: number; lng: number }> {
-  if (FORCE) return Promise.resolve(FORCED)
+export function getPosition(): Promise<GeoResult> {
+  if (FORCE) return Promise.resolve({ ...FORCED, source: 'forced' })
   return new Promise((resolve) => {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) return resolve(PUERTO_VARAS)
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      return resolve({ ...PUERTO_VARAS, source: 'fallback' })
+    }
     navigator.geolocation.getCurrentPosition(
-      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
-      () => resolve(PUERTO_VARAS),
+      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, source: 'gps' }),
+      () => resolve({ ...PUERTO_VARAS, source: 'fallback' }),
       { timeout: 6000 }
     )
   })

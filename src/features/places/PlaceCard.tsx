@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { Star, MapPin, Compass } from 'lucide-react'
 import { categoryIcon } from '@/shared/lib/icons'
@@ -39,14 +40,22 @@ const fmtDist = (m: number | null | undefined) =>
  */
 export function PlaceCard({ place: p, rank, reason, directions }: PlaceCardProps) {
   const Cat = categoryIcon(p.category_emoji)
+  const [imgError, setImgError] = useState(false)
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-card shadow-sm transition hover:shadow-md">
       <Link href={`/places/${p.slug}`} className="block">
         <div className="relative aspect-[4/3] overflow-hidden">
-          {p.photo_url ? (
+          {p.photo_url && !imgError ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={p.photo_url} alt={p.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+            <img
+              src={p.photo_url}
+              alt={p.name}
+              loading="lazy"
+              decoding="async"
+              onError={() => setImgError(true)}
+              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-goospe-gradient text-white">
               <Cat size={44} strokeWidth={1.5} />

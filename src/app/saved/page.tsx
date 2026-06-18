@@ -34,6 +34,8 @@ export default async function SavedPage() {
     )
     .order('created_at', { ascending: false })
 
+  // Lanza para que lo capture src/app/error.tsx (antes mostraba un crudo "Error: …" + "· 0").
+  if (error) throw new Error(error.message)
   const rows = (data ?? []) as unknown as SavedRow[]
   const places = rows.map((r) => r.places).filter(Boolean) as NonNullable<SavedRow['places']>[]
 
@@ -47,9 +49,7 @@ export default async function SavedPage() {
           <span className="text-base font-normal text-muted">· {places.length}</span>
         </h1>
 
-        {error && <p className="text-red-600">Error: {error.message}</p>}
-
-        {!error && places.length === 0 && (
+        {places.length === 0 && (
           <div className="flex flex-col items-center gap-4 py-24 text-center">
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-goospe-green/10 text-goospe-green">
               <Heart size={30} strokeWidth={1.5} />

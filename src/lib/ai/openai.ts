@@ -1,6 +1,8 @@
 // Capa AI server-only para la app (conserje). NO importar en componentes cliente.
 // Reusa OpenAI: embeddings text-embedding-3-large@1024 (igual que el ETL) + gpt-4o para elegir.
 
+import { unstable_cache } from 'next/cache'
+
 const KEY = process.env.OPENAI_API_KEY
 const TEXT_MODEL = process.env.OPENAI_TEXT_MODEL ?? 'gpt-4o'
 const EMBED_MODEL = process.env.OPENAI_EMBED_MODEL ?? 'text-embedding-3-large'
@@ -16,9 +18,18 @@ async function openai(path: string, body: unknown) {
   return res.json()
 }
 
-export async function embedQuery(text: string): Promise<number[]> {
+async function embedRaw(text: string): Promise<number[]> {
   const data = await openai('embeddings', { model: EMBED_MODEL, input: text, dimensions: 1024 })
   return data.data[0].embedding as number[]
+}
+
+// Los embeddings son deterministas para (texto, modelo) → los cacheamos en el Data Cache de
+// Next (persistente, compartido entre requests/instancias). Ahorra llamadas/costo a OpenAI en
+// consultas repetidas y en los ejemplos fijos del conserje. La clave incluye el texto normalizado.
+const embedCached = unstable_cache(embedRaw, ['concierge-embed-v1'], { revalidate: false })
+
+export async function embedQuery(text: string): Promise<number[]> {
+  return embedCached(text.trim().replace(/\s+/g, ' '))
 }
 
 export type Usage = { input_tokens: number; output_tokens: number }

@@ -6,6 +6,7 @@ import { Calendar, Sparkles, Check, Ticket, Compass, MapPin } from 'lucide-react
 import { createClient } from '@/lib/supabase/client'
 import { toggleRsvp } from '@/actions/events'
 import { track } from '@/lib/track'
+import { toast } from '@/shared/components/toast'
 
 export type FeedEvent = {
   id: string
@@ -31,6 +32,7 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
   const [going, setGoing] = useState(false)
   const [authed, setAuthed] = useState<boolean | null>(null)
   const [busy, setBusy] = useState(false)
+  const [imgError, setImgError] = useState(false)
 
   useEffect(() => {
     const sb = createClient()
@@ -48,16 +50,23 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
     const fd = new FormData(); fd.set('event_id', ev.id); fd.set('status', 'going')
     const res = await toggleRsvp(fd)
     setBusy(false)
-    if (res?.error) { alert(res.error); return }
-    if (res.going) track('rsvp', { eventId: ev.id })
+    if (res?.error) { toast.error(res.error); return }
+    if (res.going) { track('rsvp', { eventId: ev.id }); toast.success('¡Listo! Te esperamos') }
     setGoing(!!res.going)
   }
 
   return (
     <section data-track-id={ev.id} data-kind="event" className="relative h-[100dvh] w-full snap-start snap-always">
-      {ev.photo_url ? (
+      {ev.photo_url && !imgError ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={ev.photo_url} alt={ev.name} className="absolute inset-0 h-full w-full object-cover" />
+        <img
+          src={ev.photo_url}
+          alt={ev.name}
+          loading="lazy"
+          decoding="async"
+          onError={() => setImgError(true)}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-goospe-gradient">
           <img src="/brand/isotipo-white.svg" alt="" className="h-20 w-20 opacity-90" />
@@ -75,7 +84,14 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
 
       {/* acciones laterales */}
       <div className="text-shadow-photo absolute bottom-40 right-4 z-10 flex flex-col gap-5 text-white">
-        <button onClick={onRsvp} disabled={busy} className="flex flex-col items-center gap-1">
+        <button
+          onClick={onRsvp}
+          disabled={busy || authed === null}
+          aria-pressed={going}
+          aria-busy={busy}
+          aria-label={going ? 'Cancelar asistencia' : 'Me interesa este evento'}
+          className="flex flex-col items-center gap-1 disabled:opacity-60"
+        >
           <span className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur transition ${going ? 'bg-goospe-green' : 'bg-white/20'}`}>
             {going ? <Check size={22} strokeWidth={2} /> : <Ticket size={22} strokeWidth={1.75} />}
           </span>

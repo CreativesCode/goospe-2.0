@@ -14,16 +14,28 @@ export function AccountMenu() {
   const { theme, toggle } = useTheme()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
     document.addEventListener('mousedown', onClick)
-    return () => document.removeEventListener('mousedown', onClick)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onClick)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [])
 
-  if (loading) return null
+  // Al abrir, mueve el foco al primer item (navegable con teclado desde el inicio).
+  useEffect(() => {
+    if (open) menuRef.current?.querySelector<HTMLElement>('a, button')?.focus()
+  }, [open])
+
+  // Skeleton del tamaño del avatar mientras carga la sesión → evita el salto del header.
+  if (loading) return <div className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-line" aria-hidden />
 
   if (!user) {
     return (
@@ -53,14 +65,16 @@ export function AccountMenu() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-goospe-gradient text-sm font-bold text-white shadow ring-1 ring-white/40"
+        className="flex h-11 w-11 items-center justify-center rounded-full bg-goospe-gradient text-sm font-bold text-white shadow ring-1 ring-white/40"
         aria-label="Cuenta"
+        aria-haspopup="menu"
+        aria-expanded={open}
       >
         {initial}
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl bg-card shadow-2xl ring-1 ring-line">
+        <div ref={menuRef} role="menu" className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl bg-card shadow-2xl ring-1 ring-line">
           <div className="border-b border-line px-4 py-3">
             <p className="truncate text-sm font-medium text-fg">{label}</p>
             <p className="truncate text-xs text-muted">{user.email}</p>

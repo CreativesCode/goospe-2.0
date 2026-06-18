@@ -1,10 +1,7 @@
+import { redirect } from 'next/navigation'
+
+// Scaffolding sin implementar: el producto usa /feed, /panel y /admin. Se redirige al feed
+// para no exponer un placeholder. Reimplementar aquí si se retoma un dashboard propio.
 export default function DashboardPage() {
-  return (
-    <div className="min-h-screen p-8">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
-      <p className="mt-4 text-gray-600">
-        Implementa componentes desde features/dashboard/components/
-      </p>
-    </div>
-  )
+  redirect('/feed')
 }

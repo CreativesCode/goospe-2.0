@@ -6,29 +6,27 @@ export const dynamic = 'force-dynamic'
 
 const fmt = (s: string | null | undefined) => (s ? new Date(s).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' }) : '—')
 
-function tally(rows: { user_id: string | null }[]) {
-  const m: Record<string, number> = {}
-  for (const r of rows) if (r.user_id) m[r.user_id] = (m[r.user_id] ?? 0) + 1
-  return m
-}
+type Activity = { user_id: string; favorites: number; reviews: number; rsvps: number; businesses: number }
 
 export default async function AdminUsersPage() {
   const admin = createAdminClient()
+  const arpc = admin.rpc.bind(admin) as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown }>
 
-  const [{ data: { users: authUsers } }, { data: profilesData }, fav, rev, rsvp, mem] = await Promise.all([
+  // Los contadores por usuario se agregan en SQL (admin_user_activity): ya no se descargan
+  // favorites / reviews / event_rsvps / business_members enteras.
+  const [{ data: { users: authUsers } }, { data: profilesData }, activityRes] = await Promise.all([
     admin.auth.admin.listUsers({ perPage: 1000 }),
     admin.from('profiles').select('id, display_name, is_admin, created_at'),
-    admin.from('favorites').select('user_id'),
-    admin.from('reviews').select('user_id'),
-    admin.from('event_rsvps').select('user_id'),
-    admin.from('business_members').select('user_id, role'),
+    arpc('admin_user_activity'),
   ])
 
   const profiles = Object.fromEntries(((profilesData ?? []) as { id: string; display_name: string | null; is_admin: boolean | null; created_at: string | null }[]).map((p) => [p.id, p]))
-  const favN = tally((fav.data ?? []) as { user_id: string | null }[])
-  const revN = tally((rev.data ?? []) as { user_id: string | null }[])
-  const rsvpN = tally((rsvp.data ?? []) as { user_id: string | null }[])
-  const bizN = tally((mem.data ?? []) as { user_id: string | null }[])
+  const activity = Object.fromEntries(((activityRes.data ?? []) as Activity[]).map((a) => [a.user_id, a]))
+  const act = (id: string) => activity[id]
+  const favN = (id: string) => Number(act(id)?.favorites ?? 0)
+  const revN = (id: string) => Number(act(id)?.reviews ?? 0)
+  const rsvpN = (id: string) => Number(act(id)?.rsvps ?? 0)
+  const bizN = (id: string) => Number(act(id)?.businesses ?? 0)
 
   const rows = (authUsers ?? [])
     .map((u) => ({
@@ -78,10 +76,10 @@ export default async function AdminUsersPage() {
                 </td>
                 <td className="px-3 py-3 text-fg-soft">{fmt(u.createdAt)}</td>
                 <td className="px-3 py-3 text-fg-soft">{fmt(u.lastSignIn)}</td>
-                <td className="px-3 py-3 text-right tabular-nums text-fg-soft">{favN[u.id] ?? 0}</td>
-                <td className="px-3 py-3 text-right tabular-nums text-fg-soft">{revN[u.id] ?? 0}</td>
-                <td className="px-3 py-3 text-right tabular-nums text-fg-soft">{rsvpN[u.id] ?? 0}</td>
-                <td className="px-3 py-3 text-right tabular-nums text-fg-soft">{bizN[u.id] ?? 0}</td>
+                <td className="px-3 py-3 text-right tabular-nums text-fg-soft">{favN(u.id)}</td>
+                <td className="px-3 py-3 text-right tabular-nums text-fg-soft">{revN(u.id)}</td>
+                <td className="px-3 py-3 text-right tabular-nums text-fg-soft">{rsvpN(u.id)}</td>
+                <td className="px-3 py-3 text-right tabular-nums text-fg-soft">{bizN(u.id)}</td>
                 <td className="px-4 py-3 text-right"><AdminToggle userId={u.id} isAdmin={!!u.profile?.is_admin} /></td>
               </tr>
             ))}

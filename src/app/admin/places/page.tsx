@@ -22,35 +22,39 @@ export default async function AdminLugaresPage({ searchParams }: { searchParams:
   const cat = sp.cat ?? 'all'
   const admin = createAdminClient()
 
-  const [{ data: cats }, places] = await Promise.all([
+  // Paginación real en la BD (.range + count exact) en vez de traer 500 filas y cortar en memoria.
+  // El filtro de categoría se empuja a la BD con un inner-join sobre el embed (place_categories →
+  // categories), así dejamos de descargar el catálogo entero solo para filtrar.
+  const PAGE = 50
+  const reqPage = Math.max(1, Number(sp.page) || 1)
+  const from = (reqPage - 1) * PAGE
+  const catFilter = cat !== 'all'
+  const select = catFilter
+    ? 'id, name, slug, is_published, claimed, business_id, price_level, source, place_categories!inner(categories!inner(slug, name)), place_stats(rating, saves_count, reviews_count), place_photos(count)'
+    : 'id, name, slug, is_published, claimed, business_id, price_level, source, place_categories(categories(name)), place_stats(rating, saves_count, reviews_count), place_photos(count)'
+
+  const [{ data: cats }, placesRes] = await Promise.all([
     admin.from('categories').select('id, slug, name').order('name'),
-    (async () => {
+    (() => {
       let query = admin
         .from('places')
-        .select('id, name, slug, is_published, claimed, business_id, price_level, source, place_categories(categories(name)), place_stats(rating, saves_count, reviews_count), place_photos(count)')
-        .order('name')
+        .select(select, { count: 'exact' })
+        .order('name').order('id')
+        .range(from, from + PAGE - 1)
       if (q) query = query.ilike('name', `%${q}%`)
       if (estado === 'pub') query = query.eq('is_published', true)
       if (estado === 'hidden') query = query.eq('is_published', false)
       if (estado === 'claimed') query = query.eq('claimed', true)
-      const { data } = await query.limit(500)
-      return (data ?? []) as unknown as Row[]
+      if (catFilter) query = query.eq('place_categories.categories.slug', cat)
+      return query
     })(),
   ])
 
   const categories = (cats ?? []) as { id: number; slug: string; name: string }[]
-
-  // filtro por categoría en memoria (PostgREST no filtra fácil sobre la tabla join anidada)
-  const catName = cat === 'all' ? null : categories.find((c) => c.slug === cat)?.name ?? null
-  const rows = catName
-    ? places.filter((p) => (p.place_categories ?? []).some((pc) => pc.categories?.name === catName))
-    : places
-
-  // paginación
-  const PAGE = 50
-  const pages = Math.max(1, Math.ceil(rows.length / PAGE))
-  const page = Math.min(pages, Math.max(1, Number(sp.page) || 1))
-  const pageRows = rows.slice((page - 1) * PAGE, page * PAGE)
+  const pageRows = (placesRes.data ?? []) as unknown as Row[]
+  const totalRows = placesRes.count ?? 0
+  const pages = Math.max(1, Math.ceil(totalRows / PAGE))
+  const page = Math.min(pages, reqPage)
 
   // dueños de los lugares reclamados (solo de la página visible)
   const bizIds = [...new Set(pageRows.map((r) => r.business_id).filter(Boolean))] as string[]
@@ -77,7 +81,7 @@ export default async function AdminLugaresPage({ searchParams }: { searchParams:
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-medium text-fg">Lugares</h1>
-          <p className="text-sm text-fg-soft">{rows.length} {rows.length === 1 ? 'lugar' : 'lugares'} · crea y edita cualquier ficha.</p>
+          <p className="text-sm text-fg-soft">{totalRows} {totalRows === 1 ? 'lugar' : 'lugares'} · crea y edita cualquier ficha.</p>
         </div>
         <Link href="/admin/places/new" className="inline-flex items-center gap-1.5 rounded-full bg-goospe-gradient px-4 py-2 text-sm font-medium text-white shadow">
           <Plus size={16} /> Nuevo lugar
@@ -115,7 +119,7 @@ export default async function AdminLugaresPage({ searchParams }: { searchParams:
       </div>
 
       {/* tabla */}
-      {rows.length === 0 ? (
+      {totalRows === 0 ? (
         <p className="rounded-2xl border border-dashed border-line bg-card py-16 text-center text-sm text-muted">Sin resultados con estos filtros.</p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-line bg-card">

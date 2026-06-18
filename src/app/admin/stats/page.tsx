@@ -4,10 +4,6 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
-const DAY = 86400_000
-
-type Inter = { kind: string; place_id: string | null; created_at: string }
-
 const KINDS: { kind: string; label: string; icon: LucideIcon }[] = [
   { kind: 'view_card', label: 'Apariciones en feed', icon: Eye },
   { kind: 'view_detail', label: 'Vistas de ficha', icon: ScrollText },
@@ -20,23 +16,27 @@ const KINDS: { kind: string; label: string; icon: LucideIcon }[] = [
 
 export default async function AdminStatsPage() {
   const admin = createAdminClient()
-  const since7 = Date.now() - 7 * DAY
-  const since30 = Date.now() - 30 * DAY
+  const arpc = admin.rpc.bind(admin) as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown }>
 
-  const { data } = await admin.from('interactions').select('kind, place_id, created_at')
-  const rows = (data ?? []) as Inter[]
+  // Todo agregado en SQL: no se descarga `interactions`.
+  const [totalRes, countsRes, rankRes] = await Promise.all([
+    admin.from('interactions').select('*', { count: 'exact', head: true }),
+    arpc('admin_interaction_counts'),
+    arpc('admin_top_places', { p_limit: 10, p_value_only: true }),
+  ])
 
-  const count = (pred: (r: Inter) => boolean) => rows.filter(pred).length
-  const byKind = (k: string) => ({
-    total: count((r) => r.kind === k),
-    d30: count((r) => r.kind === k && new Date(r.created_at).getTime() >= since30),
-    d7: count((r) => r.kind === k && new Date(r.created_at).getTime() >= since7),
-  })
+  const total = totalRes.count ?? 0
+  const countsRows = (countsRes.data ?? []) as { kind: string; total: number; d30: number; d7: number }[]
+  const byKindMap = Object.fromEntries(countsRows.map((r) => [r.kind, r])) as Record<string, { total: number; d30: number; d7: number }>
+  const byKind = (k: string) => {
+    const r = byKindMap[k]
+    return { total: Number(r?.total ?? 0), d30: Number(r?.d30 ?? 0), d7: Number(r?.d7 ?? 0) }
+  }
 
   // funnel
-  const views = count((r) => r.kind === 'view_card')
-  const details = count((r) => r.kind === 'view_detail')
-  const actions = count((r) => ['save', 'directions', 'share'].includes(r.kind))
+  const views = byKind('view_card').total
+  const details = byKind('view_detail').total
+  const actions = byKind('save').total + byKind('directions').total + byKind('share').total
   const funnel = [
     { label: 'Apariciones en feed', n: views },
     { label: 'Vistas de ficha', n: details },
@@ -44,23 +44,15 @@ export default async function AdminStatsPage() {
   ]
   const maxFunnel = Math.max(1, views)
 
-  // ranking de lugares por interacciones (acciones de valor)
-  const valueKinds = new Set(['view_detail', 'save', 'directions', 'share'])
-  const byPlace: Record<string, number> = {}
-  for (const r of rows) if (r.place_id && valueKinds.has(r.kind)) byPlace[r.place_id] = (byPlace[r.place_id] ?? 0) + 1
-  const topIds = Object.entries(byPlace).sort((a, b) => b[1] - a[1]).slice(0, 10)
-  const { data: placesData } = topIds.length
-    ? await admin.from('places').select('id, name').in('id', topIds.map(([id]) => id))
-    : { data: [] }
-  const nameById = Object.fromEntries(((placesData ?? []) as { id: string; name: string }[]).map((p) => [p.id, p.name]))
-  const ranking = topIds.map(([id, n]) => ({ id, name: nameById[id] ?? '—', n }))
+  // ranking de lugares por interacciones de valor (agregado + join en SQL)
+  const ranking = ((rankRes.data ?? []) as { id: string; name: string; n: number }[]).map((r) => ({ id: r.id, name: r.name, n: Number(r.n) }))
   const maxRank = Math.max(1, ...ranking.map((r) => r.n))
 
   return (
     <div className="space-y-8">
       <header>
         <h1 className="text-2xl font-medium text-fg">Estadísticas</h1>
-        <p className="text-sm text-fg-soft">Comportamiento global · {rows.length} interacciones registradas.</p>
+        <p className="text-sm text-fg-soft">Comportamiento global · {total} interacciones registradas.</p>
       </header>
 
       {/* por tipo */}

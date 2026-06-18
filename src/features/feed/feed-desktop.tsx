@@ -1,18 +1,30 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Heart, Star, Sparkles } from 'lucide-react'
 import { categoryIcon } from '@/shared/lib/icons'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
+import { LocationNotice } from '@/shared/components/location-notice'
 import { track } from '@/lib/track'
 import { fmtDist, type FeedController, type FeedItem } from './use-feed'
 
-function Thumb({ p, className }: { p: FeedItem; className?: string }) {
-  if (p.photo_url) {
+function Thumb({ p, className, priority }: { p: FeedItem; className?: string; priority?: boolean }) {
+  const [imgError, setImgError] = useState(false)
+  if (p.photo_url && !imgError) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={p.photo_url} alt={p.name} className={`object-cover ${className ?? ''}`} />
+    return (
+      <img
+        src={p.photo_url}
+        alt={p.name}
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : 'auto'}
+        decoding="async"
+        onError={() => setImgError(true)}
+        className={`object-cover ${className ?? ''}`}
+      />
+    )
   }
   const Cat = categoryIcon(p.category_emoji)
   return (
@@ -22,8 +34,11 @@ function Thumb({ p, className }: { p: FeedItem; className?: string }) {
   )
 }
 
-/** Card pequeña del bento (lugar no destacado). */
-function PlaceCard({ p, saved, onSave }: { p: FeedItem; saved: boolean; onSave: () => void }) {
+/**
+ * Card pequeña del bento (lugar no destacado). Memoizada: con `onSave` estable (del feed)
+ * y `p` referencialmente estable, solo se re-renderiza la card afectada al guardar.
+ */
+const PlaceCard = memo(function PlaceCard({ p, saved, onSave }: { p: FeedItem; saved: boolean; onSave: (p: FeedItem) => void }) {
   return (
     <Link
       href={`/places/${p.slug}`}
@@ -31,9 +46,10 @@ function PlaceCard({ p, saved, onSave }: { p: FeedItem; saved: boolean; onSave: 
     >
       <Thumb p={p} className="h-32 w-full" />
       <button
-        onClick={(e) => { e.preventDefault(); onSave() }}
-        className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full backdrop-blur transition ${saved ? 'bg-goospe-green text-white' : 'bg-black/30 text-white opacity-0 group-hover:opacity-100'}`}
-        aria-label="Guardar"
+        onClick={(e) => { e.preventDefault(); onSave(p) }}
+        aria-pressed={saved}
+        aria-label={saved ? 'Quitar de guardados' : 'Guardar'}
+        className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full backdrop-blur transition ${saved ? 'bg-goospe-green text-white' : 'bg-black/30 text-white opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100'}`}
       >
         <Heart size={16} strokeWidth={1.9} fill={saved ? 'currentColor' : 'none'} />
       </button>
@@ -46,14 +62,14 @@ function PlaceCard({ p, saved, onSave }: { p: FeedItem; saved: boolean; onSave: 
       </div>
     </Link>
   )
-}
+})
 
 /**
  * Feed web — tablero de descubrimiento (claro, bento). Destacado grande + grid de
  * cards, con chips de filtro por categoría. Sigue el mock `02 · Feed — tablero`.
  */
 export function FeedDesktop({ feed }: { feed: FeedController }) {
-  const { items, isSaved, onSave, location, whenLabel } = feed
+  const { items, isSaved, onSave, location, whenLabel, geoSource, retryLocation } = feed
   const [cat, setCat] = useState<string | null>(null)
   const seen = useRef<Set<string>>(new Set())
 
@@ -84,6 +100,7 @@ export function FeedDesktop({ feed }: { feed: FeedController }) {
       <AppNav />
 
       <div className="mx-auto w-full max-w-6xl flex-1 px-8 py-8">
+        <LocationNotice source={geoSource} onRetry={retryLocation} className="mb-5" />
         {/* encabezado + filtros */}
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
@@ -120,7 +137,7 @@ export function FeedDesktop({ feed }: { feed: FeedController }) {
               href={`/places/${featured.slug}`}
               className="group relative row-span-2 overflow-hidden rounded-3xl shadow-lg"
             >
-              <Thumb p={featured} className="absolute inset-0 h-full w-full transition duration-500 group-hover:scale-[1.03]" />
+              <Thumb p={featured} priority className="absolute inset-0 h-full w-full transition duration-500 group-hover:scale-[1.03]" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/20" />
               <span className="absolute left-5 top-5 inline-flex items-center gap-1.5 rounded-full bg-goospe-gradient px-3.5 py-1.5 text-xs font-semibold text-white ring-1 ring-white/40">
                 <Sparkles size={13} strokeWidth={2} /> Destacado
@@ -138,7 +155,7 @@ export function FeedDesktop({ feed }: { feed: FeedController }) {
 
             {/* resto */}
             {rest.map((p) => (
-              <PlaceCard key={p.id} p={p} saved={isSaved(p.id)} onSave={() => onSave(p)} />
+              <PlaceCard key={p.id} p={p} saved={isSaved(p.id)} onSave={onSave} />
             ))}
           </div>
         )}

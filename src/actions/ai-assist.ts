@@ -4,15 +4,16 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { assertPlaceMembership } from '@/lib/ownership'
 import { complete, completeJson, type Usage } from '@/lib/ai/openai'
+import { fireAndForget } from '@/lib/fire'
 
 const COST = (u: Usage) => (u.input_tokens / 1e6) * 2.5 + (u.output_tokens / 1e6) * 10
 async function logUsage(feature: string, u: Usage, userId: string, businessId: string) {
   const admin = createAdminClient()
-  void admin.from('ai_usage').insert({
+  fireAndForget(admin.from('ai_usage').insert({
     feature, model: process.env.OPENAI_TEXT_MODEL ?? 'gpt-4o',
     input_tokens: u.input_tokens, output_tokens: u.output_tokens,
     cost_usd: COST(u), user_id: userId, business_id: businessId,
-  } as never)
+  } as never), `ai_usage:${feature}`)
 }
 
 async function ownerContext(placeId: string) {

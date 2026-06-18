@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { getPosition } from '@/lib/geo'
+import { getPosition, type GeoSource } from '@/lib/geo'
 import { useFavorites } from '@/hooks/useFavorites'
 import { track } from '@/lib/track'
+import { toast } from '@/shared/components/toast'
 import type { FeedEvent } from '@/features/events/EventFeedCard'
 
 export type FeedItem = {
@@ -60,15 +61,21 @@ export type FeedController = ReturnType<typeof useFeed>
 /**
  * Estado y acciones del feed, compartidos por los tres layouts (móvil / tablet / web).
  * Hace una sola carga de datos: lo monta `page.tsx` y pasa el resultado a cada layout.
+ *
+ * `initial` (opcional): primera tanda renderizada en el servidor con la ubicación por defecto
+ * (Puerto Varas). Si viene, el feed arranca SIN loading (pinta al instante) y refina la
+ * ubicación real en segundo plano; si no, comportamiento previo (loading hasta geo + RPC).
  */
-export function useFeed() {
-  const [items, setItems] = useState<FeedItem[]>([])
-  const [events, setEvents] = useState<FeedEvent[]>([])
-  const [loading, setLoading] = useState(true)
+export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | null) {
+  const [items, setItems] = useState<FeedItem[]>(initial?.items ?? [])
+  const [events, setEvents] = useState<FeedEvent[]>(initial?.events ?? [])
+  const [loading, setLoading] = useState(!initial)
   const [error, setError] = useState<string | null>(null)
+  const [geoSource, setGeoSource] = useState<GeoSource>('forced')
   const { isSaved, toggle } = useFavorites()
   const supabase = useMemo(() => createClient(), [])
   const dismissed = useRef<Set<string>>(new Set())
+  const itemsRef = useRef<FeedItem[]>([]) // espejo estable para leer en onDismiss (deshacer)
 
   const fetchFeed = useCallback(async (lat: number, lng: number) => {
     // `as never` en los args: workaround del tipado de rpc de supabase-js para funciones
@@ -84,23 +91,58 @@ export function useFeed() {
   }, [supabase])
 
   const feedList = useMemo(() => interleave(items, events), [items, events])
+  useEffect(() => { itemsRef.current = items }, [items])
+
+  // Resuelve ubicación → carga feed. Reutilizable como "reintentar" si el usuario
+  // activa el permiso después de haber caído al fallback de Puerto Varas. Con `background`
+  // (refine sobre un seed SSR) no muestra el loader: el contenido ya está en pantalla.
+  const loadPosition = useCallback((opts?: { background?: boolean }) => {
+    if (!opts?.background) setLoading(true)
+    setError(null) // limpia un error previo al reintentar
+    getPosition().then((pos) => {
+      setGeoSource(pos.source)
+      fetchFeed(pos.lat, pos.lng)
+    })
+  }, [fetchFeed])
+
+  // Reintento manual (botón/onClick): foreground, sin args → evita pasar el MouseEvent como opts.
+  const retryLocation = useCallback(() => loadPosition(), [loadPosition])
 
   useEffect(() => {
     dismissed.current = loadDismissed()
-    getPosition().then(({ lat, lng }) => fetchFeed(lat, lng))
-  }, [fetchFeed])
+    if (initial) {
+      // Seed SSR: filtra descartados y refina la ubicación real sin mostrar el loader.
+      setItems((prev) => prev.filter((p) => !dismissed.current.has(p.id)))
+      loadPosition({ background: true })
+    } else {
+      loadPosition()
+    }
+    // `initial` se lee una sola vez al montar (props estables del servidor).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadPosition])
 
   const onSave = useCallback((p: FeedItem) => {
-    track(isSaved(p.id) ? 'unsave' : 'save', { placeId: p.id })
-    toggle(p.id)
-  }, [isSaved, toggle])
+    const saved = toggle(p.id) // devuelve si quedó guardado → evita depender de isSaved
+    track(saved ? 'save' : 'unsave', { placeId: p.id })
+  }, [toggle])
+
+  // Restaura un lugar descartado en su posición original (lo saca de `dismissed`).
+  const restore = useCallback((item: FeedItem, idx: number) => {
+    dismissed.current.delete(item.id)
+    localStorage.setItem(DISMISSED_KEY, JSON.stringify([...dismissed.current]))
+    setItems((cur) => (cur.some((p) => p.id === item.id) ? cur : [...cur.slice(0, idx), item, ...cur.slice(idx)]))
+  }, [])
 
   const onDismiss = useCallback((id: string) => {
+    const idx = itemsRef.current.findIndex((p) => p.id === id)
+    const item = idx >= 0 ? itemsRef.current[idx] : null
     track('dismiss', { placeId: id })
     dismissed.current.add(id)
     localStorage.setItem(DISMISSED_KEY, JSON.stringify([...dismissed.current]))
     setItems((prev) => prev.filter((p) => p.id !== id))
-  }, [])
+    // Un toque accidental en "Paso" ya no borra el lugar para siempre.
+    if (item) toast.info('Descartado', { action: { label: 'Deshacer', onClick: () => restore(item, idx) } })
+  }, [restore])
 
   const onShare = useCallback((p: FeedItem) => {
     track('share', { placeId: p.id })
@@ -121,6 +163,7 @@ export function useFeed() {
 
   return {
     items, events, feedList, loading, error,
+    geoSource, retryLocation,
     isSaved, onSave, onDismiss, onShare, onDirections,
     location: LOCATION_LABEL, whenLabel,
   }

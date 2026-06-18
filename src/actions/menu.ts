@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { assertPlaceMembership } from '@/lib/ownership'
 import { visionJson, type Usage } from '@/lib/ai/openai'
+import { fireAndForget } from '@/lib/fire'
 
 const MAX_BYTES = 8 * 1024 * 1024
 const OK_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -105,11 +106,11 @@ export async function uploadMenu(formData: FormData) {
 
       const { data, usage } = await visionJson(pub.publicUrl, SYSTEM, 'Extrae la carta de esta imagen.', MENU_SCHEMA)
       merged = mergeSections(merged, (data as { sections?: MenuSection[] }).sections ?? [])
-      void admin.from('ai_usage').insert({
+      fireAndForget(admin.from('ai_usage').insert({
         feature: 'menu_vision', model: process.env.OPENAI_TEXT_MODEL ?? 'gpt-4o',
         input_tokens: usage.input_tokens, output_tokens: usage.output_tokens,
         cost_usd: COST(usage), user_id: user.id, business_id: businessId,
-      } as never)
+      } as never), 'ai_usage:menu_vision')
     }
 
     await admin

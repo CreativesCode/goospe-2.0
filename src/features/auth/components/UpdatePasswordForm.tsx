@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { updatePassword } from '@/actions/auth'
-import { fieldClass, primaryBtn } from '@/shared/lib/ui'
+import { primaryBtn } from '@/shared/lib/ui'
+import { PasswordField } from './PasswordField'
 
 export function UpdatePasswordForm() {
   const [error, setError] = useState<string | null>(null)
@@ -16,11 +17,8 @@ export function UpdatePasswordForm() {
 
   return (
     <form action={handle} className="space-y-4">
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium text-fg">Nueva contraseña</label>
-        <input id="password" name="password" type="password" required minLength={6} className={fieldClass} />
-      </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      <PasswordField label="Nueva contraseña" required minLength={6} autoComplete="new-password" />
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       <button type="submit" disabled={loading} className={primaryBtn}>
         {loading ? 'Actualizando…' : 'Actualizar contraseña'}
       </button>

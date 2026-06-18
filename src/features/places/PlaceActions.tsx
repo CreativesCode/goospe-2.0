@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Heart, Compass, Share2, Check } from 'lucide-react'
 import { useFavorites } from '@/hooks/useFavorites'
 import { track } from '@/lib/track'
+import { toast } from '@/shared/components/toast'
 
 /**
  * Fila de acciones de la ficha de lugar: Guardar / Cómo llegar / Compartir.
@@ -45,7 +46,9 @@ export function PlaceActions({
       await navigator.clipboard.writeText(url)
       setCopied(true)
       setTimeout(() => setCopied(false), 1800)
-    } catch { /* sin clipboard: no hacemos nada */ }
+    } catch {
+      toast.error('No se pudo copiar el enlace')
+    }
   }
 
   // Compacto en mobile (solo icono); icono + texto desde sm en adelante.
@@ -57,6 +60,7 @@ export function PlaceActions({
       <button
         type="button"
         onClick={onSave}
+        aria-pressed={saved}
         aria-label={saved ? 'Guardado' : 'Guardar'}
         className={`${base} ${saved ? 'border-goospe-green bg-goospe-green text-white' : 'border-line bg-card text-fg-soft hover:text-fg'}`}
       >

@@ -3,13 +3,14 @@
 import { useState } from 'react'
 import { Star, Sparkles, Check } from 'lucide-react'
 import { suggestReviewReply } from '@/actions/ai-assist'
+import { toast } from '@/shared/components/toast'
 
 type Review = { id: string; rating: number; body: string | null; created_at: string }
 const fmt = (s: string) => new Date(s).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })
 
 function Stars({ rating }: { rating: number }) {
   return (
-    <span className="inline-flex items-center gap-0.5">
+    <span className="inline-flex items-center gap-0.5" role="img" aria-label={`${rating} de 5 estrellas`}>
       {[1, 2, 3, 4, 5].map((n) => {
         const on = n <= rating
         return <Star key={n} size={14} strokeWidth={1.75} className={on ? 'text-goospe-green' : 'text-muted/40'} fill={on ? 'currentColor' : 'none'} />
@@ -30,7 +31,7 @@ function ReviewRow({ placeId, r }: { placeId: string; r: Review }) {
     fd.set('review_id', r.id)
     const res = await suggestReviewReply(fd)
     setBusy(false)
-    if (res?.error) { alert(res.error); return }
+    if (res?.error) { toast.error(res.error); return }
     setReply(res.reply ?? '')
   }
 
@@ -52,7 +53,15 @@ function ReviewRow({ placeId, r }: { placeId: string; r: Review }) {
           <textarea value={reply} onChange={(e) => setReply(e.target.value)} rows={3}
             className="w-full resize-none rounded-md border border-line bg-card px-2 py-1.5 text-sm text-fg outline-none focus:border-goospe-green" />
           <button
-            onClick={() => { navigator.clipboard?.writeText(reply); setCopied(true); setTimeout(() => setCopied(false), 1500) }}
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(reply)
+                setCopied(true)
+                setTimeout(() => setCopied(false), 1500)
+              } catch {
+                toast.error('No se pudo copiar. Selecciona el texto y cópialo manualmente.')
+              }
+            }}
             className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-goospe-green hover:underline">
             {copied ? <><Check size={13} strokeWidth={2} /> Copiado</> : 'Copiar'}
           </button>

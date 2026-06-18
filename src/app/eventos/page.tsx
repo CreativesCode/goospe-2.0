@@ -4,8 +4,11 @@ import { RsvpButton } from '@/features/events/RsvpButton'
 import Link from 'next/link'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
+import { PhotoImg } from '@/shared/components/photo-img'
 
-export const dynamic = 'force-dynamic'
+// ISR: cartelera de eventos. Se regenera cada 10 min (los eventos no son tiempo real,
+// pero sí sensibles a la fecha → ventana corta para no mostrar eventos ya pasados).
+export const revalidate = 600
 
 export const metadata: Metadata = {
   title: 'Eventos en Puerto Varas | Goospe',
@@ -40,7 +43,13 @@ export default async function EventosPage() {
         {events.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-20 text-center">
             <img src="/brand/isotipo-color.svg" alt="" className="h-14 w-14 opacity-80" />
-            <p className="text-fg-soft">Aún no hay eventos próximos. Vuelve pronto.</p>
+            <p className="text-fg-soft">Aún no hay eventos próximos. Mientras tanto, descubre lugares cerca de ti.</p>
+            <Link
+              href="/feed"
+              className="mt-1 inline-flex items-center gap-2 rounded-full bg-goospe-green px-5 py-2.5 text-sm font-medium text-white transition hover:bg-goospe-green-dark"
+            >
+              Explorar lugares
+            </Link>
           </div>
         ) : (
           <ul className="space-y-4">
@@ -48,8 +57,7 @@ export default async function EventosPage() {
               <li key={ev.id} className="overflow-hidden rounded-2xl border border-line bg-card shadow-sm">
                 <div className="flex">
                   {ev.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={ev.image_url} alt={ev.name} className="h-32 w-32 shrink-0 object-cover" />
+                    <PhotoImg src={ev.image_url} alt={ev.name} className="h-32 w-32 shrink-0 object-cover" />
                   ) : (
                     <div className="flex h-32 w-32 shrink-0 items-center justify-center bg-goospe-gradient">
                       <img src="/brand/isotipo-white.svg" alt="" className="h-9 w-9 opacity-90" />

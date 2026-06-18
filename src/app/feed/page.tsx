@@ -1,31 +1,25 @@
-'use client'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { FeedClient } from '@/features/feed/feed-client'
+import type { FeedItem } from '@/features/feed/use-feed'
+import type { FeedEvent } from '@/features/events/EventFeedCard'
 
-import { useFeed } from '@/features/feed/use-feed'
-import { useBreakpoint } from '@/features/feed/use-breakpoint'
-import { FeedMobile } from '@/features/feed/feed-mobile'
-import { FeedTablet } from '@/features/feed/feed-tablet'
-import { FeedDesktop } from '@/features/feed/feed-desktop'
-import { Loader } from '@/shared/components/loader'
+// Semilla SSR de la primera tanda con la ubicación del piloto (Puerto Varas). Es anónima (sin
+// auth → sin personalización por gusto) e igual para todos → cacheable por ISR. El cliente la
+// pinta al instante y refina con la ubicación real del usuario al montar (ver FeedClient/useFeed).
+const SEED = { lat: -41.3195, lng: -72.9854 }
+export const revalidate = 300
 
-/**
- * Feed de descubrimiento. Una sola carga de datos (`useFeed`) y tres layouts según
- * el viewport (ver `docs/design`): móvil inmersivo vertical, tablet maestro/detalle,
- * web tablero de descubrimiento.
- */
-export default function FeedPage() {
-  const feed = useFeed()
-  const bp = useBreakpoint()
+export default async function FeedPage() {
+  const admin = createAdminClient()
+  // `as never` en los args: workaround del tipado de rpc de supabase-js para funciones tabla.
+  const [places, evs] = await Promise.all([
+    admin.rpc('get_feed', { p_lat: SEED.lat, p_lng: SEED.lng, p_radius_m: 25000, p_limit: 40, p_offset: 0 } as never),
+    admin.rpc('get_feed_events', { p_lat: SEED.lat, p_lng: SEED.lng, p_radius_m: 25000, p_limit: 8 } as never),
+  ])
+  const items = (places.data ?? []) as FeedItem[]
+  const events = (evs.data ?? []) as FeedEvent[]
+  // Solo sembramos si hubo datos; si no, el cliente arranca con su loader habitual.
+  const initial = items.length ? { items, events } : null
 
-  if (feed.loading || bp === null) {
-    return (
-      <div className="flex h-[100dvh] flex-col items-center justify-center bg-surface">
-        <Loader size={140} />
-      </div>
-    )
-  }
-  if (feed.error) return <div className="p-8 text-red-600">Error: {feed.error}</div>
-
-  if (bp === 'desktop') return <FeedDesktop feed={feed} />
-  if (bp === 'tablet') return <FeedTablet feed={feed} />
-  return <FeedMobile feed={feed} />
+  return <FeedClient initial={initial} />
 }

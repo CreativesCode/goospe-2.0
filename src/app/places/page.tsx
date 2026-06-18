@@ -1,13 +1,11 @@
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { categoryIcon } from '@/shared/lib/icons'
 import { AppNav } from '@/shared/components/app-nav'
-import { AppFooter } from '@/shared/components/app-footer'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-// Página TEMPORAL de validación: muestra los lugares de Puerto Varas con los datos que tenemos
-// (enriquecimiento IA + foto de fachada Mapillary). No es la UI final del feed.
-export const dynamic = 'force-dynamic'
+// Grid de descubrimiento de Puerto Varas (cards de marca con foto aprobada cuando existe).
+// Sin searchParams → ISR seguro (antes el toggle de debug `?photos=` la forzaba a dynamic).
+export const revalidate = 3600
 
 type PlaceRow = {
   id: string
@@ -32,14 +30,7 @@ function Price({ level }: { level: number | null }) {
   )
 }
 
-export default async function PlacesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ photos?: string }>
-}) {
-  // Por defecto: cards de marca (cold-start honesto). ?photos=1 → muestra la fachada
-  // Mapillary (street-level, tipo dashcam) solo para comparar; no es la foto final.
-  const showPhotos = (await searchParams).photos === '1'
+export default async function PlacesPage() {
   const sb = createAdminClient()
   const { data, error } = await sb
     .from('places')
@@ -49,9 +40,8 @@ export default async function PlacesPage({
     .eq('is_published', true)
     .order('name')
 
-  if (error) {
-    return <main className="p-10 text-red-600">Error: {error.message}</main>
-  }
+  // Lanza para que lo capture src/app/error.tsx (UI amigable + reintento), no un crudo en rojo.
+  if (error) throw new Error(error.message)
   const places = (data ?? []) as unknown as PlaceRow[]
   const withPhoto = places.filter((p) => p.place_photos?.length).length
 
@@ -64,12 +54,6 @@ export default async function PlacesPage({
             Puerto Varas · <strong className="text-fg">{places.length}</strong> lugares ·{' '}
             <span className="text-goospe-green">{withPhoto}</span> con foto
           </span>
-          <a
-            href={showPhotos ? '/places' : '/places?photos=1'}
-            className="inline-flex items-center gap-1.5 rounded-full border border-goospe-green/40 px-3 py-1 text-xs font-medium text-goospe-green-dark transition hover:bg-goospe-green/10"
-          >
-            {showPhotos ? <><ArrowLeft size={12} strokeWidth={1.75} /> cards de marca</> : <>ver fachadas Mapillary <ArrowRight size={12} strokeWidth={1.75} /></>}
-          </a>
         </div>
       </div>
 
@@ -77,9 +61,7 @@ export default async function PlacesPage({
       <div className="mx-auto max-w-7xl px-5 py-8">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {places.map((p) => {
-            // Por defecto solo fotos aprobadas (buenas); con ?photos=1 cualquiera (incl. street pending).
-            const approved = p.place_photos?.find((ph) => ph.status === 'approved')?.url
-            const photo = showPhotos ? p.place_photos?.[0]?.url : approved
+            const photo = p.place_photos?.find((ph) => ph.status === 'approved')?.url
             const Cat = categoryIcon(p.place_categories?.[0]?.categories?.emoji)
             const city = p.address?.city ?? null
             return (
@@ -91,19 +73,12 @@ export default async function PlacesPage({
                 {/* media */}
                 <div className="relative aspect-[4/3] overflow-hidden">
                   {photo ? (
-                    <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photo}
-                        alt={p.name}
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                      />
-                      {showPhotos && (
-                        <span className="absolute bottom-2 right-2 rounded bg-black/55 px-1.5 py-0.5 text-[10px] text-white">
-                          street
-                        </span>
-                      )}
-                    </>
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={photo}
+                      alt={p.name}
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    />
                   ) : (
                     <div className="relative flex h-full w-full items-center justify-center bg-goospe-gradient text-white">
                       <Cat size={44} strokeWidth={1.5} />
@@ -152,7 +127,7 @@ export default async function PlacesPage({
       </div>
 
       <footer className="mt-auto border-t border-line pb-24 pt-6 text-center text-xs text-muted md:pb-6">
-        Vista temporal de validación · datos: OSM + enriquecimiento IA (gpt-4o) + fotos Mapillary (CC-BY-SA)
+        Datos: OSM + enriquecimiento IA (gpt-4o) + fotos Mapillary (CC-BY-SA)
       </footer>
     </main>
   )

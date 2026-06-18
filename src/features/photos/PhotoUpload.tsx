@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Camera } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { uploadPlacePhoto } from '@/actions/photos'
@@ -9,6 +10,7 @@ import { uploadPlacePhoto } from '@/actions/photos'
 // Subida de foto por el usuario. Queda en revisión (status='pending') hasta que un admin
 // la apruebe. Se muestra sólo a usuarios con sesión.
 export function PhotoUpload({ placeId }: { placeId: string }) {
+  const pathname = usePathname()
   const [authed, setAuthed] = useState<boolean | null>(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
@@ -32,10 +34,13 @@ export function PhotoUpload({ placeId }: { placeId: string }) {
     else setMsg({ ok: true, text: '¡Gracias! Tu foto quedó en revisión y aparecerá al aprobarse.' })
   }
 
+  // Mientras se resuelve la sesión no mostramos nada (evita el flash botón→login).
+  if (authed === null) return null
+
   if (authed === false) {
     return (
       <p className="mt-3 text-sm text-fg-soft">
-        <Link href="/login?next=/places" className="font-medium text-goospe-green hover:underline">Inicia sesión</Link> para aportar fotos de este lugar.
+        <Link href={`/login?next=${encodeURIComponent(pathname)}`} className="font-medium text-goospe-green hover:underline">Inicia sesión</Link> para aportar fotos de este lugar.
       </p>
     )
   }

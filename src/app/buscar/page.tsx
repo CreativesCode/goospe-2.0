@@ -5,8 +5,9 @@ import { Search, Clock, Utensils, Coffee, Martini, Moon, Ticket, type LucideIcon
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
 import { Loader } from '@/shared/components/loader'
+import { LocationNotice } from '@/shared/components/location-notice'
 import { PlaceCard } from '@/features/places/PlaceCard'
-import { getPosition } from '@/lib/geo'
+import { getPosition, type GeoSource } from '@/lib/geo'
 
 type Result = {
   id: string
@@ -36,23 +37,42 @@ export default function BuscarPage() {
   const [openNow, setOpenNow] = useState(false)
   const [results, setResults] = useState<Result[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+  const [searched, setSearched] = useState(false)
   const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null)
+  const [geoSource, setGeoSource] = useState<GeoSource>('forced')
 
-  useEffect(() => { getPosition().then(setPos) }, [])
+  // Resuelve ubicación (reutilizable como reintento si el usuario activa el permiso).
+  const loadPos = useCallback(() => {
+    getPosition().then((g) => { setGeoSource(g.source); setPos({ lat: g.lat, lng: g.lng }) })
+  }, [])
+  useEffect(() => { loadPos() }, [loadPos])
 
   const search = useCallback(async () => {
-    setLoading(true)
+    setLoading(true); setError(false)
     const params = new URLSearchParams()
     if (q.trim()) params.set('q', q.trim())
     if (cat) params.set('cat', String(cat))
     if (price) params.set('price', String(price))
     if (openNow) params.set('open', '1')
     if (pos) { params.set('lat', String(pos.lat)); params.set('lng', String(pos.lng)) }
-    const res = await fetch(`/api/search?${params}`)
-    const data = await res.json()
-    setResults(data.results ?? [])
-    setLoading(false)
+    try {
+      const res = await fetch(`/api/search?${params}`)
+      if (!res.ok) throw new Error(`search ${res.status}`)
+      const data = await res.json()
+      setResults(data.results ?? [])
+    } catch {
+      // Red caída o respuesta inválida: mostrar error con reintento en vez de colgar el spinner.
+      setError(true)
+      setResults([])
+    } finally {
+      setLoading(false)
+      setSearched(true)
+    }
   }, [q, cat, price, openNow, pos])
+
+  const hasFilters = q.trim() !== '' || cat !== null || price !== null || openNow
+  const clearFilters = useCallback(() => { setQ(''); setCat(null); setPrice(null); setOpenNow(false) }, [])
 
   // Busca al cambiar filtros (y con debounce el texto) una vez resuelta la ubicación.
   useEffect(() => {
@@ -72,6 +92,10 @@ export default function BuscarPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Busca un lugar por nombre…"
+              type="search"
+              aria-label="Buscar lugar"
+              enterKeyHint="search"
+              autoComplete="off"
               className="w-full rounded-full border border-line bg-card py-2.5 pl-11 pr-5 text-fg outline-none transition placeholder:text-muted focus:border-goospe-green focus:ring-2 focus:ring-goospe-green/30"
             />
           </div>
@@ -80,6 +104,7 @@ export default function BuscarPage() {
               <button
                 key={id}
                 onClick={() => setCat(cat === id ? null : id)}
+                aria-pressed={cat === id}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition ${cat === id ? 'bg-goospe-green text-white' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}
               >
                 <Icon size={15} strokeWidth={1.75} /> {label}
@@ -99,6 +124,7 @@ export default function BuscarPage() {
             </select>
             <button
               onClick={() => setOpenNow((v) => !v)}
+              aria-pressed={openNow}
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition ${openNow ? 'bg-goospe-green text-white' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}
             >
               <Clock size={15} strokeWidth={1.75} /> Abierto ahora
@@ -108,15 +134,41 @@ export default function BuscarPage() {
       </div>
 
       <div className="mx-auto max-w-5xl px-5 py-8">
+        <LocationNotice source={geoSource} onRetry={loadPos} className="mb-6" />
         {loading && (
           <div className="flex justify-center py-16">
             <Loader size={96} />
           </div>
         )}
-        {!loading && results.length === 0 && (
-          <p className="py-16 text-center text-muted">Sin resultados. Prueba con otros filtros.</p>
+        {!loading && error && (
+          <div className="flex flex-col items-center gap-3 py-16 text-center">
+            <p className="text-fg-soft">No pudimos completar la búsqueda. Revisa tu conexión e intenta de nuevo.</p>
+            <button
+              onClick={() => search()}
+              className="rounded-full bg-goospe-green px-5 py-2 text-sm font-medium text-white transition hover:bg-goospe-green-dark"
+            >
+              Reintentar
+            </button>
+          </div>
         )}
-        {!loading && (
+        {!loading && !error && results.length === 0 && (
+          !searched ? (
+            <p className="py-16 text-center text-muted">Empieza a buscar lugares cerca de ti.</p>
+          ) : hasFilters ? (
+            <div className="flex flex-col items-center gap-3 py-16 text-center">
+              <p className="text-fg-soft">Sin resultados con estos filtros.</p>
+              <button
+                onClick={clearFilters}
+                className="rounded-full border border-line bg-card px-5 py-2 text-sm font-medium text-fg-soft transition hover:text-fg"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          ) : (
+            <p className="py-16 text-center text-muted">Aún no hay lugares publicados cerca de ti.</p>
+          )
+        )}
+        {!loading && !error && (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {results.map((p) => (
               <PlaceCard key={p.id} place={p} />

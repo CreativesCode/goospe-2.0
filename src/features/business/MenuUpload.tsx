@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Camera, Plus } from 'lucide-react'
 import { uploadMenu, clearMenu } from '@/actions/menu'
+import { toast } from '@/shared/components/toast'
 
 export function MenuUpload({ placeId, hasMenu }: { placeId: string; hasMenu: boolean }) {
   const router = useRouter()
@@ -31,18 +32,29 @@ export function MenuUpload({ placeId, hasMenu }: { placeId: string; hasMenu: boo
   }
 
   async function onClear() {
+    if (!window.confirm('¿Quitar la carta de tu ficha? Tendrás que volver a subirla.')) return
+    setBusy(true)
     const fd = new FormData(); fd.set('place_id', placeId)
-    await clearMenu(fd); router.refresh()
+    const res = await clearMenu(fd)
+    setBusy(false)
+    if (res && 'error' in res && res.error) { toast.error(res.error); return }
+    toast.success('Carta quitada de tu ficha')
+    router.refresh()
   }
 
   return (
     <section className="rounded-2xl border border-line bg-card p-6 shadow-sm">
       <div className="flex items-center gap-2">
         <h2 className="font-medium text-fg">Carta / Menú</h2>
-        <span className="rounded-full bg-goospe-green/15 px-2 py-0.5 text-[10px] font-medium text-goospe-green-dark">IA</span>
+        <span
+          title="Decídeme lee tu carta automáticamente y la convierte en menú digital"
+          className="rounded-full bg-goospe-green/15 px-2 py-0.5 text-[10px] font-medium text-goospe-green-dark"
+        >
+          Lectura automática
+        </span>
       </div>
       <p className="mt-1 text-sm text-fg-soft">
-        Sube una o varias fotos de tu carta y la IA las convierte en menú digital. Puedes
+        Sube una o varias fotos de tu carta y Decídeme las convierte en menú digital. Puedes
         agregar más páginas cuando quieras.
       </p>
 

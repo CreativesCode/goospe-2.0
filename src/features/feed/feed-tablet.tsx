@@ -2,17 +2,28 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Heart, Compass, Share2, Star, MapPin } from 'lucide-react'
+import { Heart, Compass, Share2, Star, MapPin, RefreshCw } from 'lucide-react'
 import { categoryIcon } from '@/shared/lib/icons'
 import { AppNav } from '@/shared/components/app-nav'
 import { track } from '@/lib/track'
 import { directionsHref, fmtDist, type FeedController, type FeedItem } from './use-feed'
 
 /** Miniatura de foto o gradiente de marca (fallback sin foto). */
-function Thumb({ p, className }: { p: FeedItem; className?: string }) {
-  if (p.photo_url) {
+function Thumb({ p, className, priority }: { p: FeedItem; className?: string; priority?: boolean }) {
+  const [imgError, setImgError] = useState(false)
+  if (p.photo_url && !imgError) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={p.photo_url} alt={p.name} className={`object-cover ${className ?? ''}`} />
+    return (
+      <img
+        src={p.photo_url}
+        alt={p.name}
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : 'auto'}
+        decoding="async"
+        onError={() => setImgError(true)}
+        className={`object-cover ${className ?? ''}`}
+      />
+    )
   }
   const Cat = categoryIcon(p.category_emoji)
   return (
@@ -27,7 +38,7 @@ function Thumb({ p, className }: { p: FeedItem; className?: string }) {
  * columna "A continuación" navegable. Sigue el mock `01 · Feed — maestro / detalle`.
  */
 export function FeedTablet({ feed }: { feed: FeedController }) {
-  const { items, isSaved, onSave, onDismiss, onShare, onDirections, location, whenLabel } = feed
+  const { items, isSaved, onSave, onDismiss, onShare, onDirections, location, whenLabel, geoSource, retryLocation } = feed
   const [selected, setSelected] = useState(0)
   const seen = useRef<Set<string>>(new Set())
 
@@ -68,9 +79,20 @@ export function FeedTablet({ feed }: { feed: FeedController }) {
             <h1 className="text-3xl font-light tracking-tight text-fg">Para ti</h1>
             {whenLabel && <span className="text-sm text-muted">{whenLabel}</span>}
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-4 py-2 text-sm font-medium text-fg">
-            <MapPin size={15} strokeWidth={2} className="text-goospe-green" /> {location}
-          </span>
+          {geoSource === 'fallback' ? (
+            <button
+              onClick={retryLocation}
+              className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/50 bg-amber-400/10 px-4 py-2 text-sm font-medium text-fg transition hover:bg-amber-400/20"
+              title="Mostrando Puerto Varas — toca para activar tu ubicación"
+            >
+              <MapPin size={15} strokeWidth={2} className="text-amber-500" /> {location}
+              <RefreshCw size={13} strokeWidth={2.5} className="text-amber-500" />
+            </button>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-4 py-2 text-sm font-medium text-fg">
+              <MapPin size={15} strokeWidth={2} className="text-goospe-green" /> {location}
+            </span>
+          )}
         </div>
 
         {/* maestro / detalle */}
@@ -80,7 +102,7 @@ export function FeedTablet({ feed }: { feed: FeedController }) {
             href={`/places/${hero.slug}`}
             className="group relative overflow-hidden rounded-3xl shadow-lg"
           >
-            <Thumb p={hero} className="absolute inset-0 h-full w-full transition duration-500 group-hover:scale-[1.03]" />
+            <Thumb p={hero} priority className="absolute inset-0 h-full w-full transition duration-500 group-hover:scale-[1.03]" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/25" />
             <div className="absolute inset-x-5 top-5 flex items-center justify-between">
               {hero.category_name && (
@@ -109,7 +131,7 @@ export function FeedTablet({ feed }: { feed: FeedController }) {
           <div className="flex min-h-0 flex-col gap-4">
             {/* acciones del hero */}
             <div className="flex gap-3 rounded-3xl border border-line bg-card p-4 shadow-sm">
-              <button onClick={() => onSave(hero)} className="flex flex-1 flex-col items-center gap-2">
+              <button onClick={() => onSave(hero)} aria-pressed={isSaved(hero.id)} aria-label={isSaved(hero.id) ? 'Quitar de guardados' : 'Guardar'} className="flex flex-1 flex-col items-center gap-2">
                 <span className={`flex h-14 w-14 items-center justify-center rounded-full transition ${isSaved(hero.id) ? 'bg-goospe-green text-white' : 'bg-surface text-fg-soft'}`}>
                   <Heart size={24} strokeWidth={1.75} fill={isSaved(hero.id) ? 'currentColor' : 'none'} />
                 </span>

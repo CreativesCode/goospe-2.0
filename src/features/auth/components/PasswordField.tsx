@@ -11,6 +11,8 @@ type PasswordFieldProps = {
   required?: boolean
   minLength?: number
   placeholder?: string
+  /** `current-password` (login) o `new-password` (signup/cambio) → autofill y gestores. */
+  autoComplete?: 'current-password' | 'new-password'
 }
 
 /** Input de contraseña con botón "ojito" para mostrar/ocultar. */
@@ -21,6 +23,7 @@ export function PasswordField({
   required,
   minLength,
   placeholder,
+  autoComplete,
 }: PasswordFieldProps) {
   const [show, setShow] = useState(false)
 
@@ -35,6 +38,7 @@ export function PasswordField({
           required={required}
           minLength={minLength}
           placeholder={placeholder}
+          autoComplete={autoComplete}
           className={`${fieldClass} pr-11`}
         />
         <button

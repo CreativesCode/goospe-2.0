@@ -6,6 +6,7 @@ import { Sparkles, Plus } from 'lucide-react'
 import { createEvent, deleteEvent } from '@/actions/events'
 import { generatePromo } from '@/actions/ai-assist'
 import { boostEvent, endEventBoost } from '@/actions/boosts'
+import { toast } from '@/shared/components/toast'
 
 type Ev = { id: string; name: string; starts_at: string; description: string | null; is_boosted: boolean | null }
 
@@ -41,14 +42,17 @@ export function EventManager({ placeId, events }: { placeId: string; events: Ev[
     const res = await createEvent(formData)
     setSaving(false)
     if (res?.error) setMsg(res.error)
-    else { setMsg(null); setOpen(false); setName(''); setDescription(''); setBrief(''); router.refresh() }
+    else { setMsg(null); setOpen(false); setName(''); setDescription(''); setBrief(''); toast.success('Evento creado'); router.refresh() }
   }
 
   async function onDelete(id: string) {
+    if (!window.confirm('¿Eliminar este evento? No se puede deshacer.')) return
     const fd = new FormData()
     fd.set('event_id', id)
     fd.set('place_id', placeId)
-    await deleteEvent(fd)
+    const res = await deleteEvent(fd)
+    if (res?.error) { toast.error(res.error); return }
+    toast.success('Evento eliminado')
     router.refresh()
   }
 
@@ -56,7 +60,8 @@ export function EventManager({ placeId, events }: { placeId: string; events: Ev[
     const fd = new FormData()
     fd.set('event_id', ev.id)
     const res = ev.is_boosted ? await endEventBoost(fd) : await boostEvent(fd)
-    if (res?.error) { alert(res.error); return }
+    if (res?.error) { toast.error(res.error); return }
+    toast.success(ev.is_boosted ? 'Ya no está destacado' : 'Evento destacado')
     router.refresh()
   }
 
@@ -73,18 +78,23 @@ export function EventManager({ placeId, events }: { placeId: string; events: Ev[
         <form action={onCreate} className="mb-5 space-y-3 rounded-xl bg-surface p-4">
           <input type="hidden" name="place_id" value={placeId} />
 
-          {/* asistente IA */}
-          <div className="flex gap-2 rounded-lg bg-goospe-green/5 p-2">
-            <input
-              value={brief}
-              onChange={(e) => setBrief(e.target.value)}
-              placeholder="Idea para la IA (ej: noche de jazz el viernes)"
-              className={inp}
-            />
-            <button type="button" onClick={onGenerate} disabled={genning}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-goospe-gradient px-3 py-2 text-sm font-medium text-white disabled:opacity-60">
-              {genning ? '…' : <><Sparkles size={15} strokeWidth={1.75} /> Generar</>}
-            </button>
+          {/* Asistente Decídeme: redacta el evento a partir de una idea corta. */}
+          <div className="space-y-1.5 rounded-lg bg-goospe-green/5 p-2">
+            <p className="flex items-center gap-1 px-1 text-xs font-medium text-goospe-green-dark">
+              <Sparkles size={12} strokeWidth={2} /> Asistente Decídeme · te redacta el evento
+            </p>
+            <div className="flex gap-2">
+              <input
+                value={brief}
+                onChange={(e) => setBrief(e.target.value)}
+                placeholder="Cuéntale la idea (ej: noche de jazz el viernes)"
+                className={inp}
+              />
+              <button type="button" onClick={onGenerate} disabled={genning}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-goospe-gradient px-3 py-2 text-sm font-medium text-white disabled:opacity-60">
+                {genning ? '…' : <><Sparkles size={15} strokeWidth={1.75} /> Generar</>}
+              </button>
+            </div>
           </div>
 
           <input name="name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del evento" className={inp} />

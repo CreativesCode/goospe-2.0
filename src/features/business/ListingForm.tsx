@@ -51,15 +51,15 @@ export function ListingForm({ place }: { place: Place }) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className={lbl} htmlFor="phone">Teléfono</label>
-          <input id="phone" name="phone" defaultValue={place.phone ?? ''} className={field} />
+          <input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" defaultValue={place.phone ?? ''} className={field} />
         </div>
         <div>
           <label className={lbl} htmlFor="whatsapp">WhatsApp</label>
-          <input id="whatsapp" name="whatsapp" defaultValue={place.whatsapp ?? ''} className={field} />
+          <input id="whatsapp" name="whatsapp" type="tel" inputMode="tel" defaultValue={place.whatsapp ?? ''} className={field} />
         </div>
         <div>
           <label className={lbl} htmlFor="website">Sitio web</label>
-          <input id="website" name="website" defaultValue={place.website ?? ''} className={field} />
+          <input id="website" name="website" type="url" inputMode="url" autoComplete="url" placeholder="https://…" defaultValue={place.website ?? ''} className={field} />
         </div>
         <div>
           <label className={lbl} htmlFor="instagram">Instagram</label>
@@ -92,7 +92,10 @@ export function ListingForm({ place }: { place: Place }) {
           {saving ? 'Guardando…' : 'Guardar cambios'}
         </button>
         {msg && (
-          <span className={`inline-flex items-center gap-1 text-sm ${msg.ok ? 'text-goospe-green-dark' : 'text-red-600'}`}>
+          <span
+            role={msg.ok ? 'status' : 'alert'}
+            className={`inline-flex items-center gap-1 text-sm ${msg.ok ? 'text-goospe-green-dark' : 'text-red-600'}`}
+          >
             {msg.ok && <Check size={15} strokeWidth={2} />}{msg.text}
           </span>
         )}

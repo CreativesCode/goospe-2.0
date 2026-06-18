@@ -66,3 +66,4 @@ supabase/.branches
 supabase/.temp
 
 docs/design
+.playwright-mcp/*

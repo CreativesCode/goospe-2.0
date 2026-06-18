@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { embedQuery, pickPlacesStream, type Candidate, type Usage } from '@/lib/ai/openai'
+import { fireAndForget } from '@/lib/fire'
 
 const FALLBACK = { lat: -41.3195, lng: -72.9854 } // Puerto Varas
 const FREE_LIMIT = 20 // consultas/mes para usuarios autenticados en el piloto
@@ -67,12 +68,12 @@ export async function POST(req: NextRequest) {
           const c = byId.get(pick.id)
           if (c) send({ type: 'pick', pick: { ...c, reason: pick.reason } })
         })
-        void admin.from('ai_usage').insert({
+        fireAndForget(admin.from('ai_usage').insert({
           feature: 'concierge', model: process.env.OPENAI_TEXT_MODEL ?? 'gpt-4o',
           input_tokens: usage.input_tokens, output_tokens: usage.output_tokens,
           cost_usd: COST(usage), user_id: user?.id ?? null,
-        } as never)
-        if (user) void admin.rpc('increment_concierge_quota', { p_user: user.id, p_month: month } as never)
+        } as never), 'ai_usage:concierge')
+        if (user) fireAndForget(admin.rpc('increment_concierge_quota', { p_user: user.id, p_month: month } as never), 'concierge_quota')
         send({ type: 'done' })
       } catch (e) {
         send({ type: 'error', error: (e as Error).message })

@@ -22,67 +22,69 @@ const RANGES = [
   { key: 'all', label: 'Todo', days: null as number | null },
 ]
 
+type Breakdown = [string, { usd: number; tok: number; n: number }][]
+
 export default async function GastosIaPage({ searchParams }: { searchParams: Promise<{ range?: string; page?: string }> }) {
   const sp = await searchParams
   const range = sp.range ?? '30'
   const days = RANGES.find((r) => r.key === range)?.days ?? 30
   const admin = createAdminClient()
+  const arpc = admin.rpc.bind(admin) as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown }>
 
-  const { data } = await admin
+  // Totales, desgloses y serie diaria se agregan en SQL (no se descarga `ai_usage` entera).
+  // El detalle se pagina en la BD: solo se traen PAGE filas de la ventana seleccionada.
+  const PAGE = 60
+  const sinceIso = days ? new Date(Date.now() - days * DAY).toISOString() : null
+  const reqPage = Math.max(1, Number(sp.page) || 1)
+  const from = (reqPage - 1) * PAGE
+
+  let detailQuery = admin
     .from('ai_usage')
-    .select('feature, model, input_tokens, output_tokens, cached_tokens, cost_usd, user_id, business_id, created_at')
+    .select('feature, model, input_tokens, output_tokens, cached_tokens, cost_usd, user_id, business_id, created_at', { count: 'exact' })
     .order('created_at', { ascending: false })
-  const all = (data ?? []) as Usage[]
-  const since = days ? Date.now() - days * DAY : 0
-  const rows = days ? all.filter((r) => new Date(r.created_at).getTime() >= since) : all
+    .range(from, from + PAGE - 1)
+  if (sinceIso) detailQuery = detailQuery.gte('created_at', sinceIso)
+
+  const [totalsRes, breakdownRes, dailyRes, detailRes] = await Promise.all([
+    arpc('admin_ai_usage_totals', { p_days: days }),
+    arpc('admin_ai_usage_breakdown', { p_days: days }),
+    arpc('admin_ai_usage_daily', { p_days: days }),
+    detailQuery,
+  ])
 
   const tokIn = (r: Usage) => r.input_tokens ?? 0
   const tokOut = (r: Usage) => r.output_tokens ?? 0
-  const tokCached = (r: Usage) => r.cached_tokens ?? 0
 
-  const total = {
-    usd: rows.reduce((s, r) => s + Number(r.cost_usd ?? 0), 0),
-    in: rows.reduce((s, r) => s + tokIn(r), 0),
-    out: rows.reduce((s, r) => s + tokOut(r), 0),
-    cached: rows.reduce((s, r) => s + tokCached(r), 0),
-    n: rows.length,
-  }
+  const t = (((totalsRes.data ?? []) as { usd: number; tok_in: number; tok_out: number; tok_cached: number; n: number }[])[0] ?? {}) as { usd: number; tok_in: number; tok_out: number; tok_cached: number; n: number }
+  const total = { usd: Number(t.usd ?? 0), in: Number(t.tok_in ?? 0), out: Number(t.tok_out ?? 0), cached: Number(t.tok_cached ?? 0), n: Number(t.n ?? 0) }
 
-  // agrupar por una clave
-  function groupBy(key: (r: Usage) => string) {
-    const m = new Map<string, { usd: number; tok: number; n: number }>()
-    for (const r of rows) {
-      const k = key(r) || '—'
-      const g = m.get(k) ?? { usd: 0, tok: 0, n: 0 }
-      g.usd += Number(r.cost_usd ?? 0); g.tok += tokIn(r) + tokOut(r); g.n += 1
-      m.set(k, g)
-    }
-    return [...m.entries()].sort((a, b) => b[1].usd - a[1].usd)
-  }
-  const byFeature = groupBy((r) => r.feature)
-  const byModel = groupBy((r) => r.model)
-  const byUser = groupBy((r) => r.user_id ?? '—')
+  // desgloses: el RPC devuelve una fila por (dimension, key) ya agregada
+  const bdRows = (breakdownRes.data ?? []) as { dimension: string; key: string; usd: number; tok: number; n: number }[]
+  const pick = (dim: string): Breakdown => bdRows
+    .filter((r) => r.dimension === dim)
+    .map((r) => [r.key, { usd: Number(r.usd), tok: Number(r.tok), n: Number(r.n) }] as Breakdown[number])
+    .sort((a, b) => b[1].usd - a[1].usd)
+  const byFeature = pick('feature')
+  const byModel = pick('model')
+  const byUser = pick('user')
 
-  // serie por día
-  const dayMap = new Map<string, number>()
-  for (const r of rows) {
-    const d = r.created_at.slice(0, 10)
-    dayMap.set(d, (dayMap.get(d) ?? 0) + Number(r.cost_usd ?? 0))
-  }
-  const series = [...dayMap.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-30)
+  // serie por día (RPC ordena asc; tomamos los últimos 30)
+  const series = ((dailyRes.data ?? []) as { day: string; usd: number }[])
+    .map((r) => [r.day, Number(r.usd)] as [string, number])
+    .slice(-30)
   const maxDay = Math.max(0.000001, ...series.map(([, v]) => v))
 
-  // nombres de usuarios para los grupos / detalle
-  const userIds = [...new Set(rows.map((r) => r.user_id).filter(Boolean))] as string[]
-  const { data: profs } = userIds.length
-    ? await admin.from('profiles').select('id, display_name').in('id', userIds)
+  // detalle paginado en BD; nombres solo de los usuarios de esta página
+  const detail = (detailRes.data ?? []) as Usage[]
+  const totalRows = detailRes.count ?? 0
+  const detailUserIds = [...new Set(detail.map((r) => r.user_id).filter(Boolean))] as string[]
+  const { data: profs } = detailUserIds.length
+    ? await admin.from('profiles').select('id, display_name').in('id', detailUserIds)
     : { data: [] }
   const userName = Object.fromEntries(((profs ?? []) as { id: string; display_name: string | null }[]).map((p) => [p.id, p.display_name || 'Usuario']))
 
-  const PAGE = 60
-  const pages = Math.max(1, Math.ceil(rows.length / PAGE))
-  const page = Math.min(pages, Math.max(1, Number(sp.page) || 1))
-  const detail = rows.slice((page - 1) * PAGE, page * PAGE)
+  const pages = Math.max(1, Math.ceil(totalRows / PAGE))
+  const page = Math.min(pages, reqPage)
 
   return (
     <div className="space-y-8">
@@ -139,10 +141,10 @@ export default async function GastosIaPage({ searchParams }: { searchParams: Pro
         <Breakdown title="Por modelo" rows={byModel} />
       </section>
 
-      <Breakdown title="Por usuario" rows={byUser.map(([id, g]) => [id === '—' ? 'Sistema / anónimo' : userName[id] ?? id.slice(0, 8), g] as [string, typeof g])} />
+      <Breakdown title="Por usuario" rows={byUser} />
 
       {/* detalle */}
-      <Card title={`Detalle · ${rows.length} llamadas`}>
+      <Card title={`Detalle · ${totalRows} llamadas`}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
             <thead>

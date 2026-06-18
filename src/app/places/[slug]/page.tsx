@@ -9,18 +9,26 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { AppFooter } from '@/shared/components/app-footer'
 import { AppNav } from '@/shared/components/app-nav'
 import { BackButton } from '@/shared/components/back-button'
+import { PhotoImg } from '@/shared/components/photo-img'
 import { categoryIcon } from '@/shared/lib/icons'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { cache } from 'react'
+
+// Select completo de la ficha. `cache()` dedupe la consulta dentro del mismo request:
+// `generateMetadata` y el render de la página comparten UNA sola query (antes eran dos).
+const PLACE_SELECT =
+  'id, slug, name, address, phone, whatsapp, website, instagram, email, hours, price_level, description, vibe_line, tags, menu, ai_enriched_at, embedding_model, source, claimed, business_id, is_published, cover_url, logo_url, created_at, updated_at, place_photos(id, url, status, source, storage_path), place_categories(categories(emoji, name, slug))'
+
+const getPlace = cache(async (slug: string) => {
+  const sb = createAdminClient()
+  const { data } = await sb.from('places').select(PLACE_SELECT).eq('slug', slug).maybeSingle()
+  return data
+})
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  const sb = createAdminClient()
-  const { data } = await sb
-    .from('places')
-    .select('name, vibe_line, description, place_photos(url, status)')
-    .eq('slug', slug)
-    .maybeSingle()
+  const data = await getPlace(slug)
   if (!data) return { title: 'Lugar — Goospe' }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const photo: string | undefined = ((data as any).place_photos ?? []).find((p: any) => p.status === 'approved')?.url
@@ -47,7 +55,22 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 const fmtEventDate = (s: string) =>
   new Date(s).toLocaleString('es-CL', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 
-export const dynamic = 'force-dynamic'
+// ISR: la ficha es casi estática (contenido IA + datos del lugar). Se regenera cada hora;
+// las partes con sesión (guardar, RSVP, reseñas, subir foto) son client components que
+// cargan su propio estado. Un lugar recién publicado se genera on-demand (dynamicParams).
+export const revalidate = 3600
+
+// Pre-renderiza los slugs publicados en build para TTFB instantáneo + buen SEO.
+export async function generateStaticParams() {
+  try {
+    const sb = createAdminClient()
+    const { data } = await sb.from('places').select('slug').eq('is_published', true)
+    return (data ?? []).map((p) => ({ slug: p.slug as string }))
+  } catch {
+    // Si la BD no está disponible en build, no fallar: las fichas se generan on-demand.
+    return []
+  }
+}
 
 function igUrl(handle: string) {
   const h = handle.trim().replace(/^@/, '').replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/\/+$/, '')
@@ -69,29 +92,23 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 export default async function PlaceDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const sb = createAdminClient()
-
-  const { data: place } = await sb
-    .from('places')
-    .select(
-      'id, slug, name, address, phone, whatsapp, website, instagram, email, hours, price_level, description, vibe_line, tags, menu, ai_enriched_at, embedding_model, source, claimed, business_id, is_published, cover_url, logo_url, created_at, updated_at, place_photos(id, url, status, source, storage_path), place_categories(categories(emoji, name, slug))'
-    )
-    .eq('slug', slug)
-    .maybeSingle()
+  const place = await getPlace(slug) // dedupe con generateMetadata (React cache)
 
   if (!place) notFound()
 
-  const { data: events } = await sb
-    .from('events')
-    .select('id, name, description, image_url, starts_at, ends_at')
-    .eq('place_id', place.id)
-    .eq('status', 'approved')
-    .gte('starts_at', new Date(Date.now() - 86400_000).toISOString())
-    .order('starts_at')
+  const sb = createAdminClient()
+  // events y coords son independientes entre sí → en paralelo (antes secuencial).
+  const [{ data: events }, { data: coords }] = await Promise.all([
+    sb.from('events')
+      .select('id, name, description, image_url, starts_at, ends_at')
+      .eq('place_id', place.id)
+      .eq('status', 'approved')
+      .gte('starts_at', new Date(Date.now() - 86400_000).toISOString())
+      .order('starts_at'),
+    sb.rpc('places_lnglat', { ids: [place.id] }),
+  ])
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const upcoming = (events ?? []) as any[]
-
-  const { data: coords } = await sb.rpc('places_lnglat', { ids: [place.id] })
   const ll = coords?.[0]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const photos = (place.place_photos ?? []) as any[]
@@ -144,8 +161,9 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
           {photos.length ? (
             <PhotoGallery photos={photos} alt={place.name} />
           ) : (
-            <div className="flex aspect-[16/6] items-center justify-center rounded-2xl bg-goospe-gradient">
-              <img src="/brand/isotipo-white.svg" alt="" className="h-14 w-14 opacity-90" />
+            <div className="flex aspect-[16/6] flex-col items-center justify-center gap-2 rounded-2xl bg-goospe-gradient text-center text-white">
+              <img src="/brand/isotipo-white.svg" alt="" className="h-12 w-12 opacity-90" />
+              <p className="text-sm text-white/90">Sé el primero en aportar una foto de este lugar</p>
             </div>
           )}
           <PhotoUpload placeId={place.id} />
@@ -242,8 +260,7 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
               {upcoming.map((ev) => (
                 <li key={ev.id} className="flex items-center gap-4 rounded-xl border border-line bg-card p-4 shadow-sm">
                   {ev.image_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={ev.image_url} alt={ev.name} className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+                    <PhotoImg src={ev.image_url} alt={ev.name} className="h-16 w-16 shrink-0 rounded-lg object-cover" isoClassName="h-7 w-7" />
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium uppercase text-goospe-green">{fmtEventDate(ev.starts_at)}</p>

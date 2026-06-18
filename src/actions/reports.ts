@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { assertPlaceMembership } from '@/lib/ownership'
 import { complete, type Usage } from '@/lib/ai/openai'
+import { fireAndForget } from '@/lib/fire'
 
 const COST = (u: Usage) => (u.input_tokens / 1e6) * 2.5 + (u.output_tokens / 1e6) * 10
 const LABELS: Record<string, string> = {
@@ -56,11 +57,11 @@ Reseñas nuevas: ${reviewsText}.`
       period_end: periodEnd.toISOString().slice(0, 10),
       content: { summary: text, metrics, place_id: placeId, place_name: placeName },
     } as never)
-    void admin.from('ai_usage').insert({
+    fireAndForget(admin.from('ai_usage').insert({
       feature: 'weekly_report', model: process.env.OPENAI_TEXT_MODEL ?? 'gpt-4o',
       input_tokens: usage.input_tokens, output_tokens: usage.output_tokens,
       cost_usd: COST(usage), user_id: user.id, business_id: businessId,
-    } as never)
+    } as never), 'ai_usage:weekly_report')
     revalidatePath(`/panel/${placeId}`)
     return { success: true, summary: text }
   } catch (e) {

@@ -23,10 +23,20 @@ export function LoginForm() {
       <input type="hidden" name="next" value={next} />
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-fg">Email</label>
-        <input id="email" name="email" type="email" required className={fieldClass} />
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          inputMode="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          className={fieldClass}
+        />
       </div>
-      <PasswordField required />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      <PasswordField required autoComplete="current-password" />
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       <button type="submit" disabled={loading} className={primaryBtn}>
         {loading ? 'Entrando…' : 'Entrar'}
       </button>
