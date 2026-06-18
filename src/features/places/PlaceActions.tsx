@@ -48,18 +48,20 @@ export function PlaceActions({
     } catch { /* sin clipboard: no hacemos nada */ }
   }
 
+  // Compacto en mobile (solo icono); icono + texto desde sm en adelante.
   const base =
-    'inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition'
+    'inline-flex items-center justify-center gap-2 rounded-full border px-3 py-2.5 text-sm font-medium transition sm:px-4'
 
   return (
     <div className="flex flex-wrap gap-2">
       <button
         type="button"
         onClick={onSave}
+        aria-label={saved ? 'Guardado' : 'Guardar'}
         className={`${base} ${saved ? 'border-goospe-green bg-goospe-green text-white' : 'border-line bg-card text-fg-soft hover:text-fg'}`}
       >
         <Heart size={17} strokeWidth={1.75} fill={saved ? 'currentColor' : 'none'} />
-        {saved ? 'Guardado' : 'Guardar'}
+        <span className="hidden sm:inline">{saved ? 'Guardado' : 'Guardar'}</span>
       </button>
 
       {lat != null && lng != null && (
@@ -68,19 +70,21 @@ export function PlaceActions({
           target="_blank"
           rel="noreferrer"
           onClick={() => track('directions', { placeId })}
+          aria-label="Cómo llegar"
           className={`${base} border-line bg-card text-fg-soft hover:text-fg`}
         >
-          <Compass size={17} strokeWidth={1.75} /> Cómo llegar
+          <Compass size={17} strokeWidth={1.75} /> <span className="hidden sm:inline">Cómo llegar</span>
         </a>
       )}
 
       <button
         type="button"
         onClick={onShare}
+        aria-label="Compartir"
         className={`${base} border-line bg-card text-fg-soft hover:text-fg`}
       >
         {copied ? <Check size={17} strokeWidth={2} /> : <Share2 size={17} strokeWidth={1.75} />}
-        {copied ? 'Enlace copiado' : 'Compartir'}
+        <span className="hidden sm:inline">{copied ? 'Enlace copiado' : 'Compartir'}</span>
       </button>
     </div>
   )

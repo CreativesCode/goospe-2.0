@@ -1,10 +1,9 @@
-import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, X } from 'lucide-react'
 import { categoryIcon } from '@/shared/lib/icons'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
+import { BackButton } from '@/shared/components/back-button'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -37,9 +36,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     },
   }
 }
-import { deletePhoto } from './actions'
 import { PlaceReviews } from '@/features/reviews/PlaceReviews'
 import { PhotoUpload } from '@/features/photos/PhotoUpload'
+import { PhotoGallery } from '@/features/photos/PhotoGallery'
 import { RsvpButton } from '@/features/events/RsvpButton'
 import { DetailTracker } from '@/features/places/DetailTracker'
 import { PlaceActions } from '@/features/places/PlaceActions'
@@ -108,32 +107,28 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
       <AppNav />
 
       <div className="mx-auto max-w-5xl px-5 py-8">
-        <Link href="/feed" className="mb-5 inline-flex items-center gap-1.5 text-sm text-fg-soft transition hover:text-goospe-green">
-          <ArrowLeft size={16} strokeWidth={1.75} /> Volver al feed
-        </Link>
+        <BackButton className="mb-5" />
 
         {/* título */}
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="mb-1 flex items-center gap-3 text-sm text-fg-soft">
-              {cats.map((c) => {
-                const Cat = categoryIcon(c.emoji)
-                return <span key={c.slug} className="inline-flex items-center gap-1"><Cat size={14} strokeWidth={1.75} /> {c.name}</span>
-              })}
-            </div>
-            <h1 className="text-3xl font-medium text-fg">{place.name}</h1>
-            {place.vibe_line && <p className="mt-1 text-lg font-medium text-goospe-green">{place.vibe_line}</p>}
+        <div className="mb-4">
+          <div className="mb-1 flex items-center gap-3 text-sm text-fg-soft">
+            {cats.map((c) => {
+              const Cat = categoryIcon(c.emoji)
+              return <span key={c.slug} className="inline-flex items-center gap-1"><Cat size={14} strokeWidth={1.75} /> {c.name}</span>
+            })}
           </div>
+          <h1 className="text-3xl font-medium text-fg">{place.name}</h1>
+          {place.vibe_line && <p className="mt-1 text-lg font-medium text-goospe-green">{place.vibe_line}</p>}
+        </div>
+
+        {/* precio + acciones: guardar / cómo llegar / compartir (registran interacciones) */}
+        <div className="mb-8 flex flex-wrap items-center gap-3">
           {place.price_level && (
             <span className="text-lg font-medium">
               <span className="text-fg">{'$'.repeat(place.price_level)}</span>
               <span className="text-muted/50">{'$'.repeat(4 - place.price_level)}</span>
             </span>
           )}
-        </div>
-
-        {/* acciones: guardar / cómo llegar / compartir (registran interacciones) */}
-        <div className="mb-8">
           <PlaceActions
             placeId={place.id}
             slug={place.slug}
@@ -147,29 +142,7 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
         {/* fotos */}
         <section className="mb-8">
           {photos.length ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {photos.map((ph, i) => (
-                <div key={ph.id ?? i} className="group relative overflow-hidden rounded-xl">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={ph.url} alt={place.name} className="aspect-[4/3] w-full object-cover" />
-                  <span className="absolute bottom-1 left-1 rounded bg-black/55 px-1.5 py-0.5 text-[10px] text-white">
-                    {ph.source ?? '?'} · {ph.status}
-                  </span>
-                  <form action={deletePhoto}>
-                    <input type="hidden" name="id" value={ph.id} />
-                    <input type="hidden" name="path" value={ph.storage_path ?? ''} />
-                    <input type="hidden" name="slug" value={place.slug} />
-                    <button
-                      type="submit"
-                      title="Eliminar foto"
-                      className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/55 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100"
-                    >
-                      <X size={15} strokeWidth={2} />
-                    </button>
-                  </form>
-                </div>
-              ))}
-            </div>
+            <PhotoGallery photos={photos} alt={place.name} />
           ) : (
             <div className="flex aspect-[16/6] items-center justify-center rounded-2xl bg-goospe-gradient">
               <img src="/brand/isotipo-white.svg" alt="" className="h-14 w-14 opacity-90" />
@@ -217,21 +190,6 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
             </dl>
           </section>
         </div>
-
-        {/* meta técnica */}
-        <section className="mt-8 rounded-xl border border-line bg-card p-4">
-          <h2 className="mb-2 text-xs font-medium uppercase tracking-[0.08em] text-muted">Meta</h2>
-          <dl className="grid gap-x-6 sm:grid-cols-2">
-            <Field label="Slug">{place.slug}</Field>
-            <Field label="Fuente">{place.source}</Field>
-            <Field label="Coordenadas">{ll ? `${ll.lat?.toFixed(5)}, ${ll.lng?.toFixed(5)}` : null}</Field>
-            <Field label="Embedding">{place.embedding_model ?? 'sin generar'}</Field>
-            <Field label="Enriquecido">{place.ai_enriched_at ? new Date(place.ai_enriched_at).toLocaleString('es-CL') : 'no'}</Field>
-            <Field label="Reclamado">{place.claimed ? 'sí' : 'no'}</Field>
-            <Field label="Publicado">{place.is_published ? 'sí' : 'no'}</Field>
-            <Field label="Creado">{new Date(place.created_at!).toLocaleString('es-CL')}</Field>
-          </dl>
-        </section>
 
         {/* menú */}
         {menu?.sections && menu.sections.length > 0 && (
