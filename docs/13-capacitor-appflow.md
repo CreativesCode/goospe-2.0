@@ -256,12 +256,29 @@ Esto es lo que permite **compilar iOS desde Windows** y firmar para tiendas.
 > actualizaciones de contenido llegan solas por el deploy de Vercel. Solo se hace una nueva
 > Native Build cuando cambia algo **nativo** (plugins, permisos, ícono, versión).
 
-### Íconos y splash
+### Íconos y splash  — ✅ HECHO (2026-06-19)
+
+Los SVG de marca (`public/brand/isotipo-white.svg`) se rasterizan a los PNG fuente que
+`@capacitor/assets` necesita, con la paleta de docs/08 (verde `#2dc186`, gradiente
+`#28af79→#27f1a0`):
+
 ```bash
-npm install -D @capacitor/assets
-# Colocar logo 1024x1024 y splash en resources/  (usar el isotipo Goospe de docs/08)
-npx capacitor-assets generate
+node scripts/gen-app-assets.cjs   # genera /assets (icon-only, icon-foreground, icon-background, splash, splash-dark)
+npx capacitor-assets generate \
+  --iconBackgroundColor '#2dc186' --iconBackgroundColorDark '#0e1f18' \
+  --splashBackgroundColor '#2dc186' --splashBackgroundColorDark '#0e1f18'
+npx cap sync
 ```
+
+> **Gotcha del ícono adaptativo (Android):** `@capacitor/assets` aplica `inset="16.7%"` al
+> **fondo** además del primer plano, lo que puede dejar un borde transparente alrededor del color
+> de marca. Se corrige dejando el fondo full-bleed en
+> `android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml` y `ic_launcher_round.xml`:
+> ```xml
+> <background android:drawable="@mipmap/ic_launcher_background" />  <!-- sin <inset> -->
+> ```
+> (El primer plano sí conserva el inset para respetar la safe zone.) Re-aplicar si se regeneran
+> los assets.
 
 ---
 
