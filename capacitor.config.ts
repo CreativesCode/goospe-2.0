@@ -9,12 +9,13 @@ const config: CapacitorConfig = {
   appName: 'Goospe',
   webDir: 'mobile/www', // solo fallback offline; el contenido real vive en server.url
   server: {
-    // PROD: WebView carga el sitio real. DEV: live-reload al dev local (ajustar IP de tu LAN).
-    url: isDev ? 'http://192.168.1.100:3000' : 'https://app.goospe.com',
+    // PROD: WebView carga el deploy de Vercel. DEV: live-reload al dev local (ajustar IP de tu LAN).
+    url: isDev ? 'http://192.168.1.100:3000' : 'https://goospe.vercel.app',
     cleartext: isDev, // HTTP solo en dev; prod siempre HTTPS
     allowNavigation: [
-      'app.goospe.com',
+      'goospe.vercel.app',
       'goospe.com',
+      '*.goospe.com',
       '*.supabase.co', // auth + storage Supabase dentro del WebView
     ],
   },
