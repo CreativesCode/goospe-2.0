@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Goospe</string>
+    <string name="title_activity_main">Goospe</string>
+    <string name="package_name">com.goospe.app</string>
+    <string name="custom_url_scheme">com.goospe.app</string>
+</resources>
