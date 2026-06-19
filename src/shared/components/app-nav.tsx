@@ -48,7 +48,7 @@ export function AppNav() {
   return (
     <>
       {/* ===== barra superior ===== */}
-      <header className="sticky top-0 z-30 border-b border-line bg-surface/80 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-line bg-surface/80 pt-[var(--sat)] backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-5 py-3">
           <Link href="/" className="shrink-0">
             <img src="/brand/logo-color.svg" alt="Goospe" className="h-7 dark:hidden" />
@@ -82,7 +82,7 @@ export function AppNav() {
 
       {/* ===== tab bar inferior (solo móvil) ===== */}
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 backdrop-blur md:hidden">
-        <div className="mx-auto flex max-w-md items-stretch justify-around px-2 pb-[max(env(safe-area-inset-bottom),6px)] pt-2">
+        <div className="mx-auto flex max-w-md items-stretch justify-around px-2 pb-[max(var(--sab),6px)] pt-2">
           {TABS.map(({ href, label, icon: Icon }) => {
             const active = isActive(pathname, href)
             return (

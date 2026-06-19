@@ -211,7 +211,7 @@ export function FeedMobile({ feed }: { feed: FeedController }) {
   return (
     <main ref={containerRef} className="h-[100dvh] snap-y snap-mandatory overflow-y-scroll bg-[#121311]">
       {/* fila 1: logo + "Para ti · hora"  |  controles (overlay oscuro → tokens dark) */}
-      <div className="fixed inset-x-4 top-[calc(1rem+env(safe-area-inset-top))] z-20 flex items-center justify-between gap-3">
+      <div className="fixed inset-x-4 top-[calc(1rem+var(--sat))] z-20 flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5 text-white drop-shadow">
           <Link href="/places" className="shrink-0">
             <img src="/brand/logo-white.svg" alt="Goospe" className="h-6" />
@@ -227,7 +227,7 @@ export function FeedMobile({ feed }: { feed: FeedController }) {
       </div>
 
       {/* fila 2: ubicación + atajos Eventos / Buscar */}
-      <div className="fixed left-4 top-[calc(3.5rem+env(safe-area-inset-top))] z-20 flex flex-wrap items-center gap-2">
+      <div className="fixed left-4 top-[calc(3.5rem+var(--sat))] z-20 flex flex-wrap items-center gap-2">
         {geoSource === 'fallback' ? (
           // Ubicación real no disponible → las distancias son desde el centro de la ciudad.
           // Chip accionable: toca para reintentar el permiso.

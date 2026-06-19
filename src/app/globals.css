@@ -17,6 +17,11 @@
   --fg: 28 28 26;          /* #1C1C1A */
   --fg-soft: 99 99 99;     /* #636363 */
   --muted: 154 150 141;    /* #9A968D */
+
+  /* Safe-area insets. iOS/web usan env(); en Android (Capacitor edge-to-edge) env() es 0
+     y el plugin SystemBars inyecta --safe-area-inset-* con el valor real. Usar var(--sat)/var(--sab). */
+  --sat: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --sab: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
 }
 
 /* Tema OSCURO ("negro cálido") */

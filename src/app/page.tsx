@@ -34,7 +34,7 @@ export default async function Landing() {
     <main className="min-h-[100dvh] bg-surface">
       {/* ===== Hero (gradiente, constante en ambos temas) ===== */}
       <div className="bg-goospe-gradient text-white">
-        <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 lg:px-8">
+        <header className="mx-auto flex max-w-6xl items-center justify-between px-5 pb-5 pt-[calc(1.25rem+var(--sat))] lg:px-8">
           <img src="/brand/logo-white.svg" alt="Goospe" className="h-7" />
           <nav className="flex items-center gap-3 text-sm sm:gap-5">
             <Link href="/eventos" className="hidden text-white/85 hover:text-white sm:inline">Eventos</Link>

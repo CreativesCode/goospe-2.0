@@ -187,6 +187,40 @@ Para flujo nativo fino usar `@capacitor/camera` (opcional).
 
 ---
 
+## 5.3 Barra de estado / edge-to-edge (Android 16)  — ✅ HECHO (2026-06-19)
+
+**Síntoma:** el header (logo, "Entrar", campana) se dibujaba **bajo la barra de estado** del
+sistema en todas las pantallas.
+
+**Causa:** `targetSdk = 36` (Android 16) **fuerza edge-to-edge** y ya **no permite opt-out**
+(`overlaysWebView`/`statusBarColor` del plugin StatusBar quedaron inertes). Además, en Android el
+WebView **no** rellena `env(safe-area-inset-top)` con la altura de la barra de estado (queda en 0),
+así que el CSS basado en `env()` —que sí funciona en iOS— no servía.
+
+**Solución (Capacitor 8 — plugin core `SystemBars`):**
+1. `capacitor.config.ts` → `plugins.SystemBars.insetsHandling = 'css'`. Esto inyecta las variables
+   CSS `--safe-area-inset-top/-bottom/...` con el valor real del inset en Android.
+2. La web las consume con fallback a `env()` (iOS/web). En `globals.css`:
+   ```css
+   :root {
+     --sat: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+     --sab: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+   }
+   ```
+   Headers/overlays fijos usan `pt-[var(--sat)]` y la tab bar `pb-[max(var(--sab),6px)]`.
+   Tocados: `app-nav.tsx` (header + tab bar), `feed-mobile.tsx` (overlays), `page.tsx` (hero).
+
+> **Dos despliegues:** el cambio en `capacitor.config.ts` es **nativo** → requiere **rebuild de la
+> APK**. Los cambios CSS son **web** → requieren **redeploy a Vercel** (no rebuild). Ambos deben
+> estar para que se vea bien.
+
+> **Pendiente menor (color de íconos):** el contraste de los íconos de la barra (claros vs oscuros)
+> es global. Para ajustarlo por pantalla (feed oscuro → íconos blancos; superficies claras → íconos
+> oscuros) se puede llamar `StatusBar.setStyle()` (`@capacitor/status-bar`, sigue funcionando en
+> Android 16) desde un componente cliente por ruta. No bloquea.
+
+---
+
 ## 6. Deep links (compartir fichas `/places/[slug]`)
 
 La app ya genera enlaces compartibles. Para que abran la app nativa:

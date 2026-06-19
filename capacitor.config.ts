@@ -31,6 +31,13 @@ const config: CapacitorConfig = {
       backgroundColor: '#ffffff',
       showSpinner: false,
     },
+    // Android 16 fuerza edge-to-edge: el contenido se dibuja bajo la barra de estado y
+    // `env(safe-area-inset-top)` queda en 0. SystemBars (core de Capacitor 8) con
+    // insetsHandling 'css' inyecta las variables CSS --safe-area-inset-* con el valor real.
+    // La web las consume vía var(--sat) / var(--sab). Ver docs/13.
+    SystemBars: {
+      insetsHandling: 'css',
+    },
   },
 }
 
