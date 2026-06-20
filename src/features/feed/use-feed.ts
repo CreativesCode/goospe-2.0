@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getPosition, type GeoSource } from '@/lib/geo'
+import { resolveCoverage } from '@/features/coverage/services/coverage'
 import { useFavorites } from '@/hooks/useFavorites'
 import { track } from '@/lib/track'
 import { toast } from '@/shared/components/toast'
@@ -72,6 +73,9 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
   const [loading, setLoading] = useState(!initial)
   const [error, setError] = useState<string | null>(null)
   const [geoSource, setGeoSource] = useState<GeoSource>('forced')
+  // Cobertura: 'pending' hasta resolver; 'uncovered' bloquea el feed (pantalla "pronto").
+  const [coverage, setCoverage] = useState<'pending' | 'covered' | 'uncovered'>('pending')
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const { isSaved, toggle } = useFavorites()
   const supabase = useMemo(() => createClient(), [])
   const dismissed = useRef<Set<string>>(new Set())
@@ -99,8 +103,23 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
   const loadPosition = useCallback((opts?: { background?: boolean }) => {
     if (!opts?.background) setLoading(true)
     setError(null) // limpia un error previo al reintentar
-    getPosition().then((pos) => {
+    getPosition().then(async (pos) => {
       setGeoSource(pos.source)
+      setCoords({ lat: pos.lat, lng: pos.lng })
+      // Gate de cobertura: si la posición real cae fuera de toda ciudad activa, no cargamos
+      // el feed → feed-client muestra <OutOfCoverageScreen>. Un error de red NO bloquea.
+      let covered = true
+      try {
+        covered = (await resolveCoverage(pos.lat, pos.lng)) !== null
+      } catch {
+        covered = true
+      }
+      if (!covered) {
+        setCoverage('uncovered')
+        setLoading(false)
+        return
+      }
+      setCoverage('covered')
       fetchFeed(pos.lat, pos.lng)
     })
   }, [fetchFeed])
@@ -163,7 +182,7 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
 
   return {
     items, events, feedList, loading, error,
-    geoSource, retryLocation,
+    geoSource, retryLocation, coverage, coords,
     isSaved, onSave, onDismiss, onShare, onDirections,
     location: LOCATION_LABEL, whenLabel,
   }

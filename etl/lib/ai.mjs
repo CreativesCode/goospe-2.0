@@ -40,8 +40,11 @@ const ENRICH_SCHEMA = {
   },
 }
 
-const SYSTEM = `Eres el editor de contenido de Goospe, una app chilena que sugiere dónde salir a comer, tomar café o beber.
-Escribes fichas breves y atractivas para lugares de Puerto Varas (Región de Los Lagos, Chile), en español rioplatense-neutro chileno.
+// Prompt parametrizado por zona: la ciudad/región/país vienen del lugar (cargador multi-ciudad).
+function buildSystem({ city, region, country } = {}) {
+  const loc = [city, region, country].filter(Boolean).join(', ') || 'su ciudad'
+  return `Eres el editor de contenido de Goospe, una app que sugiere dónde salir a comer, tomar café o beber.
+Escribes fichas breves y atractivas para lugares de ${loc}, en español neutro latinoamericano.
 REGLAS DURAS:
 - NO inventes datos factuales: nada de horarios, teléfonos, precios exactos, platos del menú, premios, años de fundación ni reseñas.
 - Escribe sobre el TIPO de lugar y su ambiente probable según su categoría y nombre. Si no sabes algo, no lo afirmes.
@@ -49,6 +52,7 @@ REGLAS DURAS:
 - price_level: estima con cautela por el tipo de local; si no hay señal, devuelve null.
 - vibe_line: una sola línea evocadora para una card (ej: "Café tranquilo con vista al lago").
 - tags: ambiente/ocasión (ej: "casual", "para grupos", "romántico", "al aire libre"), en minúscula, sin '#'.`
+}
 
 export function createAI(env) {
   const key = env.OPENAI_API_KEY
@@ -70,7 +74,7 @@ export function createAI(env) {
     return res.json()
   }
 
-  // place: { name, category, city, address, tags }
+  // place: { name, category, city, region, country, address, tags }
   async function enrichText(place) {
     const ctx = [
       `Nombre: ${place.name}`,
@@ -84,7 +88,7 @@ export function createAI(env) {
       model: textModel,
       temperature: 0.7,
       messages: [
-        { role: 'system', content: SYSTEM },
+        { role: 'system', content: buildSystem({ city: place.city, region: place.region, country: place.country }) },
         { role: 'user', content: `Genera la ficha para este lugar:\n${ctx}` },
       ],
       response_format: { type: 'json_schema', json_schema: ENRICH_SCHEMA },

@@ -4,8 +4,15 @@ import { Smartphone, Sparkles, Calendar, Compass } from 'lucide-react'
 import { ThemeToggle } from '@/shared/components/theme-toggle'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-// ISR: la landing solo muestra un conteo de lugares; se regenera cada hora.
+// ISR: la landing muestra conteo de lugares y ciudades activas; se regenera cada hora.
 export const revalidate = 3600
+
+// "A", "A y B", "A, B y C" — para listar las ciudades cubiertas en prosa.
+function formatCityList(names: string[]): string {
+  if (names.length === 0) return 'tu ciudad'
+  if (names.length === 1) return names[0]
+  return `${names.slice(0, -1).join(', ')} y ${names[names.length - 1]}`
+}
 
 export const metadata: Metadata = {
   title: 'Goospe — ¿dónde voy hoy? Lugares y eventos en Puerto Varas',
@@ -28,7 +35,12 @@ const CONCIERGE_PICKS = [
 
 export default async function Landing() {
   const sb = createAdminClient()
-  const { count } = await sb.from('places').select('*', { count: 'exact', head: true }).eq('is_published', true)
+  const [{ count }, { data: cityRows }] = await Promise.all([
+    sb.from('places').select('*', { count: 'exact', head: true }).eq('is_published', true),
+    sb.from('cities').select('name').eq('is_active', true).order('name'),
+  ])
+  const cities = (cityRows ?? []).map((c) => c.name as string)
+  const citiesLabel = formatCityList(cities)
 
   return (
     <main className="min-h-[100dvh] bg-surface">
@@ -52,7 +64,7 @@ export default async function Landing() {
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-white/90 sm:text-xl">
             Dinos con quién estás y cuánto quieres gastar. Te decimos dónde ir en
-            Puerto Varas — decidido en 30 segundos.
+            {' '}{citiesLabel} — decidido en 30 segundos.
           </p>
 
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -64,8 +76,20 @@ export default async function Landing() {
             </Link>
           </div>
 
-          {typeof count === 'number' && (
-            <p className="mt-6 text-sm text-white/80">{count} lugares de Puerto Varas ya en Goospe</p>
+          {cities.length > 0 && (
+            <div className="mt-7">
+              <p className="text-sm text-white/80">
+                {typeof count === 'number' ? `${count} lugares` : 'Lugares'} en {citiesLabel} ya en Goospe
+              </p>
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                {cities.map((name) => (
+                  <span key={name} className="rounded-full bg-white/15 px-3.5 py-1 text-sm font-medium text-white ring-1 ring-white/25 backdrop-blur">
+                    {name}
+                  </span>
+                ))}
+                <span className="rounded-full px-3.5 py-1 text-sm text-white/75">y seguimos creciendo 🌎</span>
+              </div>
+            </div>
           )}
         </section>
 
@@ -142,7 +166,7 @@ export default async function Landing() {
       <section className="px-5 py-16 text-center">
         <Compass size={28} strokeWidth={1.5} className="mx-auto text-goospe-green" />
         <h2 className="mt-4 text-2xl font-light tracking-tight text-fg sm:text-3xl">
-          ¿Tienes un negocio en Puerto Varas?
+          ¿Tienes un negocio local?
         </h2>
         <p className="mx-auto mt-2 max-w-md text-fg-soft">
           Reclama tu ficha, sube tu carta y destácate en el feed. Gratis durante el piloto.
@@ -157,7 +181,7 @@ export default async function Landing() {
 
       <footer className="border-t border-line px-5 py-6 text-sm text-muted">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
-          <span>Goospe · Puerto Varas, Chile</span>
+          <span>Goospe · {citiesLabel}</span>
           <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
             <Link href="/terminos" className="transition hover:text-fg">Términos</Link>
             <Link href="/privacidad" className="transition hover:text-fg">Privacidad</Link>

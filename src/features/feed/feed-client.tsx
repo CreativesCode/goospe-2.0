@@ -6,6 +6,7 @@ import { useBreakpoint } from '@/features/feed/use-breakpoint'
 import { FeedMobile } from '@/features/feed/feed-mobile'
 import { FeedTablet } from '@/features/feed/feed-tablet'
 import { FeedDesktop } from '@/features/feed/feed-desktop'
+import { OutOfCoverageScreen } from '@/features/coverage/components/OutOfCoverageScreen'
 import { Loader } from '@/shared/components/loader'
 import type { FeedEvent } from '@/features/events/EventFeedCard'
 
@@ -18,6 +19,11 @@ import type { FeedEvent } from '@/features/events/EventFeedCard'
 export function FeedClient({ initial }: { initial: { items: FeedItem[]; events: FeedEvent[] } | null }) {
   const feed = useFeed(initial)
   const bp = useBreakpoint()
+
+  // Gate de cobertura (prioridad máxima): fuera de toda ciudad activa → pantalla "pronto".
+  if (feed.coverage === 'uncovered') {
+    return <OutOfCoverageScreen coords={feed.coords ?? undefined} />
+  }
 
   if (feed.loading || bp === null) {
     return (

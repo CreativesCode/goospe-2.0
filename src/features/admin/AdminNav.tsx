@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import {
-  LayoutDashboard, Store, Users, BadgeCheck, Sparkles, BarChart3, Image, MessageSquare,
+  LayoutDashboard, Store, Users, BadgeCheck, Sparkles, BarChart3, Image, MessageSquare, Globe,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -20,17 +21,27 @@ const ITEMS: Item[] = [
   { href: '/admin/content', label: 'Moderar contenido', icon: MessageSquare },
 ]
 
+// El cargador de zonas es local-only. El menú solo aparece en localhost (el gate real es
+// server-side en la ruta/acción). Se detecta tras montar para no romper la hidratación.
+const LOADER_ITEM: Item = { href: '/admin/loader', label: 'Cargador de zonas', icon: Globe }
+
 const active = (pathname: string, href: string) =>
   href === '/admin' ? pathname === '/admin' : pathname.startsWith(href)
 
 /** Navegación del backoffice: sidebar en `lg:`, tabs con scroll horizontal en móvil. */
 export function AdminNav() {
   const pathname = usePathname()
+  const [isLocal, setIsLocal] = useState(false)
+  useEffect(() => {
+    setIsLocal(/^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)$/.test(window.location.hostname))
+  }, [])
+
+  const items = isLocal ? [...ITEMS, LOADER_ITEM] : ITEMS
 
   return (
     <nav className="mb-4 lg:mb-0 lg:w-56 lg:shrink-0">
       <ul className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0">
-        {ITEMS.map(({ href, label, icon: Icon }) => {
+        {items.map(({ href, label, icon: Icon }) => {
           const on = active(pathname, href)
           return (
             <li key={href} className="shrink-0">

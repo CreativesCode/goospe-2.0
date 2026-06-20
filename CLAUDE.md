@@ -72,6 +72,9 @@ Usuario dice algo
     ├── "Optimiza este skill / mejora el skill / autoresearch"
     |       → Ejecutar skill AUTORESEARCH (loop autonomo de mejora)
     |
+    ├── "Carga una ciudad / agrega una zona / expandir a [lugar]"
+    |       → Ejecutar skill LOAD-ZONE (OSM+IA+fotos → activa la ciudad; LOCAL-ONLY, gasta)
+    |
     └── No encaja en nada
             → Usar tu juicio. Leer el codebase, entender patrones, ejecutar.
 ```
@@ -100,6 +103,7 @@ Usuario dice algo
 | 13 | `image-generation` | Generar y editar imagenes con OpenRouter + Gemini |
 | 14 | `autoresearch` | Auto-optimizar skills con loop autonomo (patron Karpathy) |
 | 15 | `skill-creator` | Crear nuevos skills para extender la fabrica |
+| 16 | `load-zone` | Cargar una ciudad/zona nueva (OSM+IA+fotos) y activarla. LOCAL-ONLY, gasta |
 
 ---
 

@@ -297,6 +297,7 @@ export type Database = {
         Row: {
           center: unknown
           country: string
+          coverage_radius_m: number
           created_at: string | null
           id: number
           is_active: boolean | null
@@ -308,6 +309,7 @@ export type Database = {
         Insert: {
           center: unknown
           country: string
+          coverage_radius_m?: number
           created_at?: string | null
           id?: never
           is_active?: boolean | null
@@ -319,6 +321,7 @@ export type Database = {
         Update: {
           center?: unknown
           country?: string
+          coverage_radius_m?: number
           created_at?: string | null
           id?: never
           is_active?: boolean | null
@@ -938,6 +941,68 @@ export type Database = {
           },
         ]
       }
+      region_jobs: {
+        Row: {
+          bbox: Json | null
+          city_id: number | null
+          city_name: string | null
+          counts: Json
+          country: string | null
+          created_at: string
+          created_by: string | null
+          error: string | null
+          id: string
+          log: Json
+          progress: number
+          region: string | null
+          stage: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          bbox?: Json | null
+          city_id?: number | null
+          city_name?: string | null
+          counts?: Json
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          log?: Json
+          progress?: number
+          region?: string | null
+          stage?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          bbox?: Json | null
+          city_id?: number | null
+          city_name?: string | null
+          counts?: Json
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          log?: Json
+          progress?: number
+          region?: string | null
+          stage?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "region_jobs_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           body: string | null
@@ -1041,11 +1106,91 @@ export type Database = {
         }
         Relationships: []
       }
+      waitlist: {
+        Row: {
+          created_at: string
+          detected_label: string | null
+          email: string
+          id: string
+          lat: number | null
+          lng: number | null
+        }
+        Insert: {
+          created_at?: string
+          detected_label?: string | null
+          email: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+        }
+        Update: {
+          created_at?: string
+          detected_label?: string | null
+          email?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_ai_usage_breakdown: {
+        Args: { p_days?: number }
+        Returns: {
+          dimension: string
+          key: string
+          n: number
+          tok: number
+          usd: number
+        }[]
+      }
+      admin_ai_usage_daily: {
+        Args: { p_days?: number }
+        Returns: {
+          day: string
+          usd: number
+        }[]
+      }
+      admin_ai_usage_summary: {
+        Args: never
+        Returns: {
+          calls: number
+          scope: string
+          tokens: number
+          usd: number
+        }[]
+      }
+      admin_ai_usage_totals: {
+        Args: { p_days?: number }
+        Returns: {
+          n: number
+          tok_cached: number
+          tok_in: number
+          tok_out: number
+          usd: number
+        }[]
+      }
+      admin_interaction_counts: {
+        Args: never
+        Returns: {
+          d30: number
+          d7: number
+          kind: string
+          total: number
+        }[]
+      }
+      admin_interaction_daily: {
+        Args: { p_days?: number }
+        Returns: {
+          day: string
+          n: number
+        }[]
+      }
+      admin_places_with_photo: { Args: never; Returns: number }
       admin_save_place: {
         Args: {
           p_category_ids: number[]
@@ -1066,6 +1211,25 @@ export type Database = {
           p_whatsapp: string
         }
         Returns: string
+      }
+      admin_top_places: {
+        Args: { p_limit?: number; p_value_only?: boolean }
+        Returns: {
+          id: string
+          n: number
+          name: string
+          slug: string
+        }[]
+      }
+      admin_user_activity: {
+        Args: never
+        Returns: {
+          businesses: number
+          favorites: number
+          reviews: number
+          rsvps: number
+          user_id: string
+        }[]
       }
       enqueue_event_reminders: { Args: never; Returns: undefined }
       get_feed: {
@@ -1150,6 +1314,7 @@ export type Database = {
           vibe_line: string
         }[]
       }
+      ping: { Args: never; Returns: string }
       place_metrics: {
         Args: { p_days?: number; p_place_id: string }
         Returns: {
@@ -1167,6 +1332,15 @@ export type Database = {
       }
       recompute_place_stats: { Args: { p_place: string }; Returns: undefined }
       recompute_trending: { Args: never; Returns: undefined }
+      resolve_coverage: {
+        Args: { p_lat: number; p_lng: number }
+        Returns: {
+          city_id: number
+          distance_m: number
+          name: string
+          slug: string
+        }[]
+      }
       search_places: {
         Args: {
           p_category?: number
