@@ -210,45 +210,49 @@ export function FeedMobile({ feed }: { feed: FeedController }) {
 
   return (
     <main ref={containerRef} className="h-[100dvh] snap-y snap-mandatory overflow-y-scroll bg-[#121311]">
-      {/* fila 1: logo + "Para ti · hora"  |  controles (overlay oscuro → tokens dark) */}
-      <div className="fixed inset-x-4 top-[calc(1rem+var(--sat))] z-20 flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2.5 text-white drop-shadow">
-          <Link href="/places" className="shrink-0">
-            <img src="/brand/logo-white.svg" alt="Goospe" className="h-6" />
+      {/* Header overlay: fila 1 (logo + controles) y fila 2 (ubicación + atajos) apiladas en
+          una columna fija. El gap garantiza que la fila 2 quede SIEMPRE bajo la fila 1 (sin
+          offsets fijos que colisionen). pointer-events-none deja pasar el scroll del feed;
+          solo los elementos interactivos reciben pointer-events-auto. */}
+      <div className="pointer-events-none fixed inset-x-4 top-[calc(1rem+var(--sat))] z-20 flex flex-col gap-2">
+        {/* fila 1 (overlay oscuro → tokens dark) */}
+        <div className="flex items-center justify-between gap-3">
+          <Link href="/places" className="pointer-events-auto flex min-w-0 items-center gap-2.5 text-white drop-shadow">
+            <img src="/brand/logo-white.svg" alt="Goospe" className="h-6 shrink-0" />
+            <span className="text-base font-light">Para ti</span>
+            {whenLabel && <span className="hidden text-xs text-white/55 min-[380px]:inline">· {whenLabel}</span>}
           </Link>
-          <span className="text-base font-light">Para ti</span>
-          {whenLabel && <span className="hidden text-xs text-white/55 min-[380px]:inline">· {whenLabel}</span>}
+          <div className="dark pointer-events-auto flex shrink-0 items-center gap-2">
+            <ThemeToggle />
+            <Notifications />
+            <AccountMenu />
+          </div>
         </div>
-        <div className="dark flex shrink-0 items-center gap-2">
-          <ThemeToggle />
-          <Notifications />
-          <AccountMenu />
-        </div>
-      </div>
 
-      {/* fila 2: ubicación + atajos Eventos / Buscar */}
-      <div className="fixed left-4 top-[calc(3.5rem+var(--sat))] z-20 flex flex-wrap items-center gap-2">
-        {geoSource === 'fallback' ? (
-          // Ubicación real no disponible → las distancias son desde el centro de la ciudad.
-          // Chip accionable: toca para reintentar el permiso.
-          <button
-            onClick={retryLocation}
-            className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/20 px-3 py-1 text-xs font-medium text-white ring-1 ring-amber-300/40 backdrop-blur transition hover:bg-amber-400/30"
-          >
-            <MapPin size={13} strokeWidth={2} className="text-amber-300" /> {location}
-            <RefreshCw size={11} strokeWidth={2.5} className="text-amber-200" />
-          </button>
-        ) : (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white ring-1 ring-white/15 backdrop-blur">
-            <MapPin size={13} strokeWidth={2} className="text-goospe-green-light" /> {location}
-          </span>
-        )}
-        <Link href="/eventos" className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur transition hover:bg-white/25">
-          <Calendar size={13} strokeWidth={2} /> Eventos
-        </Link>
-        <Link href="/buscar" className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur transition hover:bg-white/25">
-          <Search size={13} strokeWidth={2} /> Buscar
-        </Link>
+        {/* fila 2: ubicación + atajos Eventos / Buscar */}
+        <div className="flex flex-wrap items-center gap-2">
+          {geoSource === 'fallback' ? (
+            // Ubicación real no disponible → las distancias son desde el centro de la ciudad.
+            // Chip accionable: toca para reintentar el permiso.
+            <button
+              onClick={retryLocation}
+              className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-amber-400/20 px-3 py-1 text-xs font-medium text-white ring-1 ring-amber-300/40 backdrop-blur transition hover:bg-amber-400/30"
+            >
+              <MapPin size={13} strokeWidth={2} className="text-amber-300" /> {location}
+              <RefreshCw size={11} strokeWidth={2.5} className="text-amber-200" />
+            </button>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white ring-1 ring-white/15 backdrop-blur">
+              <MapPin size={13} strokeWidth={2} className="text-goospe-green-light" /> {location}
+            </span>
+          )}
+          <Link href="/eventos" className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur transition hover:bg-white/25">
+            <Calendar size={13} strokeWidth={2} /> Eventos
+          </Link>
+          <Link href="/buscar" className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur transition hover:bg-white/25">
+            <Search size={13} strokeWidth={2} /> Buscar
+          </Link>
+        </div>
       </div>
 
       {/* conserje (FAB) */}
