@@ -60,8 +60,9 @@ const FeedCardMobile = memo(function FeedCardMobile({
       {/* overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/30" />
 
-      {/* pills superiores: categoría + destacado */}
-      <div className="absolute left-4 right-20 top-32 z-10 flex flex-wrap gap-2">
+      {/* pills superiores: categoría + destacado. El offset incluye var(--sat) para quedar
+          bajo el header flotante (que también baja con el safe-area en la app nativa). */}
+      <div className="absolute left-4 right-20 top-[calc(8rem+var(--sat))] z-10 flex flex-wrap gap-2">
         {p.category_name && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-black/30 px-3 py-1 text-xs font-medium text-white ring-1 ring-white/15 backdrop-blur">
             <Cat size={13} strokeWidth={2} /> {p.category_name}

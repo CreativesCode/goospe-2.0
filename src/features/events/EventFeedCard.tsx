@@ -74,8 +74,8 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/40" />
 
-      {/* etiquetas */}
-      <div className="absolute left-4 top-32 z-10 flex flex-col gap-2">
+      {/* etiquetas. top incluye var(--sat) para quedar bajo el header flotante del feed. */}
+      <div className="absolute left-4 top-[calc(8rem+var(--sat))] z-10 flex flex-col gap-2">
         <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white backdrop-blur"><Calendar size={13} strokeWidth={2} /> Evento</span>
         {ev.boosted && (
           <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-goospe-gradient px-3 py-1 text-xs font-semibold text-white shadow-lg ring-1 ring-white/40"><Sparkles size={13} strokeWidth={2} /> Destacado</span>
