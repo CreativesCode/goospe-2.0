@@ -14,7 +14,7 @@ type ProfileRow = { display_name: string | null; avatar_url: string | null; is_a
 export default async function PerfilPage() {
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
-  if (!user) redirect('/login?next=/perfil')
+  if (!user) redirect('/login?next=/profile')
 
   const [{ data: profileData }, favs, revs, rsvps] = await Promise.all([
     sb.from('profiles').select('display_name, avatar_url, is_admin, onboarding').eq('id', user.id).maybeSingle(),
@@ -34,12 +34,12 @@ export default async function PerfilPage() {
   const STATS: { label: string; value: number; icon: LucideIcon; href: string }[] = [
     { label: 'Guardados', value: favs.count ?? 0, icon: Heart, href: '/saved' },
     { label: 'Reseñas', value: revs.count ?? 0, icon: Star, href: '/feed' },
-    { label: 'Eventos', value: rsvps.count ?? 0, icon: Ticket, href: '/eventos' },
+    { label: 'Eventos', value: rsvps.count ?? 0, icon: Ticket, href: '/events' },
   ]
 
   const LINKS: { label: string; href: string; icon: LucideIcon }[] = [
     { label: 'Mis guardados', href: '/saved', icon: Heart },
-    { label: 'Eventos', href: '/eventos', icon: Calendar },
+    { label: 'Eventos', href: '/events', icon: Calendar },
     { label: 'Mis gustos', href: '/onboarding', icon: Sparkles },
     ...(isAdmin ? [{ label: 'Moderar contenido', href: '/admin/content', icon: ShieldCheck as LucideIcon }] : []),
   ]

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
-  LayoutDashboard, Store, Users, BadgeCheck, Sparkles, BarChart3, Image, MessageSquare, Globe,
+  LayoutDashboard, Store, Users, BadgeCheck, Sparkles, BarChart3, Image, MessageSquare, Globe, MapPin,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -17,6 +17,7 @@ const ITEMS: Item[] = [
   { href: '/admin/claims', label: 'Reclamos', icon: BadgeCheck },
   { href: '/admin/ai-costs', label: 'Gastos IA', icon: Sparkles },
   { href: '/admin/stats', label: 'Estadísticas', icon: BarChart3 },
+  { href: '/admin/zones', label: 'Zonas sin cobertura', icon: MapPin },
   { href: '/admin/photos', label: 'Moderar fotos', icon: Image },
   { href: '/admin/content', label: 'Moderar contenido', icon: MessageSquare },
 ]

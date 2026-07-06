@@ -41,6 +41,6 @@ export async function setEventStatus(formData: FormData) {
   const { error } = await admin.from('events').update({ status } as never).eq('id', id)
   if (error) return { error: error.message }
   revalidatePath('/admin/content')
-  revalidatePath('/eventos')
+  revalidatePath('/events')
   return { success: true }
 }

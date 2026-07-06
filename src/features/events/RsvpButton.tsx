@@ -28,7 +28,7 @@ export function RsvpButton({ eventId }: { eventId: string }) {
   }, [eventId])
 
   async function onClick() {
-    if (authed === false) { window.location.href = '/login?next=/eventos'; return }
+    if (authed === false) { window.location.href = '/login?next=/events'; return }
     setBusy(true)
     const fd = new FormData()
     fd.set('event_id', eventId)

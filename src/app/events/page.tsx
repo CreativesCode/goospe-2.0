@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   title: 'Eventos en Puerto Varas | Goospe',
   description:
     'Qué hacer esta semana en Puerto Varas: conciertos, ferias y panoramas cerca de ti. Confirma tu asistencia con un toque.',
-  alternates: { canonical: '/eventos' },
+  alternates: { canonical: '/events' },
 }
 
 const fmt = (s: string) =>

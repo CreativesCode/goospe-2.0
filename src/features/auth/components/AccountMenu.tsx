@@ -79,10 +79,10 @@ export function AccountMenu() {
             <p className="truncate text-sm font-medium text-fg">{label}</p>
             <p className="truncate text-xs text-muted">{user.email}</p>
           </div>
-          <Item href="/perfil" icon={User}>Mi perfil</Item>
+          <Item href="/profile" icon={User}>Mi perfil</Item>
           <Item href="/saved" icon={Heart}>Mis guardados</Item>
           <Item href="/panel" icon={Store}>Panel de negocio</Item>
-          <Item href="/eventos" icon={Calendar}>Eventos</Item>
+          <Item href="/events" icon={Calendar}>Eventos</Item>
           <Item href="/onboarding" icon={Sparkles}>Mis gustos</Item>
           {profile?.is_admin && (
             <Link

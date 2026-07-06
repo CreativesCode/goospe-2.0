@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getPosition, type GeoSource } from '@/lib/geo'
 import { resolveCoverage } from '@/features/coverage/services/coverage'
+import { logCoverageRequest } from '@/actions/coverage-request'
 import { useFavorites } from '@/hooks/useFavorites'
 import { track } from '@/lib/track'
 import { toast } from '@/shared/components/toast'
@@ -40,6 +41,27 @@ export const directionsHref = (lat: number, lng: number) =>
 const LOCATION_LABEL = 'Puerto Varas'
 
 const DISMISSED_KEY = 'goospe:dismissed'
+const ZONE_LOGGED_KEY = 'goospe:zone-logged'
+
+// Registra (una sola vez por zona y navegador) una apertura fuera de cobertura, para que el panel
+// admin sepa desde dónde abren la app zonas aún no cubiertas. Best-effort: cualquier fallo se ignora.
+function logUncoveredZone(lat: number, lng: number) {
+  try {
+    const key = `${lat.toFixed(2)},${lng.toFixed(2)}` // ~1 km: no repetir por micro-movimientos
+    const seen = new Set<string>(JSON.parse(localStorage.getItem(ZONE_LOGGED_KEY) ?? '[]'))
+    if (seen.has(key)) return
+    seen.add(key)
+    localStorage.setItem(ZONE_LOGGED_KEY, JSON.stringify([...seen]))
+    void logCoverageRequest({
+      lat,
+      lng,
+      tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      locale: navigator.language,
+    })
+  } catch {
+    // sin acceso a localStorage / server action caída → no pasa nada
+  }
+}
 const loadDismissed = (): Set<string> => {
   if (typeof window === 'undefined') return new Set()
   try { return new Set(JSON.parse(localStorage.getItem(DISMISSED_KEY) ?? '[]')) } catch { return new Set() }
@@ -75,6 +97,8 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
   const [geoSource, setGeoSource] = useState<GeoSource>('forced')
   // Cobertura: 'pending' hasta resolver; 'uncovered' bloquea el feed (pantalla "pronto").
   const [coverage, setCoverage] = useState<'pending' | 'covered' | 'uncovered'>('pending')
+  // Dentro de cobertura pero el feed volvió sin lugares NI eventos → feed-client muestra <ComingSoonScreen>.
+  const [emptyZone, setEmptyZone] = useState(false)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const { isSaved, toggle } = useFavorites()
   const supabase = useMemo(() => createClient(), [])
@@ -88,9 +112,14 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
       supabase.rpc('get_feed', { p_lat: lat, p_lng: lng, p_radius_m: 25000, p_limit: 40, p_offset: 0 } as never),
       supabase.rpc('get_feed_events', { p_lat: lat, p_lng: lng, p_radius_m: 25000, p_limit: 8 } as never),
     ])
+    const placeRows = (places.data ?? []) as FeedItem[]
+    const eventRows = (evs.data ?? []) as FeedEvent[]
     if (places.error) setError(places.error.message)
-    else setItems(((places.data ?? []) as FeedItem[]).filter((p) => !dismissed.current.has(p.id)))
-    setEvents((evs.data ?? []) as FeedEvent[])
+    else setItems(placeRows.filter((p) => !dismissed.current.has(p.id)))
+    setEvents(eventRows)
+    // Zona activa pero sin datos: se mide sobre las filas crudas (no lo descartado) para no
+    // confundir "zona vacía" con "ya viste todo".
+    setEmptyZone(!places.error && placeRows.length === 0 && eventRows.length === 0)
     setLoading(false)
   }, [supabase])
 
@@ -100,12 +129,20 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
   // Resuelve ubicación → carga feed. Reutilizable como "reintentar" si el usuario
   // activa el permiso después de haber caído al fallback de Puerto Varas. Con `background`
   // (refine sobre un seed SSR) no muestra el loader: el contenido ya está en pantalla.
-  const loadPosition = useCallback((opts?: { background?: boolean }) => {
+  const loadPosition = useCallback((opts?: { background?: boolean; allowFallback?: boolean }) => {
     if (!opts?.background) setLoading(true)
     setError(null) // limpia un error previo al reintentar
+    setEmptyZone(false) // limpia el estado "zona vacía" al reintentar
     getPosition().then(async (pos) => {
       setGeoSource(pos.source)
       setCoords({ lat: pos.lat, lng: pos.lng })
+      // Sin ubicación real (permiso denegado / timeout / sin soporte) NO mostramos Puerto Varas a
+      // ciegas: feed-client renderiza <LocationNeededScreen> pidiendo activar la ubicación.
+      // `allowFallback` (botón "explorar de todos modos") salta el gate y usa el centro de la ciudad.
+      if (pos.source === 'fallback' && !opts?.allowFallback) {
+        setLoading(false)
+        return
+      }
       // Gate de cobertura: si la posición real cae fuera de toda ciudad activa, no cargamos
       // el feed → feed-client muestra <OutOfCoverageScreen>. Un error de red NO bloquea.
       let covered = true
@@ -117,6 +154,8 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
       if (!covered) {
         setCoverage('uncovered')
         setLoading(false)
+        // Solo con GPS real: registramos la zona de demanda (el fallback no tiene ubicación fiable).
+        if (pos.source === 'gps') logUncoveredZone(pos.lat, pos.lng)
         return
       }
       setCoverage('covered')
@@ -126,6 +165,8 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
 
   // Reintento manual (botón/onClick): foreground, sin args → evita pasar el MouseEvent como opts.
   const retryLocation = useCallback(() => loadPosition(), [loadPosition])
+  // "Explorar de todos modos": el usuario decide continuar sin ubicación real (centro de la ciudad).
+  const continueWithFallback = useCallback(() => loadPosition({ allowFallback: true }), [loadPosition])
 
   useEffect(() => {
     dismissed.current = loadDismissed()
@@ -182,7 +223,7 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
 
   return {
     items, events, feedList, loading, error,
-    geoSource, retryLocation, coverage, coords,
+    geoSource, retryLocation, continueWithFallback, coverage, emptyZone, coords,
     isSaved, onSave, onDismiss, onShare, onDirections,
     location: LOCATION_LABEL, whenLabel,
   }

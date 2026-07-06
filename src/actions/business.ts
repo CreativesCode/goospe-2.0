@@ -34,7 +34,7 @@ async function assertMembership(admin: ReturnType<typeof createAdminClient>, use
 // linkea el place y registra el claim como aprobado. Sin revisión manual por ahora.
 export async function claimPlace(formData: FormData) {
   const placeId = formData.get('place_id') as string
-  if (!placeId) redirect('/panel/reclamar?error=Falta+el+lugar')
+  if (!placeId) redirect('/panel/claim?error=Falta+el+lugar')
   const user = await requireUser()
   const admin = createAdminClient()
 
@@ -44,15 +44,15 @@ export async function claimPlace(formData: FormData) {
     .eq('id', placeId)
     .single()
   const p = place as { id: string; name: string; claimed: boolean; business_id: string | null } | null
-  if (!p) redirect('/panel/reclamar?error=Lugar+no+encontrado')
-  if (p!.claimed || p!.business_id) redirect('/panel/reclamar?error=Este+lugar+ya+fue+reclamado')
+  if (!p) redirect('/panel/claim?error=Lugar+no+encontrado')
+  if (p!.claimed || p!.business_id) redirect('/panel/claim?error=Este+lugar+ya+fue+reclamado')
 
   const { data: biz, error: bizErr } = await admin
     .from('businesses')
     .insert({ name: p!.name } as never)
     .select('id')
     .single()
-  if (bizErr || !biz) redirect('/panel/reclamar?error=No+se+pudo+crear+el+negocio')
+  if (bizErr || !biz) redirect('/panel/claim?error=No+se+pudo+crear+el+negocio')
   const businessId = (biz as { id: string }).id
 
   await admin

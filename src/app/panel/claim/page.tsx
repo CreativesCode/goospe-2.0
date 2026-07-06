@@ -23,7 +23,7 @@ export default async function ReclamarPage({
 }) {
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
-  if (!user) redirect('/login?next=/panel/reclamar')
+  if (!user) redirect('/login?next=/panel/claim')
 
   const sp = await searchParams
   const q = (sp.q ?? '').trim()

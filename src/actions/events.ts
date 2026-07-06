@@ -41,7 +41,7 @@ export async function createEvent(formData: FormData) {
   if (error) return { error: error.message }
 
   revalidatePath(`/panel/${placeId}`)
-  revalidatePath('/eventos')
+  revalidatePath('/events')
   return { success: true }
 }
 
@@ -58,7 +58,7 @@ export async function deleteEvent(formData: FormData) {
   const { error } = await admin.from('events').delete().eq('id', eventId).eq('place_id', placeId)
   if (error) return { error: error.message }
   revalidatePath(`/panel/${placeId}`)
-  revalidatePath('/eventos')
+  revalidatePath('/events')
   return { success: true }
 }
 
@@ -80,7 +80,7 @@ export async function toggleRsvp(formData: FormData) {
   if (existing) {
     const { error } = await sb.from('event_rsvps').delete().eq('user_id', user.id).eq('event_id', eventId)
     if (error) return { error: error.message }
-    revalidatePath('/eventos')
+    revalidatePath('/events')
     return { success: true, going: false }
   }
 
@@ -88,6 +88,6 @@ export async function toggleRsvp(formData: FormData) {
     .from('event_rsvps')
     .insert({ user_id: user.id, event_id: eventId, status } as never)
   if (error) return { error: error.message }
-  revalidatePath('/eventos')
+  revalidatePath('/events')
   return { success: true, going: true }
 }

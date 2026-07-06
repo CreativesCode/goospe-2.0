@@ -13,8 +13,8 @@ type NavLink = { href: string; label: string; icon: LucideIcon }
 // Enlaces del navbar superior (tablet/web).
 const TOP_LINKS: NavLink[] = [
   { href: '/feed', label: 'Feed', icon: Smartphone },
-  { href: '/buscar', label: 'Buscar', icon: Search },
-  { href: '/eventos', label: 'Eventos', icon: Calendar },
+  { href: '/search', label: 'Buscar', icon: Search },
+  { href: '/events', label: 'Eventos', icon: Calendar },
   { href: '/saved', label: 'Guardados', icon: Heart },
   { href: '/concierge', label: 'Decídeme', icon: Sparkles },
 ]
@@ -22,11 +22,11 @@ const TOP_LINKS: NavLink[] = [
 // Pestañas de la barra inferior (móvil). La última depende de la sesión.
 const BASE_TABS: NavLink[] = [
   { href: '/feed', label: 'Feed', icon: Smartphone },
-  { href: '/buscar', label: 'Buscar', icon: Search },
+  { href: '/search', label: 'Buscar', icon: Search },
   { href: '/concierge', label: 'Decídeme', icon: Sparkles },
-  { href: '/eventos', label: 'Eventos', icon: Calendar },
+  { href: '/events', label: 'Eventos', icon: Calendar },
 ]
-const PROFILE_TAB: NavLink = { href: '/perfil', label: 'Perfil', icon: User }
+const PROFILE_TAB: NavLink = { href: '/profile', label: 'Perfil', icon: User }
 const LOGIN_TAB: NavLink = { href: '/login', label: 'Entrar', icon: LogIn }
 
 const isActive = (pathname: string, href: string) =>

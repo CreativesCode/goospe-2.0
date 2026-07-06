@@ -5,7 +5,7 @@ import Link from 'next/link'
 export const metadata: Metadata = {
   title: 'Términos y Condiciones | Goospe',
   description: 'Términos y condiciones de uso de Goospe, el descubridor de lugares y eventos de Puerto Varas.',
-  alternates: { canonical: '/terminos' },
+  alternates: { canonical: '/terms' },
 }
 
 export default function TerminosPage() {
@@ -76,7 +76,7 @@ export default function TerminosPage() {
 
       <h2>9. Privacidad</h2>
       <p>
-        El tratamiento de tus datos personales se rige por nuestra <Link href="/privacidad">Política de Privacidad</Link>.
+        El tratamiento de tus datos personales se rige por nuestra <Link href="/privacy">Política de Privacidad</Link>.
       </p>
 
       <h2>10. Ley aplicable</h2>

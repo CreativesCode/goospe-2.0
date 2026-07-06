@@ -5,7 +5,7 @@ import Link from 'next/link'
 export const metadata: Metadata = {
   title: 'Política de Privacidad | Goospe',
   description: 'Cómo Goospe recopila, usa y protege tus datos personales conforme a la Ley N° 19.628 de Chile.',
-  alternates: { canonical: '/privacidad' },
+  alternates: { canonical: '/privacy' },
 }
 
 export default function PrivacidadPage() {
@@ -87,7 +87,7 @@ export default function PrivacidadPage() {
       <h2>11. Contacto</h2>
       <p>
         Para cualquier consulta sobre privacidad escríbenos a <a href="mailto:robert.cabrer92@gmail.com">robert.cabrer92@gmail.com</a>.
-        Consulta también nuestros <Link href="/terminos">Términos y Condiciones</Link>.
+        Consulta también nuestros <Link href="/terms">Términos y Condiciones</Link>.
       </p>
     </LegalPage>
   )

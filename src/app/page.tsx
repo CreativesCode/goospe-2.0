@@ -49,8 +49,8 @@ export default async function Landing() {
         <header className="mx-auto flex max-w-6xl items-center justify-between px-5 pb-5 pt-[calc(1.25rem+var(--sat))] lg:px-8">
           <img src="/brand/logo-white.svg" alt="Goospe" className="h-7" />
           <nav className="flex items-center gap-3 text-sm sm:gap-5">
-            <Link href="/eventos" className="hidden text-white/85 hover:text-white sm:inline">Eventos</Link>
-            <Link href="/buscar" className="hidden text-white/85 hover:text-white sm:inline">Buscar</Link>
+            <Link href="/events" className="hidden text-white/85 hover:text-white sm:inline">Eventos</Link>
+            <Link href="/search" className="hidden text-white/85 hover:text-white sm:inline">Buscar</Link>
             <span className="dark"><ThemeToggle /></span>
             <Link href="/login" className="rounded-full border border-white/25 bg-white/15 px-4 py-1.5 font-medium backdrop-blur hover:bg-white/25">
               Entrar
@@ -183,8 +183,8 @@ export default async function Landing() {
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
           <span>Goospe · {citiesLabel}</span>
           <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-            <Link href="/terminos" className="transition hover:text-fg">Términos</Link>
-            <Link href="/privacidad" className="transition hover:text-fg">Privacidad</Link>
+            <Link href="/terms" className="transition hover:text-fg">Términos</Link>
+            <Link href="/privacy" className="transition hover:text-fg">Privacidad</Link>
           </nav>
         </div>
       </footer>

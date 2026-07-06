@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { useFeed, type FeedItem } from '@/features/feed/use-feed'
 import { useBreakpoint } from '@/features/feed/use-breakpoint'
@@ -7,6 +8,8 @@ import { FeedMobile } from '@/features/feed/feed-mobile'
 import { FeedTablet } from '@/features/feed/feed-tablet'
 import { FeedDesktop } from '@/features/feed/feed-desktop'
 import { OutOfCoverageScreen } from '@/features/coverage/components/OutOfCoverageScreen'
+import { LocationNeededScreen } from '@/features/coverage/components/LocationNeededScreen'
+import { ComingSoonScreen } from '@/features/coverage/components/ComingSoonScreen'
 import { Loader } from '@/shared/components/loader'
 import type { FeedEvent } from '@/features/events/EventFeedCard'
 
@@ -19,8 +22,25 @@ import type { FeedEvent } from '@/features/events/EventFeedCard'
 export function FeedClient({ initial }: { initial: { items: FeedItem[]; events: FeedEvent[] } | null }) {
   const feed = useFeed(initial)
   const bp = useBreakpoint()
+  // El usuario eligió "explorar de todos modos" → no volver a mostrar el gate de ubicación.
+  const [skippedLocation, setSkippedLocation] = useState(false)
 
-  // Gate de cobertura (prioridad máxima): fuera de toda ciudad activa → pantalla "pronto".
+  // Gate de ubicación (máxima prioridad): sin ubicación real no mostramos Puerto Varas a ciegas,
+  // pedimos activarla. Al montar geoSource es 'forced' (seed SSR), así que no aparece hasta que
+  // la geolocalización real falle en segundo plano.
+  if (feed.geoSource === 'fallback' && !skippedLocation) {
+    return (
+      <LocationNeededScreen
+        onEnable={feed.retryLocation}
+        onContinue={() => {
+          setSkippedLocation(true)
+          feed.continueWithFallback()
+        }}
+      />
+    )
+  }
+
+  // Gate de cobertura: fuera de toda ciudad activa → pantalla "pronto".
   if (feed.coverage === 'uncovered') {
     return <OutOfCoverageScreen coords={feed.coords ?? undefined} />
   }
@@ -45,6 +65,11 @@ export function FeedClient({ initial }: { initial: { items: FeedItem[]; events: 
         </button>
       </div>
     )
+  }
+
+  // Dentro de cobertura pero el feed volvió vacío (zona activa aún sin datos) → "muy pronto".
+  if (feed.coverage === 'covered' && feed.emptyZone) {
+    return <ComingSoonScreen onRetry={feed.retryLocation} />
   }
 
   if (bp === 'desktop') return <FeedDesktop feed={feed} />

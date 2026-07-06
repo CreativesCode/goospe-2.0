@@ -1,12 +1,12 @@
 import Link from 'next/link'
 
 const FOOTER_LINKS = [
-  { href: '/buscar', label: 'Buscar' },
-  { href: '/eventos', label: 'Eventos' },
+  { href: '/search', label: 'Buscar' },
+  { href: '/events', label: 'Eventos' },
   { href: '/concierge', label: 'Decídeme' },
   { href: '/panel', label: '¿Tienes un negocio?' },
-  { href: '/terminos', label: 'Términos' },
-  { href: '/privacidad', label: 'Privacidad' },
+  { href: '/terms', label: 'Términos' },
+  { href: '/privacy', label: 'Privacidad' },
 ]
 
 /**

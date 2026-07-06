@@ -47,7 +47,7 @@ export default async function PanelPage() {
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-medium text-fg">Mis lugares</h1>
           <Link
-            href="/panel/reclamar"
+            href="/panel/claim"
             className="inline-flex items-center gap-1.5 rounded-full bg-goospe-gradient px-5 py-2 text-sm font-medium text-white shadow"
           >
             <Plus size={16} strokeWidth={2} /> Reclamar un lugar
@@ -64,7 +64,7 @@ export default async function PanelPage() {
               Reclama tu negocio en Puerto Varas para editar su ficha, fotos y datos de contacto.
             </p>
             <Link
-              href="/panel/reclamar"
+              href="/panel/claim"
               className="mt-2 rounded-full bg-goospe-gradient px-6 py-2.5 text-sm font-medium text-white shadow"
             >
               Reclamar mi negocio

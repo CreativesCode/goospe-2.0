@@ -16,9 +16,9 @@ const FORCED = {
 // De dónde salió la ubicación:
 // - 'forced'  : override de desarrollo (NEXT_PUBLIC_FORCE_LOCATION) → no avisar.
 // - 'gps'     : geolocalización real del navegador.
-// - 'fallback': el usuario negó el permiso / expiró / sin soporte → caemos a Puerto Varas.
-//   En este caso las distancias se miden desde el centro de la ciudad, no del usuario,
-//   así que la UI debe avisarlo (ver <LocationNotice />).
+// - 'fallback': no pudimos obtener la ubicación real (permiso denegado / timeout / sin soporte).
+//   Las coords devueltas son el centro de Puerto Varas SOLO como valor numérico neutro; la UI
+//   NO debe mostrar ese feed a ciegas: pide activar la ubicación (ver <LocationNeededScreen />).
 export type GeoSource = 'forced' | 'gps' | 'fallback'
 export type GeoResult = { lat: number; lng: number; source: GeoSource }
 
@@ -32,7 +32,10 @@ export function getPosition(): Promise<GeoResult> {
     navigator.geolocation.getCurrentPosition(
       (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, source: 'gps' }),
       () => resolve({ ...PUERTO_VARAS, source: 'fallback' }),
-      { timeout: 6000 }
+      // enableHighAccuracy: pide GPS real (no solo IP/wifi).
+      // timeout 12s: en móvil el primer fix suele tardar >6s → evita fallbacks falsos.
+      // maximumAge 60s: acepta un fix reciente en caché → respuesta instantánea y menos timeouts.
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
     )
   })
 }

@@ -247,10 +247,10 @@ export function FeedMobile({ feed }: { feed: FeedController }) {
               <MapPin size={13} strokeWidth={2} className="text-goospe-green-light" /> {location}
             </span>
           )}
-          <Link href="/eventos" className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur transition hover:bg-white/25">
+          <Link href="/events" className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur transition hover:bg-white/25">
             <Calendar size={13} strokeWidth={2} /> Eventos
           </Link>
-          <Link href="/buscar" className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur transition hover:bg-white/25">
+          <Link href="/search" className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur transition hover:bg-white/25">
             <Search size={13} strokeWidth={2} /> Buscar
           </Link>
         </div>
