@@ -9,7 +9,7 @@ import { AccountMenu } from '@/features/auth/components'
 import { EventFeedCard } from '@/features/events/EventFeedCard'
 import { Notifications } from '@/features/notifications/Notifications'
 import { track } from '@/lib/track'
-import { directionsHref, fmtDist, type FeedController, type FeedItem, type FeedRow } from './use-feed'
+import { directionsHref, fmtDistDrive, type FeedController, type FeedItem, type FeedRow } from './use-feed'
 
 const SCROLL_KEY = 'goospe:feed-scroll'
 
@@ -106,7 +106,7 @@ const FeedCardMobile = memo(function FeedCardMobile({
       {/* info — pr-20 deja espacio a las acciones laterales; pb-28 a la barra Decídeme */}
       <div className="text-shadow-photo absolute inset-x-0 bottom-0 z-10 space-y-2 p-5 pb-28 pr-20 text-white">
         <div className="flex items-center gap-2 text-sm text-white/80">
-          <span>{fmtDist(p.distance_m)}</span>
+          <span>{fmtDistDrive(p.distance_m)}</span>
           {p.rating > 0 && <><span>·</span><span className="inline-flex items-center gap-1"><Star size={13} strokeWidth={1.75} fill="currentColor" /> {Number(p.rating).toFixed(1)}</span></>}
           {p.price_level ? <><span>·</span><span>{'$'.repeat(p.price_level)}</span></> : null}
         </div>

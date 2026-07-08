@@ -33,11 +33,26 @@ export type FeedRow = { kind: 'place'; place: FeedItem } | { kind: 'event'; even
 
 export const fmtDist = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`)
 
+// Tiempo estimado SIN llamar a ninguna API de rutas: la distancia es en línea recta y las velocidades
+// efectivas ya absorben el rodeo de calles + tráfico. Cerca (≤600 m) mostramos "a pie" —ir en auto ahí
+// no tiene sentido en una ciudad—; más lejos, "en auto". Mínimo 1 min.
+const DRIVE_KMH = 28
+const WALK_KMH = 4.8
+const WALK_MAX_M = 600
+export const fmtEta = (m: number) => {
+  const walk = m <= WALK_MAX_M
+  const min = Math.max(1, Math.round((m / 1000 / (walk ? WALK_KMH : DRIVE_KMH)) * 60))
+  return `${min} min ${walk ? 'a pie' : 'en auto'}`
+}
+// Distancia + ETA, para la línea de info de cada card ("450 m · 6 min a pie" / "1,2 km · 4 min en auto").
+export const fmtDistDrive = (m: number) => `${fmtDist(m)} · ${fmtEta(m)}`
+
 /** Enlace a indicaciones en Google Maps para unas coordenadas. */
 export const directionsHref = (lat: number, lng: number) =>
   `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
 
-// Ciudad del piloto (ver memoria del proyecto). Mostrada en el context strip del feed.
+// Etiqueta por defecto del context strip: ciudad del piloto y del seed SSR. Solo se muestra hasta
+// que la cobertura resuelve la ciudad real de la ubicación del usuario (ver `cityName` más abajo).
 const LOCATION_LABEL = 'Puerto Varas'
 
 const DISMISSED_KEY = 'goospe:dismissed'
@@ -100,6 +115,9 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
   // Dentro de cobertura pero el feed volvió sin lugares NI eventos → feed-client muestra <ComingSoonScreen>.
   const [emptyZone, setEmptyZone] = useState(false)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
+  // Nombre de la ciudad activa que cubre la ubicación real (lo devuelve resolve_coverage). Reemplaza
+  // la etiqueta fija: alguien en otra ciudad ya NO ve "Puerto Varas" en el chip de ubicación.
+  const [cityName, setCityName] = useState<string | null>(null)
   const { isSaved, toggle } = useFavorites()
   const supabase = useMemo(() => createClient(), [])
   const dismissed = useRef<Set<string>>(new Set())
@@ -147,7 +165,9 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
       // el feed → feed-client muestra <OutOfCoverageScreen>. Un error de red NO bloquea.
       let covered = true
       try {
-        covered = (await resolveCoverage(pos.lat, pos.lng)) !== null
+        const city = await resolveCoverage(pos.lat, pos.lng)
+        covered = city !== null
+        if (city) setCityName(city.name) // rótulo real de la ciudad, no la constante del piloto
       } catch {
         covered = true
       }
@@ -225,6 +245,6 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
     items, events, feedList, loading, error,
     geoSource, retryLocation, continueWithFallback, coverage, emptyZone, coords,
     isSaved, onSave, onDismiss, onShare, onDirections,
-    location: LOCATION_LABEL, whenLabel,
+    location: cityName ?? LOCATION_LABEL, whenLabel,
   }
 }

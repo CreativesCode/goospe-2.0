@@ -8,7 +8,7 @@ import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
 import { LocationNotice } from '@/shared/components/location-notice'
 import { track } from '@/lib/track'
-import { fmtDist, type FeedController, type FeedItem } from './use-feed'
+import { fmtDistDrive, type FeedController, type FeedItem } from './use-feed'
 
 function Thumb({ p, className, priority }: { p: FeedItem; className?: string; priority?: boolean }) {
   const [imgError, setImgError] = useState(false)
@@ -57,7 +57,7 @@ const PlaceCard = memo(function PlaceCard({ p, saved, onSave }: { p: FeedItem; s
         <div className="truncate font-medium text-fg">{p.name}</div>
         {p.vibe_line && <div className="line-clamp-2 text-sm text-goospe-green">{p.vibe_line}</div>}
         <div className="pt-1 text-xs text-muted">
-          {p.price_level ? `${'$'.repeat(p.price_level)} · ` : ''}{fmtDist(p.distance_m)}
+          {p.price_level ? `${'$'.repeat(p.price_level)} · ` : ''}{fmtDistDrive(p.distance_m)}
         </div>
       </div>
     </Link>
@@ -148,7 +148,7 @@ export function FeedDesktop({ feed }: { feed: FeedController }) {
                 <div className="mt-2.5 flex items-center gap-2 text-sm text-white/85">
                   {featured.rating > 0 && <span className="inline-flex items-center gap-1"><Star size={14} strokeWidth={1.75} fill="currentColor" /> {Number(featured.rating).toFixed(1)}</span>}
                   {featured.price_level ? <><span className="opacity-50">·</span><span>{'$'.repeat(featured.price_level)}</span></> : null}
-                  <span className="opacity-50">·</span><span>{fmtDist(featured.distance_m)}</span>
+                  <span className="opacity-50">·</span><span>{fmtDistDrive(featured.distance_m)}</span>
                 </div>
               </div>
             </Link>

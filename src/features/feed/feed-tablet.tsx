@@ -6,7 +6,7 @@ import { Heart, Compass, Share2, Star, MapPin, RefreshCw } from 'lucide-react'
 import { categoryIcon } from '@/shared/lib/icons'
 import { AppNav } from '@/shared/components/app-nav'
 import { track } from '@/lib/track'
-import { directionsHref, fmtDist, type FeedController, type FeedItem } from './use-feed'
+import { directionsHref, fmtDistDrive, type FeedController, type FeedItem } from './use-feed'
 
 /** Miniatura de foto o gradiente de marca (fallback sin foto). */
 function Thumb({ p, className, priority }: { p: FeedItem; className?: string; priority?: boolean }) {
@@ -122,7 +122,7 @@ export function FeedTablet({ feed }: { feed: FeedController }) {
               <div className="mt-3 flex items-center gap-3 text-sm text-white/85">
                 {hero.rating > 0 && <span className="inline-flex items-center gap-1"><Star size={15} strokeWidth={1.75} fill="currentColor" /> {Number(hero.rating).toFixed(1)}</span>}
                 {hero.price_level ? <><span className="opacity-50">·</span><span>{'$'.repeat(hero.price_level)}</span></> : null}
-                <span className="opacity-50">·</span><span>{fmtDist(hero.distance_m)}</span>
+                <span className="opacity-50">·</span><span>{fmtDistDrive(hero.distance_m)}</span>
               </div>
             </div>
           </Link>
@@ -166,7 +166,7 @@ export function FeedTablet({ feed }: { feed: FeedController }) {
                     <div className="truncate font-medium text-fg">{p.name}</div>
                     {p.vibe_line && <div className="truncate text-sm text-goospe-green">{p.vibe_line}</div>}
                     <div className="mt-0.5 text-xs text-muted">
-                      {p.price_level ? `${'$'.repeat(p.price_level)} · ` : ''}{fmtDist(p.distance_m)}
+                      {p.price_level ? `${'$'.repeat(p.price_level)} · ` : ''}{fmtDistDrive(p.distance_m)}
                     </div>
                   </div>
                 </button>
