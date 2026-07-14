@@ -35,7 +35,7 @@ async function searchPlace(place) {
     headers: {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': KEY,
-      'X-Goog-FieldMask': 'places.id,places.displayName,places.photos',
+      'X-Goog-FieldMask': 'places.id,places.displayName,places.photos,places.businessStatus',
     },
     body: JSON.stringify({
       textQuery: place.name,
@@ -46,7 +46,7 @@ async function searchPlace(place) {
   if (!res.ok) throw new Error(`searchText ${res.status}: ${(await res.text()).slice(0, 160)}`)
   const data = await res.json()
   const cand = (data.places ?? []).find((p) => nameMatches(place.name, p.displayName?.text ?? ''))
-  return cand?.photos ?? []
+  return { photos: cand?.photos ?? [], businessStatus: cand?.businessStatus ?? null }
 }
 
 async function pool(items, n, fn) {
@@ -73,7 +73,10 @@ async function main() {
 
   let matched = 0, photos = 0
   const res = await pool(todo, CONCURRENCY, async (p) => {
-    const refs = (await searchPlace(p)).slice(0, PER)
+    const { photos: allRefs, businessStatus } = await searchPlace(p)
+    // Estado autoritativo de Google — se guarda aunque no haya fotos (señal de "¿sigue abierto?").
+    if (businessStatus) await sb.from('places').update({ business_status: businessStatus }).eq('id', p.id)
+    const refs = allRefs.slice(0, PER)
     if (!refs.length) return { name: p.name, matched: false }
     const rows = refs.map((ph) => ({
       place_id: p.id,

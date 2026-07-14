@@ -38,6 +38,8 @@ export default async function PlacesPage() {
       'id, slug, name, description, vibe_line, tags, price_level, address, place_photos(url, status), place_categories(categories(emoji, name))'
     )
     .eq('is_published', true)
+    // Oculta lugares marcados como cerrados definitivos por Google (NULL = sin dato → visible).
+    .or('business_status.is.null,business_status.neq.CLOSED_PERMANENTLY')
     .order('name')
 
   // Lanza para que lo capture src/app/error.tsx (UI amigable + reintento), no un crudo en rojo.

@@ -11,6 +11,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .from('places')
     .select('slug, updated_at')
     .eq('is_published', true)
+    // No indexar fichas de lugares cerrados definitivos (NULL = sin dato → se indexa).
+    .or('business_status.is.null,business_status.neq.CLOSED_PERMANENTLY')
     .order('name')
     .limit(5000)
 

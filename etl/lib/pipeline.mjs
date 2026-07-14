@@ -106,7 +106,7 @@ export async function photosGoogle(sb, { cityId, key, per = GOOGLE_PER, onProgre
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': key,
-        'X-Goog-FieldMask': 'places.id,places.displayName,places.photos',
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.photos,places.businessStatus',
       },
       body: JSON.stringify({
         textQuery: p.name,
@@ -117,6 +117,11 @@ export async function photosGoogle(sb, { cityId, key, per = GOOGLE_PER, onProgre
     if (!r.ok) throw new Error(`searchText ${r.status}`)
     const data = await r.json()
     const cand = (data.places ?? []).find((g) => nameMatches(p.name, g.displayName?.text ?? ''))
+    // Estado autoritativo de Google (OPERATIONAL | CLOSED_TEMPORARILY | CLOSED_PERMANENTLY).
+    // Se guarda aunque el lugar no tenga fotos: es la señal de "¿sigue abierto?" (migración 0030).
+    if (cand?.businessStatus) {
+      await sb.from('places').update({ business_status: cand.businessStatus }).eq('id', p.id)
+    }
     const refs = (cand?.photos ?? []).slice(0, per)
     if (refs.length) {
       const rows = refs.map((ph) => ({
@@ -146,6 +151,10 @@ export async function enrichCity(sb, ai, { cityId, cityContext, anchorLimit = AN
     .select('id, name, address, tags, place_categories(categories(slug,name))')
     .eq('city_id', cityId)
     .is('ai_enriched_at', null)
+    // No gastar tokens enriqueciendo lugares que Google marca cerrados definitivos: igual se
+    // ocultan del feed (migración 0030). El status se setea antes, en la etapa de fotos Google.
+    // NULL = sin dato → sí se enriquece (no sabemos que esté cerrado).
+    .or('business_status.is.null,business_status.neq.CLOSED_PERMANENTLY')
     .order('name')
   if (!pending?.length) return { enriched: 0, cost: 0, total: 0 }
 

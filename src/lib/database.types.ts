@@ -794,6 +794,7 @@ export type Database = {
           address: Json | null
           ai_enriched_at: string | null
           business_id: string | null
+          business_status: string | null
           city_id: number
           claimed: boolean | null
           cover_url: string | null
@@ -825,6 +826,7 @@ export type Database = {
           address?: Json | null
           ai_enriched_at?: string | null
           business_id?: string | null
+          business_status?: string | null
           city_id: number
           claimed?: boolean | null
           cover_url?: string | null
@@ -856,6 +858,7 @@ export type Database = {
           address?: Json | null
           ai_enriched_at?: string | null
           business_id?: string | null
+          business_status?: string | null
           city_id?: number
           claimed?: boolean | null
           cover_url?: string | null
