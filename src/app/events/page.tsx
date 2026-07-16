@@ -1,10 +1,25 @@
 import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { RsvpButton } from '@/features/events/RsvpButton'
+import { AttendanceCounts } from '@/features/events/AttendanceCounts'
 import Link from 'next/link'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
 import { PhotoImg } from '@/shared/components/photo-img'
+
+// Conteos agregados de asistentes por evento (solo números, sin PII). El RPC es SECURITY
+// DEFINER; si aún no está aplicado en la BD, degradamos a un mapa vacío (no muestra conteos).
+type EventStat = { event_id: string; going: number; male: number; female: number }
+async function fetchStats(sb: ReturnType<typeof createAdminClient>, ids: string[]): Promise<Record<string, EventStat>> {
+  if (!ids.length) return {}
+  const rpc = sb.rpc.bind(sb) as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown }>
+  try {
+    const { data } = await rpc('event_gender_stats', { p_event_ids: ids })
+    return Object.fromEntries(((data as EventStat[] | null) ?? []).map((r) => [r.event_id, r]))
+  } catch {
+    return {}
+  }
+}
 
 // ISR: cartelera de eventos. Se regenera cada 10 min (los eventos no son tiempo real,
 // pero sí sensibles a la fecha → ventana corta para no mostrar eventos ya pasados).
@@ -31,6 +46,7 @@ export default async function EventosPage() {
     .limit(60)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const events = (data ?? []) as any[]
+  const stats = await fetchStats(sb, events.map((e) => e.id as string))
 
   return (
     <main className="flex min-h-screen flex-col bg-surface">
@@ -73,6 +89,7 @@ export default async function EventosPage() {
                         </Link>
                       )}
                     </div>
+                    {(() => { const s = stats[ev.id]; return s ? <AttendanceCounts going={Number(s.going)} male={Number(s.male)} female={Number(s.female)} className="mt-1 text-fg-soft" /> : null })()}
                     <div className="mt-2 flex items-center justify-between gap-2">
                       {ev.description && <p className="line-clamp-1 text-sm text-fg-soft">{ev.description}</p>}
                       <RsvpButton eventId={ev.id} />

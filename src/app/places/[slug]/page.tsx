@@ -1,4 +1,5 @@
 import { RsvpButton } from '@/features/events/RsvpButton'
+import { AttendanceCounts } from '@/features/events/AttendanceCounts'
 import { PhotoGallery } from '@/features/photos/PhotoGallery'
 import { PhotoUpload } from '@/features/photos/PhotoUpload'
 import { DetailTracker } from '@/features/places/DetailTracker'
@@ -13,8 +14,10 @@ import { BackButton } from '@/shared/components/back-button'
 import { PhotoImg } from '@/shared/components/photo-img'
 import { categoryIcon } from '@/shared/lib/icons'
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
+import { BadgeCheck, ArrowRight } from 'lucide-react'
 
 // Select completo de la ficha. `cache()` dedupe la consulta dentro del mismo request:
 // `generateMetadata` y el render de la página comparten UNA sola query (antes eran dos).
@@ -114,6 +117,20 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
   ])
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const upcoming = (events ?? []) as any[]
+  // Conteos agregados de asistentes por evento (solo números, sin PII). RPC SECURITY DEFINER;
+  // si aún no está aplicado en la BD, degradamos a mapa vacío (no muestra conteos).
+  const eventStats: Record<string, { going: number; male: number; female: number }> = await (async () => {
+    const ids = upcoming.map((e) => e.id as string)
+    if (!ids.length) return {}
+    const rpc = sb.rpc.bind(sb) as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown }>
+    try {
+      const { data } = await rpc('event_gender_stats', { p_event_ids: ids })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return Object.fromEntries(((data as any[]) ?? []).map((r) => [r.event_id, r]))
+    } catch {
+      return {}
+    }
+  })()
   const ll = coords?.[0]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const photos = (place.place_photos ?? []) as any[]
@@ -160,6 +177,27 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
             lng={ll?.lng ?? null}
           />
         </div>
+
+        {/* CTA de reclamo: solo si el lugar aún no tiene dueño */}
+        {!place.claimed && !place.business_id && (
+          <Link
+            href={`/panel/claim?q=${encodeURIComponent(place.name)}`}
+            className="mb-8 flex items-center justify-between gap-4 rounded-2xl border border-goospe-green/30 bg-goospe-green/5 px-5 py-4 transition hover:border-goospe-green/60 hover:bg-goospe-green/10"
+          >
+            <span className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-goospe-green/15 text-goospe-green">
+                <BadgeCheck size={20} strokeWidth={1.75} />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-medium text-fg">¿Este es tu negocio?</span>
+                <span className="block text-sm text-fg-soft">Reclámalo para editar tu ficha, publicar eventos y ver tus estadísticas.</span>
+              </span>
+            </span>
+            <span className="hidden shrink-0 items-center gap-1 text-sm font-medium text-goospe-green-dark sm:inline-flex">
+              Reclamar <ArrowRight size={15} strokeWidth={1.75} />
+            </span>
+          </Link>
+        )}
 
         {/* fotos */}
         <section className="mb-8">
@@ -277,6 +315,7 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
                     <p className="text-xs font-medium uppercase text-goospe-green">{fmtEventDate(ev.starts_at)}</p>
                     <h3 className="font-medium text-fg">{ev.name}</h3>
                     {ev.description && <p className="line-clamp-1 text-sm text-fg-soft">{ev.description}</p>}
+                    {(() => { const s = eventStats[ev.id]; return s ? <AttendanceCounts going={Number(s.going)} male={Number(s.male)} female={Number(s.female)} className="mt-1 text-fg-soft" /> : null })()}
                   </div>
                   <RsvpButton eventId={ev.id} />
                 </li>

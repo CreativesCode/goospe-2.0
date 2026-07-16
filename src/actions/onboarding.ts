@@ -16,9 +16,13 @@ const BUDGET_LABEL: Record<string, string> = {
   '1': 'económico', '2': 'medio', '3': 'alto', '4': 'premium',
 }
 
+const VALID_GENDERS = new Set(['male', 'female', 'other'])
+
 export async function saveOnboarding(formData: FormData) {
   const likes = formData.getAll('likes').map(String) // categorías + vibes
   const budget = (formData.get('budget') as string) || ''
+  const genderRaw = (formData.get('gender') as string) || ''
+  const gender = VALID_GENDERS.has(genderRaw) ? genderRaw : null
 
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
@@ -39,10 +43,10 @@ export async function saveOnboarding(formData: FormData) {
 
   const admin = createAdminClient()
 
-  // perfil crudo
+  // perfil crudo (gender se guarda aquí para el desglose agregado de asistentes por evento)
   await admin
     .from('profiles')
-    .update({ onboarding: { likes, budget } } as never)
+    .update({ onboarding: { likes, budget, gender } } as never)
     .eq('id', user.id)
 
   // perfil de gusto + embedding

@@ -107,7 +107,7 @@ export default async function AdminDashboard() {
       <Card title="Actividad · últimos 14 días">
         <div className="flex items-end gap-1.5" style={{ height: 110 }}>
           {activity.map(({ d, n }) => (
-            <div key={d} className="group flex flex-1 flex-col items-center justify-end gap-1" title={`${new Date(d).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}: ${n} interacciones`}>
+            <div key={d} className="group flex h-full flex-1 flex-col items-center justify-end gap-1" title={`${new Date(d).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}: ${n} interacciones`}>
               <span className="text-[9px] font-medium text-muted opacity-0 transition group-hover:opacity-100">{n}</span>
               <div className="w-full rounded-t bg-goospe-green/70 transition group-hover:bg-goospe-green" style={{ height: `${Math.max(3, (n / maxActivity) * 100)}%` }} />
               <span className="text-[9px] text-muted">{d.slice(8, 10)}</span>

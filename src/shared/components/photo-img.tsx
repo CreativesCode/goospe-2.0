@@ -13,13 +13,13 @@ export function PhotoImg({
   className,
   isoClassName = 'h-9 w-9',
 }: {
-  src: string
+  src: string | null | undefined
   alt: string
   className?: string
   isoClassName?: string
 }) {
   const [failed, setFailed] = useState(false)
-  if (failed) {
+  if (failed || !src) {
     return (
       <div className={`flex items-center justify-center bg-goospe-gradient ${className ?? ''}`}>
         <img src="/brand/isotipo-white.svg" alt="" className={`${isoClassName} opacity-90`} />

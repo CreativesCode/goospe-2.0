@@ -85,11 +85,48 @@ export default async function EditListingPage({
   // Eventos del lugar + boost activo (para los controles del dueño).
   const { data: evRows } = await admin
     .from('events')
-    .select('id, name, starts_at, description, is_boosted')
+    .select('id, name, starts_at, ends_at, description, image_url, is_boosted')
     .eq('place_id', placeId)
     .order('starts_at', { ascending: false })
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const events = (evRows ?? []) as any[]
+  const evList = (evRows ?? []) as any[]
+
+  // Participaciones (RSVPs) por evento: conteo + lista de asistentes con su nombre.
+  // La RLS "own rsvps" no deja al dueño leerlos con el cliente normal → admin client.
+  const evIds = evList.map((e) => e.id as string)
+  let rsvpsByEvent: Record<string, { user_id: string; status: string; created_at: string }[]> = {}
+  let rsvpNameByUser: Record<string, string> = {}
+  if (evIds.length) {
+    const { data: rsvpRows } = await admin
+      .from('event_rsvps')
+      .select('event_id, user_id, status, created_at')
+      .in('event_id', evIds)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rsvps = (rsvpRows ?? []) as any[]
+    rsvpsByEvent = rsvps.reduce((acc, r) => {
+      (acc[r.event_id] ??= []).push({ user_id: r.user_id, status: r.status, created_at: r.created_at })
+      return acc
+    }, {} as Record<string, { user_id: string; status: string; created_at: string }[]>)
+    const rsvpUserIds = [...new Set(rsvps.map((r) => r.user_id as string))]
+    if (rsvpUserIds.length) {
+      const { data: profs } = await admin.from('profiles').select('id, display_name').in('id', rsvpUserIds)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      rsvpNameByUser = Object.fromEntries(((profs ?? []) as any[]).map((p) => [p.id, p.display_name]))
+    }
+  }
+
+  const events = evList.map((e) => {
+    const rs = rsvpsByEvent[e.id] ?? []
+    const attendees = rs
+      .map((r) => ({ name: rsvpNameByUser[r.user_id] || 'Usuario', status: r.status, when: r.created_at }))
+      .sort((a, b) => (a.when < b.when ? 1 : -1))
+    return {
+      ...e,
+      goingCount: rs.filter((r) => r.status === 'going').length,
+      interestedCount: rs.filter((r) => r.status === 'interested').length,
+      attendees,
+    }
+  })
 
   const { data: boostRows } = await admin
     .from('boosts')

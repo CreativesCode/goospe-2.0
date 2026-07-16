@@ -30,8 +30,9 @@ async function assertMembership(admin: ReturnType<typeof createAdminClient>, use
   return member ? businessId : null
 }
 
-// Reclamo instantáneo (MVP piloto): crea el negocio, agrega al usuario como owner,
-// linkea el place y registra el claim como aprobado. Sin revisión manual por ahora.
+// Solicitud de reclamo (moderada): el usuario pide administrar un lugar y el reclamo queda
+// PENDIENTE con sus datos de contacto en `evidence`. Un admin lo revisa personalmente en
+// /admin/claims (aprobar/rechazar). NO se otorga la propiedad hasta la aprobación.
 export async function claimPlace(formData: FormData) {
   const placeId = formData.get('place_id') as string
   if (!placeId) redirect('/panel/claim?error=Falta+el+lugar')
@@ -47,29 +48,30 @@ export async function claimPlace(formData: FormData) {
   if (!p) redirect('/panel/claim?error=Lugar+no+encontrado')
   if (p!.claimed || p!.business_id) redirect('/panel/claim?error=Este+lugar+ya+fue+reclamado')
 
-  const { data: biz, error: bizErr } = await admin
-    .from('businesses')
-    .insert({ name: p!.name } as never)
+  // Evita solicitudes duplicadas del mismo usuario para el mismo lugar.
+  const { data: existing } = await admin
+    .from('claims')
     .select('id')
-    .single()
-  if (bizErr || !biz) redirect('/panel/claim?error=No+se+pudo+crear+el+negocio')
-  const businessId = (biz as { id: string }).id
+    .eq('place_id', placeId)
+    .eq('user_id', user.id)
+    .eq('status', 'pending')
+    .maybeSingle()
+  if (existing) redirect('/panel/claim?sent=1')
 
-  await admin
-    .from('business_members')
-    .insert({ business_id: businessId, user_id: user.id, role: 'owner' } as never)
-
-  await admin
-    .from('places')
-    .update({ business_id: businessId, claimed: true, source: 'owner' } as never)
-    .eq('id', placeId)
+  // Datos de contacto para que el admin verifique de forma personal.
+  const evidence = {
+    contact_name: ((formData.get('contact_name') as string) ?? '').trim() || null,
+    phone: ((formData.get('phone') as string) ?? '').trim() || null,
+    email: user.email ?? null,
+    message: ((formData.get('message') as string) ?? '').trim() || null,
+  }
 
   await admin
     .from('claims')
-    .insert({ place_id: placeId, user_id: user.id, method: 'manual', status: 'approved' } as never)
+    .insert({ place_id: placeId, user_id: user.id, method: 'manual', status: 'pending', evidence } as never)
 
-  revalidatePath('/panel')
-  redirect(`/panel/${placeId}`)
+  revalidatePath('/admin/claims')
+  redirect('/panel/claim?sent=1')
 }
 
 const toArray = (s: string) =>

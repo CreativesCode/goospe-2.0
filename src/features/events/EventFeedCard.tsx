@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { toggleRsvp } from '@/actions/events'
 import { track } from '@/lib/track'
 import { toast } from '@/shared/components/toast'
+import { EventAttendanceLive } from './EventAttendanceLive'
 
 export type FeedEvent = {
   id: string
@@ -119,6 +120,7 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
         <Link href={`/places/${ev.place_slug}`} className="block text-white/80">
           en {ev.place_name} · {fmtDist(ev.distance_m)}
         </Link>
+        <EventAttendanceLive eventId={ev.id} className="text-white/90" />
         {ev.description && <p className="line-clamp-2 max-w-md text-sm text-white/80">{ev.description}</p>}
       </div>
     </section>

@@ -24,11 +24,15 @@ const VIBES = [
 const BUDGETS = [
   { v: '1', label: 'Económico' }, { v: '2', label: 'Medio' }, { v: '3', label: 'Alto' }, { v: '4', label: 'Premium' },
 ]
+const GENDERS = [
+  { v: 'female', label: 'Mujer' }, { v: 'male', label: 'Hombre' }, { v: 'other', label: 'Prefiero no decir' },
+]
 
 export default function OnboardingPage() {
   const router = useRouter()
   const [likes, setLikes] = useState<Set<string>>(new Set())
   const [budget, setBudget] = useState('')
+  const [gender, setGender] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -41,6 +45,7 @@ export default function OnboardingPage() {
     const fd = new FormData()
     likes.forEach((l) => fd.append('likes', l))
     if (budget) fd.set('budget', budget)
+    if (gender) fd.set('gender', gender)
     const res = await saveOnboarding(fd)
     setSaving(false)
     if (res?.error) setError(res.error)
@@ -85,6 +90,15 @@ export default function OnboardingPage() {
           <div className="flex flex-wrap gap-2">
             {BUDGETS.map((b) => (
               <Chip key={b.v} label={b.label} active={budget === b.v} onClick={() => setBudget(budget === b.v ? '' : b.v)} />
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-7">
+          <h2 className={sectionLabel}>¿Con qué género te identificas? <span className="normal-case text-muted">(opcional)</span></h2>
+          <div className="flex flex-wrap gap-2">
+            {GENDERS.map((g) => (
+              <Chip key={g.v} label={g.label} active={gender === g.v} onClick={() => setGender(gender === g.v ? '' : g.v)} />
             ))}
           </div>
         </section>
