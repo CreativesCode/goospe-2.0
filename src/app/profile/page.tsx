@@ -94,7 +94,7 @@ export default async function PerfilPage() {
               })}
               {budget > 0 && (
                 <span className="inline-flex items-center rounded-full border border-line bg-card px-3 py-1.5 text-sm font-medium text-fg-soft">
-                  {'$'.repeat(budget)}
+                  {(['Económico', 'Medio', 'Alto', 'Premium'][budget - 1]) ?? '$'.repeat(budget)}
                 </span>
               )}
             </div>

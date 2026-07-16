@@ -79,11 +79,23 @@ export function useFavorites() {
     })
 
     if (uid) {
-      // Persistencia en DB en segundo plano (no bloquea la UI optimista).
+      // Persistencia en DB en segundo plano (no bloquea la UI optimista). Si la
+      // escritura falla, revertimos el optimismo para no mostrar un "Guardado"
+      // fantasma que en realidad nunca aterrizó (ver bug de 0031_stats_triggers_definer).
       const sb = supabase.current
-      void (willSave
+      const op = willSave
         ? sb.from('favorites').upsert({ user_id: uid, place_id: placeId } as never, { onConflict: 'user_id,place_id' })
-        : sb.from('favorites').delete().eq('user_id', uid).eq('place_id', placeId))
+        : sb.from('favorites').delete().eq('user_id', uid).eq('place_id', placeId)
+      Promise.resolve(op).then(({ error }) => {
+        if (!error) return
+        console.error('[favorites] no se pudo persistir el guardado:', error.message)
+        setIds((prev) => {
+          const next = new Set(prev)
+          willSave ? next.delete(placeId) : next.add(placeId) // revertir
+          idsRef.current = next
+          return next
+        })
+      })
     }
     return willSave
   }, [])

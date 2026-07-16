@@ -5,6 +5,7 @@ import { DetailTracker } from '@/features/places/DetailTracker'
 import { DirectionsLink } from '@/features/places/DirectionsLink'
 import { PlaceActions } from '@/features/places/PlaceActions'
 import { PlaceReviews } from '@/features/reviews/PlaceReviews'
+import { humanizeHours } from '@/lib/hours'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AppFooter } from '@/shared/components/app-footer'
 import { AppNav } from '@/shared/components/app-nav'
@@ -204,7 +205,13 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
                 )}
               </Field>
               <Field label="Email">{place.email}</Field>
-              <Field label="Horario (OSM)">{hours?.osm_raw}</Field>
+              <Field label="Horario">
+                {(() => {
+                  const lines = humanizeHours(hours?.osm_raw)
+                  if (lines) return <span className="space-y-0.5">{lines.map((l, i) => <span key={i} className="block">{l}</span>)}</span>
+                  return hours?.osm_raw ?? null
+                })()}
+              </Field>
             </dl>
           </section>
         </div>

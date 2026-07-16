@@ -63,6 +63,61 @@ export function isOpenNow(osmRaw: string | null | undefined, osmDay: number, min
   return parsedAny ? false : null
 }
 
+// ─── Humanizador: `opening_hours` de OSM → líneas legibles en español ───────────
+const OSM_DAY_ES: Record<string, string> = {
+  Mo: 'Lun', Tu: 'Mar', We: 'Mié', Th: 'Jue', Fr: 'Vie', Sa: 'Sáb', Su: 'Dom',
+}
+
+function humanizeDays(spec: string): string {
+  const parts: string[] = []
+  for (const tok of spec.split(',')) {
+    const m = tok.trim().match(/^([A-Za-z]{2})(?:-([A-Za-z]{2}))?$/)
+    if (!m) continue
+    const a = OSM_DAY_ES[m[1]]
+    if (!a) continue
+    parts.push(m[2] && OSM_DAY_ES[m[2]] ? `${a} a ${OSM_DAY_ES[m[2]]}` : a)
+  }
+  return parts.join(', ')
+}
+
+function humanizeTimes(spec: string): string | null {
+  const out: string[] = []
+  for (const r of spec.split(',')) {
+    const m = r.trim().match(/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/)
+    if (!m) continue
+    out.push(`${m[1].padStart(2, '0')}:${m[2]}–${m[3].padStart(2, '0')}:${m[4]}`)
+  }
+  return out.length ? out.join(' y ') : null
+}
+
+// Convierte el `opening_hours` de OSM a líneas legibles en español (ej.
+// "Lun a Vie: 09:00–18:00", "Sáb: 10:00–14:00"). Devuelve null si no hay dato o
+// no se puede parsear nada — en ese caso la UI puede caer al string crudo.
+export function humanizeHours(osmRaw: string | null | undefined): string[] | null {
+  if (!osmRaw) return null
+  const raw = osmRaw.trim()
+  if (!raw) return null
+  if (raw === '24/7') return ['Abierto las 24 horas']
+
+  const lines: string[] = []
+  for (const rule of raw.split(';')) {
+    const r = rule.trim()
+    if (!r) continue
+    const timeIdx = r.search(/\d{1,2}:\d{2}/)
+    if (/\boff\b|\bclosed\b/i.test(r)) {
+      const daySpec = (timeIdx < 0 ? r.replace(/\b(off|closed)\b/i, '') : r.slice(0, timeIdx)).trim()
+      lines.push(`${humanizeDays(daySpec) || 'Todos los días'}: Cerrado`)
+      continue
+    }
+    if (timeIdx < 0) continue
+    const times = humanizeTimes(r.slice(timeIdx).trim())
+    if (!times) continue
+    const daySpec = r.slice(0, timeIdx).trim()
+    lines.push(`${humanizeDays(daySpec) || 'Todos los días'}: ${times}`)
+  }
+  return lines.length ? lines : null
+}
+
 // "Ahora" en la zona de la ciudad (Puerto Varas → America/Santiago).
 export function cityNowParts(tz = 'America/Santiago'): { osmDay: number; minutes: number } {
   const parts = new Intl.DateTimeFormat('en-US', {

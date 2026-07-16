@@ -22,7 +22,7 @@ const VIBES = [
   { v: 'al aire libre', label: 'Al aire libre' },
 ]
 const BUDGETS = [
-  { v: '1', label: '$' }, { v: '2', label: '$$' }, { v: '3', label: '$$$' }, { v: '4', label: '$$$$' },
+  { v: '1', label: 'Económico' }, { v: '2', label: 'Medio' }, { v: '3', label: 'Alto' }, { v: '4', label: 'Premium' },
 ]
 
 export default function OnboardingPage() {
@@ -82,7 +82,7 @@ export default function OnboardingPage() {
 
         <section className="mt-7">
           <h2 className={sectionLabel}>¿Presupuesto típico?</h2>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {BUDGETS.map((b) => (
               <Chip key={b.v} label={b.label} active={budget === b.v} onClick={() => setBudget(budget === b.v ? '' : b.v)} />
             ))}
