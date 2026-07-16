@@ -61,7 +61,7 @@ export default async function PanelPage() {
             </span>
             <p className="text-lg font-medium text-fg">Aún no administras ningún lugar</p>
             <p className="max-w-sm text-sm text-fg-soft">
-              Reclama tu negocio en Puerto Varas para editar su ficha, fotos y datos de contacto.
+              Reclama tu negocio para editar su ficha, fotos y datos de contacto.
             </p>
             <Link
               href="/panel/claim"

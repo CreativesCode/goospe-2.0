@@ -4,7 +4,7 @@ import { MapPin } from 'lucide-react'
 
 // Pantalla "activa tu ubicación": se muestra cuando NO pudimos obtener la ubicación real del
 // usuario (permiso denegado / timeout / navegador sin geolocalización). En vez de mostrar
-// Puerto Varas a ciegas, pedimos activar la ubicación para descubrir lugares realmente cerca.
+// el centro por defecto a ciegas, pedimos activar la ubicación para descubrir lugares realmente cerca.
 // - onEnable   : reintenta la geolocalización (útil si el usuario acaba de conceder el permiso).
 // - onContinue : escape para explorar sin ubicación exacta (usa el centro de la ciudad activa).
 export function LocationNeededScreen({

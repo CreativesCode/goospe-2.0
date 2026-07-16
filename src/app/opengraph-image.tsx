@@ -3,7 +3,7 @@ import { ImageResponse } from 'next/og'
 // Imagen Open Graph por defecto de TODO el sitio (file-based metadata de Next).
 // Cualquier ruta que no defina su propia imagen hereda esta al compartirse.
 // Se genera con la marca Goospe (gradiente + wordmark) — sin depender de un PNG estático.
-export const alt = 'Goospe — ¿dónde voy hoy? Lugares y eventos en Puerto Varas'
+export const alt = 'Goospe — ¿dónde voy hoy? Lugares y eventos cerca de ti'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -64,7 +64,7 @@ export default function OpengraphImage() {
             marginTop: 'auto',
           }}
         >
-          Puerto Varas · Chile
+          Lugares y eventos cerca de ti
         </div>
       </div>
     ),

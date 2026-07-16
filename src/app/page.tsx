@@ -15,9 +15,9 @@ function formatCityList(names: string[]): string {
 }
 
 export const metadata: Metadata = {
-  title: 'Goospe — ¿dónde voy hoy? Lugares y eventos en Puerto Varas',
+  title: 'Goospe — ¿dónde voy hoy? Lugares y eventos cerca de ti',
   description:
-    'Descubre dónde ir en Puerto Varas: cafés, restaurantes, bares y eventos cerca de ti, con un conserje IA que decide por ti en 30 segundos.',
+    'Descubre dónde ir cerca de ti: cafés, restaurantes, bares y eventos, con un conserje IA que decide por ti en 30 segundos.',
   alternates: { canonical: '/' },
 }
 

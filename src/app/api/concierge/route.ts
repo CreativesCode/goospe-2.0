@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { embedQuery, pickPlacesStream, type Candidate, type Usage } from '@/lib/ai/openai'
 import { fireAndForget } from '@/lib/fire'
 
-const FALLBACK = { lat: -41.3195, lng: -72.9854 } // Puerto Varas
+const FALLBACK = { lat: -41.3195, lng: -72.9854 } // centro por defecto del piloto
 const FREE_LIMIT = 20 // consultas/mes para usuarios autenticados en el piloto
 // gpt-4o (aprox, USD por millón de tokens) + embeddings (despreciable, estimado).
 const COST = (u: Usage) => (u.input_tokens / 1e6) * 2.5 + (u.output_tokens / 1e6) * 10 + 0.00002

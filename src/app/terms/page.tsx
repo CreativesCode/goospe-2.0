@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Términos y Condiciones | Goospe',
-  description: 'Términos y condiciones de uso de Goospe, el descubridor de lugares y eventos de Puerto Varas.',
+  description: 'Términos y condiciones de uso de Goospe, el descubridor de lugares y eventos cerca de ti.',
   alternates: { canonical: '/terms' },
 }
 
@@ -13,7 +13,7 @@ export default function TerminosPage() {
     <LegalPage title="Términos y Condiciones" updatedAt="18 de junio de 2026">
       <p>
         Estos Términos y Condiciones (los “Términos”) regulan el uso de Goospe (la “Plataforma”), un servicio de
-        descubrimiento de lugares y eventos enfocado en Puerto Varas, Chile, actualmente en fase piloto y gratuito.
+        descubrimiento de lugares y eventos locales, actualmente en fase piloto y gratuito.
         Al acceder o usar Goospe aceptas estos Términos. Si no estás de acuerdo, no uses la Plataforma.
       </p>
 
@@ -82,7 +82,7 @@ export default function TerminosPage() {
       <h2>10. Ley aplicable</h2>
       <p>
         Estos Términos se rigen por las leyes de la República de Chile. Cualquier controversia se someterá a los
-        tribunales competentes de la ciudad de Puerto Varas.
+        tribunales competentes de Chile.
       </p>
 
       <h2>11. Contacto</h2>

@@ -83,7 +83,7 @@ export function FeedTablet({ feed }: { feed: FeedController }) {
             <button
               onClick={retryLocation}
               className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/50 bg-amber-400/10 px-4 py-2 text-sm font-medium text-fg transition hover:bg-amber-400/20"
-              title="Mostrando Puerto Varas — toca para activar tu ubicación"
+              title="Mostrando una ubicación aproximada — toca para activar tu ubicación"
             >
               <MapPin size={15} strokeWidth={2} className="text-amber-500" /> {location}
               <RefreshCw size={13} strokeWidth={2.5} className="text-amber-500" />

@@ -50,7 +50,7 @@ export default async function ReclamarPage({
           <ArrowLeft size={16} strokeWidth={1.75} /> Mis lugares
         </Link>
         <h1 className="text-2xl font-medium text-fg">Reclama tu negocio</h1>
-        <p className="mt-1 text-fg-soft">Busca tu lugar en Puerto Varas y reclámalo para administrarlo.</p>
+        <p className="mt-1 text-fg-soft">Busca tu lugar y reclámalo para administrarlo.</p>
 
         {error && (
           <p className="mt-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-600">{error}</p>

@@ -16,7 +16,7 @@ import type { FeedEvent } from '@/features/events/EventFeedCard'
 /**
  * Feed de descubrimiento (cliente). Una sola carga de datos (`useFeed`) y tres layouts según
  * el viewport. Recibe `initial`: la primera tanda renderizada en el servidor con la ubicación
- * por defecto (Puerto Varas) → el feed pinta al instante al resolverse el breakpoint, sin
+ * por defecto (centro del piloto) → el feed pinta al instante al resolverse el breakpoint, sin
  * esperar geolocalización + 2 RPC; luego refina con la ubicación real en segundo plano.
  */
 export function FeedClient({ initial }: { initial: { items: FeedItem[]; events: FeedEvent[] } | null }) {
@@ -25,7 +25,7 @@ export function FeedClient({ initial }: { initial: { items: FeedItem[]; events: 
   // El usuario eligió "explorar de todos modos" → no volver a mostrar el gate de ubicación.
   const [skippedLocation, setSkippedLocation] = useState(false)
 
-  // Gate de ubicación (máxima prioridad): sin ubicación real no mostramos Puerto Varas a ciegas,
+  // Gate de ubicación (máxima prioridad): sin ubicación real no mostramos el centro por defecto a ciegas,
   // pedimos activarla. Al montar geoSource es 'forced' (seed SSR), así que no aparece hasta que
   // la geolocalización real falle en segundo plano.
   if (feed.geoSource === 'fallback' && !skippedLocation) {

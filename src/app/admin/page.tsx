@@ -85,7 +85,7 @@ export default async function AdminDashboard() {
     <div className="space-y-8">
       <header>
         <h1 className="text-2xl font-medium text-fg">Dashboard</h1>
-        <p className="text-sm text-fg-soft">Visión general del piloto Goospe · Puerto Varas.</p>
+        <p className="text-sm text-fg-soft">Visión general del piloto Goospe.</p>
       </header>
 
       {/* KPIs principales */}

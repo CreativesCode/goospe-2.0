@@ -3,7 +3,7 @@ import { FeedClient } from '@/features/feed/feed-client'
 import type { FeedItem } from '@/features/feed/use-feed'
 import type { FeedEvent } from '@/features/events/EventFeedCard'
 
-// Semilla SSR de la primera tanda con la ubicación del piloto (Puerto Varas). Es anónima (sin
+// Semilla SSR de la primera tanda con la ubicación por defecto del piloto. Es anónima (sin
 // auth → sin personalización por gusto) e igual para todos → cacheable por ISR. El cliente la
 // pinta al instante y refina con la ubicación real del usuario al montar (ver FeedClient/useFeed).
 const SEED = { lat: -41.3195, lng: -72.9854 }

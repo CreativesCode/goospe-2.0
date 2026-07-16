@@ -51,9 +51,10 @@ export const fmtDistDrive = (m: number) => `${fmtDist(m)} · ${fmtEta(m)}`
 export const directionsHref = (lat: number, lng: number) =>
   `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
 
-// Etiqueta por defecto del context strip: ciudad del piloto y del seed SSR. Solo se muestra hasta
-// que la cobertura resuelve la ciudad real de la ubicación del usuario (ver `cityName` más abajo).
-const LOCATION_LABEL = 'Puerto Varas'
+// Etiqueta por defecto del context strip mientras la cobertura resuelve la ciudad real de la
+// ubicación del usuario (ver `cityName` más abajo, que la reemplaza). Genérica: nunca fijamos
+// una ciudad concreta para no mostrar "otra ciudad" a quien abre desde fuera del piloto.
+const LOCATION_LABEL = 'Tu zona'
 
 const DISMISSED_KEY = 'goospe:dismissed'
 const ZONE_LOGGED_KEY = 'goospe:zone-logged'
@@ -101,7 +102,7 @@ export type FeedController = ReturnType<typeof useFeed>
  * Hace una sola carga de datos: lo monta `page.tsx` y pasa el resultado a cada layout.
  *
  * `initial` (opcional): primera tanda renderizada en el servidor con la ubicación por defecto
- * (Puerto Varas). Si viene, el feed arranca SIN loading (pinta al instante) y refina la
+ * (centro por defecto). Si viene, el feed arranca SIN loading (pinta al instante) y refina la
  * ubicación real en segundo plano; si no, comportamiento previo (loading hasta geo + RPC).
  */
 export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | null) {
@@ -116,7 +117,7 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
   const [emptyZone, setEmptyZone] = useState(false)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   // Nombre de la ciudad activa que cubre la ubicación real (lo devuelve resolve_coverage). Reemplaza
-  // la etiqueta fija: alguien en otra ciudad ya NO ve "Puerto Varas" en el chip de ubicación.
+  // la etiqueta genérica: alguien en otra ciudad ya NO ve una ciudad fija en el chip de ubicación.
   const [cityName, setCityName] = useState<string | null>(null)
   const { isSaved, toggle } = useFavorites()
   const supabase = useMemo(() => createClient(), [])
@@ -145,7 +146,7 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
   useEffect(() => { itemsRef.current = items }, [items])
 
   // Resuelve ubicación → carga feed. Reutilizable como "reintentar" si el usuario
-  // activa el permiso después de haber caído al fallback de Puerto Varas. Con `background`
+  // activa el permiso después de haber caído al fallback (centro por defecto). Con `background`
   // (refine sobre un seed SSR) no muestra el loader: el contenido ya está en pantalla.
   const loadPosition = useCallback((opts?: { background?: boolean; allowFallback?: boolean }) => {
     if (!opts?.background) setLoading(true)
@@ -154,7 +155,7 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
     getPosition().then(async (pos) => {
       setGeoSource(pos.source)
       setCoords({ lat: pos.lat, lng: pos.lng })
-      // Sin ubicación real (permiso denegado / timeout / sin soporte) NO mostramos Puerto Varas a
+      // Sin ubicación real (permiso denegado / timeout / sin soporte) NO mostramos el centro por defecto a
       // ciegas: feed-client renderiza <LocationNeededScreen> pidiendo activar la ubicación.
       // `allowFallback` (botón "explorar de todos modos") salta el gate y usa el centro de la ciudad.
       if (pos.source === 'fallback' && !opts?.allowFallback) {

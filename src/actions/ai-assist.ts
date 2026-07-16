@@ -46,7 +46,7 @@ export async function generatePromo(formData: FormData) {
   const ctx = await ownerContext(placeId)
   if (!ctx) return { error: 'Sin permiso' }
 
-  const system = `Eres el community manager de un negocio local en Puerto Varas, Chile.
+  const system = `Eres el community manager de un negocio local.
 Escribe promos/eventos atractivos y honestos en español chileno cercano, listos para publicar.
 ${ctx.brandVoice ? `Tono de marca: ${ctx.brandVoice}.` : ''}
 El título: corto y con gancho (máx 60 caracteres). La descripción: 2-3 frases, concreta, sin inventar

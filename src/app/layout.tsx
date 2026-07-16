@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Goospe — ¿dónde voy hoy?',
-    description: 'Lugares y eventos cerca de ti en Puerto Varas, decididos en 30 segundos.',
+    description: 'Lugares y eventos cerca de ti, decididos en 30 segundos.',
   },
 }
 

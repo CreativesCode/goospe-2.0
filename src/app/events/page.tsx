@@ -11,9 +11,9 @@ import { PhotoImg } from '@/shared/components/photo-img'
 export const revalidate = 600
 
 export const metadata: Metadata = {
-  title: 'Eventos en Puerto Varas | Goospe',
+  title: 'Eventos cerca de ti | Goospe',
   description:
-    'Qué hacer esta semana en Puerto Varas: conciertos, ferias y panoramas cerca de ti. Confirma tu asistencia con un toque.',
+    'Qué hacer esta semana cerca de ti: conciertos, ferias y panoramas. Confirma tu asistencia con un toque.',
   alternates: { canonical: '/events' },
 }
 
@@ -37,8 +37,8 @@ export default async function EventosPage() {
       <AppNav />
 
       <div className="mx-auto max-w-3xl px-5 py-8">
-        <h1 className="mb-1 text-3xl font-medium text-fg">Eventos en Puerto Varas</h1>
-        <p className="mb-6 text-fg-soft">Lo que viene en los lugares de la ciudad.</p>
+        <h1 className="mb-1 text-3xl font-medium text-fg">Próximos eventos</h1>
+        <p className="mb-6 text-fg-soft">Lo que viene en los lugares cerca de ti.</p>
 
         {events.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-20 text-center">

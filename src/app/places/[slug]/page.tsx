@@ -33,8 +33,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!data) return { title: 'Lugar — Goospe' }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const photo: string | undefined = ((data as any).place_photos ?? []).find((p: any) => p.status === 'approved')?.url
-  const title = `${data.name} — Puerto Varas | Goospe`
-  const description = data.vibe_line || data.description || `Descubre ${data.name} en Puerto Varas con Goospe.`
+  // Ciudad real del propio lugar (dinámica), no una fija; si no hay, copy sin ciudad.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const city = ((data as any).address?.city as string | undefined)?.trim() || null
+  const title = city ? `${data.name} — ${city} | Goospe` : `${data.name} | Goospe`
+  const description = data.vibe_line || data.description ||
+    (city ? `Descubre ${data.name} en ${city} con Goospe.` : `Descubre ${data.name} con Goospe.`)
   // Foto de la ficha como imagen de compartir. El proxy /api/place-photo sirve a 800px por
   // defecto; pedimos 1200px para una tarjeta OG nítida. Si no hay foto aprobada, omitimos
   // `images` y Next usa la imagen de marca por defecto (src/app/opengraph-image.tsx).

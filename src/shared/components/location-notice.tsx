@@ -4,7 +4,7 @@ import { MapPin, RefreshCw } from 'lucide-react'
 import type { GeoSource } from '@/lib/geo'
 
 /**
- * Aviso cuando la ubicación es el fallback de Puerto Varas (permiso denegado / expirado).
+ * Aviso cuando la ubicación es el fallback (centro por defecto: permiso denegado / expirado).
  * Sin esto, las distancias se miden desde el centro de la ciudad y se muestran como
  * "cerca de ti" sin que el usuario lo sepa. Solo se renderiza cuando hace falta.
  */
@@ -26,7 +26,7 @@ export function LocationNotice({
     >
       <MapPin size={16} strokeWidth={1.75} className="shrink-0 text-goospe-green" />
       <span className="min-w-0 flex-1">
-        Mostrando <b className="font-medium text-fg">Puerto Varas</b> — activa tu ubicación para distancias reales.
+        Mostrando una <b className="font-medium text-fg">ubicación aproximada</b> — activa tu ubicación para distancias reales.
       </span>
       {onRetry && (
         <button

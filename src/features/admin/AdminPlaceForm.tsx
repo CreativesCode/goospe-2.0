@@ -125,7 +125,7 @@ export function AdminPlaceForm({ place, categories }: { place: AdminPlace; categ
             <input id="lng" name="lng" type="number" step="any" defaultValue={place.lng ?? ''} placeholder="-72.9854" className={field} />
           </div>
         </div>
-        <p className="text-xs text-muted">Si dejas las coordenadas vacías al crear, se usa el centro de Puerto Varas.</p>
+        <p className="text-xs text-muted">Si dejas las coordenadas vacías al crear, se usa el centro por defecto.</p>
       </section>
 
       <label className="flex items-center gap-3 rounded-2xl border border-line bg-card p-4">

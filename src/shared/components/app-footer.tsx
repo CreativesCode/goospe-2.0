@@ -16,7 +16,7 @@ export function AppFooter() {
   return (
     <footer className="mt-auto border-t border-line bg-surface px-5 pb-24 pt-8 text-sm text-muted md:pb-8">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
-        <span>Goospe · Puerto Varas, Chile</span>
+        <span>Goospe · Chile</span>
         <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
           {FOOTER_LINKS.map((l) => (
             <Link key={l.href} href={l.href} className="transition hover:text-fg">{l.label}</Link>

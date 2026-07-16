@@ -3,7 +3,7 @@ import { categoryIcon } from '@/shared/lib/icons'
 import { AppNav } from '@/shared/components/app-nav'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-// Grid de descubrimiento de Puerto Varas (cards de marca con foto aprobada cuando existe).
+// Grid de descubrimiento de lugares (cards de marca con foto aprobada cuando existe).
 // Sin searchParams → ISR seguro (antes el toggle de debug `?photos=` la forzaba a dynamic).
 export const revalidate = 3600
 
@@ -53,7 +53,7 @@ export default async function PlacesPage() {
       <div className="border-b border-line bg-surface/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm text-fg-soft">
           <span>
-            Puerto Varas · <strong className="text-fg">{places.length}</strong> lugares ·{' '}
+            <strong className="text-fg">{places.length}</strong> lugares ·{' '}
             <span className="text-goospe-green">{withPhoto}</span> con foto
           </span>
         </div>

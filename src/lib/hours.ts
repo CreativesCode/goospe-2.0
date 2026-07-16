@@ -118,7 +118,7 @@ export function humanizeHours(osmRaw: string | null | undefined): string[] | nul
   return lines.length ? lines : null
 }
 
-// "Ahora" en la zona de la ciudad (Puerto Varas → America/Santiago).
+// "Ahora" en la zona de la ciudad (zona del piloto → America/Santiago).
 export function cityNowParts(tz = 'America/Santiago'): { osmDay: number; minutes: number } {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: tz, weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
