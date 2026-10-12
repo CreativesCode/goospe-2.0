@@ -318,6 +318,20 @@ competitivo y clustering — que el doc 15 difiere hasta tener volumen de intera
 - **Error**: `create or replace` no admite cambiar columnas de `returns table`.
 - **Fix**: `drop function if exists` + `create` en la misma transacción y **volver a dar los grants** (se pierden con el drop). Tras aplicar: `notify pgrst, 'reload schema'`.
 
+### 2026-10-12 (Fase 5): las server actions cortan en 1 MB
+- **Error**: el tope por defecto de Next para el cuerpo de una server action es 1 MB; la validación de "hasta 5 MB" nunca llegaba a ejecutarse con una foto de móvil.
+- **Fix**: `experimental.serverActions.bodySizeLimit: '6mb'` en `next.config.ts` y aviso de tamaño en el cliente antes de subir.
+- **Aplicar en**: toda subida de archivos por server action.
+
+### 2026-10-12 (Fase 5): columna nueva en una tabla que el usuario puede escribir
+- **Error**: `reviews` tenía UPDATE de tabla para `authenticated`; al añadir `owner_reply`, el autor de la reseña habría podido escribirse la "respuesta del negocio" por la API.
+- **Fix**: `revoke insert, update` de tabla + `grant ... (columnas)` en la misma migración que añade la columna (0037).
+- **Aplicar en**: cada `add column` sobre una tabla con política de escritura para el usuario.
+
+### 2026-10-12 (Fase 5): "off" al final apaga la madrugada del día anterior
+- **Error**: `isOpenNow` aplica `off` sobre lo ya evaluado; `Fr 22:00-02:00; Sa off` daba cerrado el sábado a la 01:00.
+- **Fix**: el editor de horario emite primero los días cerrados (`src/lib/hours-editor.ts`, con test).
+
 ---
 
 ## Gotchas

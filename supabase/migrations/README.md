@@ -15,7 +15,13 @@ un no-op funcional pendiente de aplicar.
 - **`0035`**: migración primero, código después.
 - **`0036`**: versiona `assign_nearest_city`, que existía en la BD sin archivo. Misma
   definición y mismos permisos que ya tiene producción.
-- La numeración continúa en `0037`. No reutilizar un número.
+- **`0037`** (fase 5, panel del dueño): solo cambios aditivos; migración primero, código después.
+  El código nuevo del panel NO funciona sin ella (columnas `owner_reply`, `link`, `owner_paused_at`,
+  tabla `place_change_requests`, RPC `place_metrics_series`). Pendiente de aplicar.
+- **`0038`**: `search_places` y `match_places` devuelven la portada del dueño (`places.cover_url`)
+  como `photo_url`. Misma firma y columnas (`create or replace`). Pendiente de aplicar; antes,
+  comparar `match_places` con su `pg_get_functiondef` real (el cuerpo viene de `0030`).
+- La numeración continúa en `0039`. No reutilizar un número.
 
 ## Drift conocido entre el historial de la BD y el repo
 

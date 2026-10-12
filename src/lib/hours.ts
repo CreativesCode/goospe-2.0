@@ -13,7 +13,7 @@ const OFF_RE = /\b(off|closed)\b/i
 // Separa las reglas. OSM admite `;` y también `,` entre reglas; la coma además separa días
 // ("Sa,Su") y franjas ("13:00-16:00,20:00-24:00"). Una coma abre regla nueva solo si lo
 // acumulado ya trae horario (u "off") y lo que sigue empieza por un día, no por una hora.
-function splitRules(raw: string): string[] {
+export function splitRules(raw: string): string[] {
   const out: string[] = []
   for (const semi of raw.split(';')) {
     let cur = ''
@@ -32,7 +32,7 @@ function splitRules(raw: string): string[] {
 }
 
 // Días de una regla. null = hay algo que no entendemos (meses, fechas) → regla no evaluable.
-function expandDays(spec: string): Set<number> | null {
+export function expandDays(spec: string): Set<number> | null {
   const out = new Set<number>()
   for (const tok of spec.split(',')) {
     const t = tok.trim()
@@ -139,20 +139,35 @@ export function humanizeHours(osmRaw: string | null | undefined): string[] | nul
   if (!raw) return null
   if (raw === '24/7') return ['Abierto las 24 horas']
 
-  const lines: string[] = []
+  const lines: { text: string; order: number }[] = []
   for (const r of splitRules(raw)) {
     const timeIdx = r.search(TIME_RE)
     const isOff = OFF_RE.test(r)
     if (timeIdx < 0 && !isOff) continue
     const daySpec = (timeIdx < 0 ? r.replace(OFF_RE, '') : r.slice(0, timeIdx)).trim()
     const days = daySpec ? humanizeDays(daySpec) : 'Todos los días'
-    if (days === null) { lines.push(r); continue } // regla que no sabemos traducir: tal cual
-    if (isOff) { lines.push(`${days || 'Todos los días'}: Cerrado`); continue }
+    if (days === null) { lines.push({ text: r, order: 8 }); continue } // regla que no sabemos traducir: tal cual
+    const order = firstDayOrder(daySpec)
+    if (isOff) { lines.push({ text: `${days || 'Todos los días'}: Cerrado`, order }); continue }
     const times = humanizeTimes(r.slice(timeIdx).trim())
     if (!times) continue
-    lines.push(`${days || 'Todos los días'}: ${times}`)
+    lines.push({ text: `${days || 'Todos los días'}: ${times}`, order })
   }
-  return lines.length ? lines : null
+  // Solo al MOSTRAR: lunes primero (el editor guarda antes los días cerrados). Orden estable;
+  // no toca el formato guardado ni isOpenNow.
+  lines.sort((a, b) => a.order - b.order)
+  return lines.length ? lines.map((l) => l.text) : null
+}
+
+// Posición de una regla al listarla: -1 "todos los días", 0..6 el primer día que nombra
+// (Lun..Dom), 7 solo festivos.
+function firstDayOrder(daySpec: string): number {
+  if (!daySpec) return -1
+  for (const tok of daySpec.split(',')) {
+    const i = OSM_DAYS.indexOf(tok.trim().slice(0, 2))
+    if (i >= 0) return i
+  }
+  return 7
 }
 
 // "Ahora" en la zona de la CIUDAD del lugar (cities.timezone). Sin zona usa la del entorno.

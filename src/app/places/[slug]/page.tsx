@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const data = await getPlace(slug)
   if (!data) return { title: 'Lugar — Goospe' }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const photo: string | undefined = ((data as any).place_photos ?? []).find((p: any) => p.status === 'approved')?.url
+  const photo: string | undefined = data.cover_url || ((data as any).place_photos ?? []).find((p: any) => p.status === 'approved')?.url
   // Ciudad real del propio lugar (dinámica), no una fija; si no hay, copy sin ciudad.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const city = ((data as any).address?.city as string | undefined)?.trim() || null
@@ -149,6 +149,10 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
   // tiene que estar aquí. Antes se colaban las pendientes de moderación.
   const photos = ((place.place_photos ?? []) as { id: string; url: string; status: string | null }[])
     .filter((ph) => ph.status === 'approved')
+  // La portada que subió el dueño va primero en la galería (sin repetirla si ya es una foto suya).
+  const gallery = place.cover_url
+    ? [{ id: 'cover', url: place.cover_url }, ...photos.filter((ph) => ph.url !== place.cover_url)]
+    : photos
   const tz = (place as unknown as { cities: { timezone: string } | null }).cities?.timezone ?? null
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cats = (place.place_categories ?? []).map((pc: any) => pc.categories).filter(Boolean)
@@ -172,6 +176,13 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
       <div className="mx-auto max-w-5xl px-5 py-8">
         <BackButton className="mb-5" />
 
+        {/* Lugar oculto (pausado por su dueño o por el equipo): la ficha avisa en vez de aparentar normalidad. */}
+        {place.is_published === false && (
+          <p role="status" className="mb-5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-fg">
+            Este lugar está cerrado temporalmente o no está disponible por ahora.
+          </p>
+        )}
+
         {/* título */}
         <div className="mb-4">
           <div className="mb-1 flex items-center gap-3 text-sm text-fg-soft">
@@ -180,8 +191,15 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
               return <span key={c.slug} className="inline-flex items-center gap-1"><Cat size={14} strokeWidth={1.75} /> {c.name}</span>
             })}
           </div>
-          <h1 className="text-3xl font-medium text-fg">{place.name}</h1>
-          {place.vibe_line && <p className="mt-1 text-lg font-medium text-goospe-green">{place.vibe_line}</p>}
+          <div className="flex items-center gap-3">
+            {place.logo_url && (
+              <PhotoImg src={place.logo_url} alt={`Logo de ${place.name}`} className="h-14 w-14 shrink-0 rounded-full border border-line object-cover" isoClassName="h-6 w-6" />
+            )}
+            <div className="min-w-0">
+              <h1 className="text-3xl font-medium text-fg [overflow-wrap:anywhere]">{place.name}</h1>
+              {place.vibe_line && <p className="mt-1 text-lg font-medium text-goospe-green">{place.vibe_line}</p>}
+            </div>
+          </div>
           <OpenNowBadge hours={hours} timezone={tz} tone="surface" className="mt-2" />
         </div>
 
@@ -227,7 +245,7 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
         {/* fotos */}
         <section className="mb-8">
           {/* `empty` cubre también el caso "hay fotos pero ninguna cargó" (Google caído). */}
-          <PhotoGallery photos={photos} alt={place.name} empty={noPhotos} />
+          <PhotoGallery photos={gallery} alt={place.name} empty={noPhotos} />
           <PhotoUpload placeId={place.id} />
         </section>
 

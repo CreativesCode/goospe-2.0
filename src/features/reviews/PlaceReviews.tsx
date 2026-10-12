@@ -3,12 +3,16 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Star } from 'lucide-react'
+import { Star, BadgeCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { submitReview, deleteOwnReview } from '@/actions/reviews'
+import { submitReview, deleteOwnReview, managesPlace } from '@/actions/reviews'
 import { toast } from '@/shared/components/toast'
 
-type Review = { id: string; user_id: string; rating: number; body: string | null; created_at: string }
+type Review = {
+  id: string; user_id: string; rating: number; body: string | null; created_at: string
+  owner_reply?: string | null; owner_replied_at?: string | null
+}
+const REVIEW_COLS = 'id, user_id, rating, body, created_at'
 type Stats = { rating: number; reviews_count: number }
 type PublicProfile = { id: string; display_name: string | null }
 type PublicProfilesClient = {
@@ -46,6 +50,7 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
   const [names, setNames] = useState<Record<string, string>>({})
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isManager, setIsManager] = useState(false)
 
   // form
   const [rating, setRating] = useState(0)
@@ -54,22 +59,23 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
   const [saving, setSaving] = useState(false)
 
   const load = useCallback(async () => {
-    const [{ data: st }, { data: rv }, { data: { user } }] = await Promise.all([
+    const fetchReviews = (cols: string) =>
+      supabase.from('reviews').select(cols).eq('place_id', placeId).eq('status', 'approved')
+        .order('created_at', { ascending: false }).limit(50)
+    const [{ data: st }, withReply, { data: { user } }] = await Promise.all([
       supabase.from('place_stats').select('rating, reviews_count').eq('place_id', placeId).maybeSingle(),
-      supabase
-        .from('reviews')
-        .select('id, user_id, rating, body, created_at')
-        .eq('place_id', placeId)
-        .eq('status', 'approved')
-        .order('created_at', { ascending: false })
-        .limit(50),
+      fetchReviews(`${REVIEW_COLS}, owner_reply, owner_replied_at`),
       supabase.auth.getUser(),
     ])
+    // Si la BD aún no tiene las columnas de respuesta (migración 0037), se listan sin ella.
+    const rv = withReply.error ? (await fetchReviews(REVIEW_COLS)).data : withReply.data
 
     const list = (rv ?? []) as unknown as Review[]
     setStats((st as unknown as Stats) ?? { rating: 0, reviews_count: 0 })
     setReviews(list)
     setUserId(user?.id ?? null)
+    // El dueño no reseña su propio lugar: no se le ofrece el formulario (el servidor también lo rechaza).
+    if (user) managesPlace(placeId).then(setIsManager).catch(() => {})
 
     const ids = [...new Set(list.map((r) => r.user_id))]
     if (ids.length) {
@@ -121,7 +127,7 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
   }
 
   return (
-    <section className="mt-10 border-t border-line pt-8">
+    <section id="resenas" className="mt-10 scroll-mt-24 border-t border-line pt-8">
       <div className="mb-5 flex items-center gap-3">
         <h2 className="text-xs font-medium uppercase tracking-[0.08em] text-muted">Reseñas</h2>
         {stats.reviews_count > 0 && (
@@ -137,6 +143,11 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
       {userId === null && !loading ? (
         <div className="mb-6 rounded-xl bg-goospe-green/5 p-4 text-sm text-fg">
           <Link href={`/login?next=${encodeURIComponent(pathname)}`} className="font-medium text-goospe-green hover:underline">Inicia sesión</Link> para dejar tu reseña.
+        </div>
+      ) : userId && isManager ? (
+        <div className="mb-6 rounded-xl bg-goospe-green/5 p-4 text-sm text-fg-soft">
+          Administras este lugar, así que no puedes reseñarlo. Responde a tus clientes desde tu panel.
+          {own && <button type="button" onClick={onDelete} className="ml-2 text-red-600 hover:underline">Eliminar mi reseña</button>}
         </div>
       ) : userId ? (
         <form onSubmit={onSubmit} className="mb-8 rounded-xl border border-line bg-card p-4 shadow-sm">
@@ -195,7 +206,16 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
                 <span className="text-xs text-muted">{fmtDate(r.created_at)}</span>
               </div>
               <Stars value={r.rating} size={14} />
-              {r.body && <p className="mt-2 text-sm text-fg-soft">{r.body}</p>}
+              {r.body && <p className="mt-2 text-sm text-fg-soft [overflow-wrap:anywhere]">{r.body}</p>}
+              {r.owner_reply && (
+                <div className="mt-3 rounded-lg border-l-2 border-goospe-green bg-goospe-green/5 px-3 py-2">
+                  <p className="flex flex-wrap items-center gap-x-2 text-xs font-medium text-goospe-green-dark">
+                    <span className="inline-flex items-center gap-1"><BadgeCheck size={13} strokeWidth={2} /> Respuesta del negocio</span>
+                    {r.owner_replied_at && <span className="font-normal text-muted">{fmtDate(r.owner_replied_at)}</span>}
+                  </p>
+                  <p className="mt-1 whitespace-pre-line text-sm text-fg [overflow-wrap:anywhere]">{r.owner_reply}</p>
+                </div>
+              )}
             </li>
           ))}
         </ul>

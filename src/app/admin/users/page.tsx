@@ -2,10 +2,11 @@ import { ShieldCheck, Heart, Star, Calendar, Store, Download } from 'lucide-reac
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminToggle } from '@/features/admin/AdminToggle'
 import { requireAdmin } from '@/lib/admin-guard'
+import { ADMIN_TZ, fmtInZone } from '@/lib/tz'
 
 export const dynamic = 'force-dynamic'
 
-const fmt = (s: string | null | undefined) => (s ? new Date(s).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' }) : '—')
+const fmt = (s: string | null | undefined) => (s ? fmtInZone(s, ADMIN_TZ, { day: 'numeric', month: 'short', year: 'numeric' }) : '—')
 
 type Activity = { user_id: string; favorites: number; reviews: number; rsvps: number; businesses: number }
 

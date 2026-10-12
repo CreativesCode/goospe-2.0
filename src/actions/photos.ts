@@ -8,25 +8,10 @@ import { isAdmin } from '@/lib/ownership'
 import { rateLimit } from '@/lib/rate-limit'
 import { isUuid } from '@/lib/validation'
 import { revalidatePlace } from '@/lib/revalidate-place'
+import { BAD_IMAGE_FORMAT as BAD_FORMAT, IMAGE_MAX_BYTES as MAX_BYTES, sniffImage } from '@/lib/image-sniff'
 
-const MAX_BYTES = 5 * 1024 * 1024
 const UPLOADS_PER_HOUR = 10
 const UPLOAD_FAILED = 'No pudimos subir la foto. Intenta de nuevo.'
-const BAD_FORMAT = 'Formato no soportado (usa JPG, PNG o WebP)'
-
-type ImageKind = { mime: 'image/jpeg' | 'image/png' | 'image/webp'; ext: 'jpg' | 'png' | 'webp' }
-
-// Tipo REAL del archivo por sus magic bytes (el `file.type` lo declara el cliente y no es fiable).
-function sniffImage(b: Buffer): ImageKind | null {
-  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return { mime: 'image/jpeg', ext: 'jpg' }
-  if (b.length >= 8 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) {
-    return { mime: 'image/png', ext: 'png' }
-  }
-  if (b.length >= 12 && b.toString('latin1', 0, 4) === 'RIFF' && b.toString('latin1', 8, 12) === 'WEBP') {
-    return { mime: 'image/webp', ext: 'webp' }
-  }
-  return null
-}
 
 // Subida de foto por un usuario. place_photos no tiene policy de INSERT para authenticated,
 // así que pasa por admin client, pero fijando author_id = sesión real y status='pending'

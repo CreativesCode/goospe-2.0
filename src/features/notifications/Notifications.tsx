@@ -1,17 +1,31 @@
 'use client'
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { Bell } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Bell, Star, AlertTriangle, Ticket, BadgeCheck, XCircle, MessageSquare, CalendarX, CalendarClock, Inbox, type LucideIcon } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { toast } from '@/shared/components/toast'
+import { safeInternalLink, timeAgo } from '@/features/notifications/format'
 
-type Notif = { id: string; title: string; body: string | null; read: boolean; created_at: string }
+type Notif = { id: string; kind: string; title: string; body: string | null; link: string | null; read: boolean; created_at: string }
+
+const HISTORY = 30
+const COLS = 'id, kind, title, body, link, read, created_at'
+const LEGACY_COLS = 'id, kind, title, body, read, created_at' // antes de la migración 0037 (sin `link`)
+
+// Icono por tipo. Los avisos críticos / de rechazo llevan además color de alerta.
+const ICON: Record<string, LucideIcon> = {
+  event_reminder: CalendarClock, review_new: Star, review_critical: AlertTriangle, event_rsvp: Ticket,
+  claim_approved: BadgeCheck, claim_rejected: XCircle, review_reply: MessageSquare,
+  event_cancelled: CalendarX, event_updated: CalendarClock,
+  claim_new: Inbox, change_request_new: Inbox, change_request_resolved: BadgeCheck,
+}
+const ALERT_KINDS = new Set(['review_critical', 'claim_rejected', 'event_cancelled'])
 
 // ── Store-singleton de notificaciones ───────────────────────────────────────────────────────
-// Antes el componente se remontaba en cada navegación → nuevo `getUser()` + fetch + canal
-// Realtime por página. Ahora el estado y el canal viven en el módulo: `ensure(userId)` es
-// idempotente para el mismo usuario (no re-suscribe al navegar) y reacciona a login/logout.
+// El estado y el canal Realtime viven en el módulo: `ensure(userId)` es idempotente para el
+// mismo usuario (no re-suscribe al navegar) y reacciona a login/logout.
 let items: Notif[] = []
 const listeners = new Set<() => void>()
 let activeUserId: string | null | undefined = undefined // undefined = aún sin resolver
@@ -20,6 +34,15 @@ let channel: ReturnType<ReturnType<typeof createClient>['channel']> | null = nul
 const emit = () => listeners.forEach((l) => l())
 const setItems = (next: Notif[]) => { items = next; emit() }
 
+async function fetchHistory(userId: string) {
+  const sb = createClient()
+  const query = (cols: string) =>
+    sb.from('notifications').select(cols).order('created_at', { ascending: false }).limit(HISTORY)
+  let { data, error } = await query(COLS)
+  if (error) ({ data, error } = await query(LEGACY_COLS))
+  if (activeUserId === userId) setItems(((data ?? []) as unknown as Notif[]).map((n) => ({ ...n, link: n.link ?? null })))
+}
+
 function ensure(userId: string | null) {
   if (typeof window === 'undefined' || userId === activeUserId) return // idempotente
   const sb = createClient()
@@ -27,12 +50,7 @@ function ensure(userId: string | null) {
   activeUserId = userId
   setItems([])
   if (!userId) return
-
-  sb.from('notifications')
-    .select('id, title, body, read, created_at')
-    .order('created_at', { ascending: false })
-    .limit(20)
-    .then(({ data }) => { if (activeUserId === userId) setItems((data ?? []) as Notif[]) })
+  void fetchHistory(userId)
 
   // Canal único por usuario; vive lo que vive la pestaña (no se re-suscribe al navegar).
   const topic = `notif-${userId}-${Math.random().toString(36).slice(2)}`
@@ -43,20 +61,51 @@ function ensure(userId: string | null) {
       { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
       (payload) => {
         const n = payload.new as Notif
-        setItems([n, ...items])
+        setItems([{ ...n, link: n.link ?? null }, ...items].slice(0, HISTORY))
         toast.info(n.body ? `${n.title} · ${n.body}` : n.title) // aviso en vivo vía toast global
       }
     )
     .subscribe()
 }
 
+// Marca como leídas en el store (optimista) y en la BD (el usuario solo puede tocar `read`).
+async function markRead(ids: string[]) {
+  if (!ids.length) return
+  const set = new Set(ids)
+  setItems(items.map((n) => (set.has(n.id) ? { ...n, read: true } : n)))
+  // `as never`: workaround del tipado del cliente de navegador (igual que en use-feed.ts).
+  await createClient().from('notifications').update({ read: true } as never).in('id', ids)
+}
+
 const subscribe = (cb: () => void) => { listeners.add(cb); return () => { listeners.delete(cb) } }
 const getSnapshot = () => items
 const EMPTY: Notif[] = []
 
-// Campana de notificaciones en vivo. Lee del store compartido; solo el abrir/cerrar es local.
+function Row({ n, onOpen }: { n: Notif; onOpen: (n: Notif) => void }) {
+  const Icon = ICON[n.kind] ?? Bell
+  const alert = ALERT_KINDS.has(n.kind)
+  return (
+    <li className="border-b border-line last:border-0">
+      <button type="button" role="menuitem" onClick={() => onOpen(n)}
+        className={`flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-surface ${n.read ? '' : 'bg-goospe-green/5'}`}>
+        <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${alert ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400' : 'bg-goospe-green/10 text-goospe-green'}`}>
+          <Icon size={16} strokeWidth={1.75} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className={`block text-sm text-fg ${n.read ? '' : 'font-medium'}`}>{n.title}</span>
+          {n.body && <span className="line-clamp-2 block text-xs text-fg-soft [overflow-wrap:anywhere]">{n.body}</span>}
+          <span className="mt-0.5 block text-[11px] text-muted">{timeAgo(n.created_at)}</span>
+        </span>
+        {!n.read && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-goospe-green" aria-label="Sin leer" />}
+      </button>
+    </li>
+  )
+}
+
+// Campana de notificaciones en vivo con historial. Lee del store compartido.
 export function Notifications() {
   const { user } = useAuth()
+  const router = useRouter()
   const list = useSyncExternalStore(subscribe, getSnapshot, () => EMPTY)
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -75,44 +124,47 @@ export function Notifications() {
     }
   }, [])
 
-  const unread = list.filter((n) => !n.read).length
+  const unread = list.filter((n) => !n.read)
 
-  async function openAndRead() {
-    setOpen((v) => !v)
-    if (!open && unread > 0) {
-      const sb = createClient()
-      const ids = list.filter((n) => !n.read).map((n) => n.id)
-      setItems(items.map((n) => ({ ...n, read: true })))
-      await sb.from('notifications').update({ read: true } as never).in('id', ids)
-    }
+  // Abrir una notificación: la marca como leída y navega a su destino (solo rutas internas).
+  function openItem(n: Notif) {
+    if (!n.read) void markRead([n.id])
+    const href = safeInternalLink(n.link)
+    if (!href) return
+    setOpen(false)
+    router.push(href)
   }
 
   return (
     <div ref={ref} className="relative">
-      <button onClick={openAndRead} aria-label="Notificaciones" aria-haspopup="menu" aria-expanded={open}
+      <button onClick={() => setOpen((v) => !v)} aria-haspopup="menu" aria-expanded={open}
+        aria-label={unread.length ? `Notificaciones: ${unread.length} sin leer` : 'Notificaciones'}
         className="relative flex h-11 w-11 items-center justify-center rounded-full border border-line bg-card text-fg-soft transition hover:text-fg">
         <Bell size={18} strokeWidth={1.75} />
-        {unread > 0 && (
+        {unread.length > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-goospe-green px-1 text-[10px] font-bold text-white">
-            {unread}
+            {unread.length > 9 ? '9+' : unread.length}
           </span>
         )}
       </button>
 
       {open && (
         // z-50: por encima de los chips del feed móvil y del contenido de la página.
-        <div className="absolute right-0 z-50 mt-2 w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl bg-card shadow-2xl ring-1 ring-line">
-          <div className="border-b border-line px-4 py-2.5 text-sm font-medium text-fg">Notificaciones</div>
+        <div role="menu" aria-label="Notificaciones"
+          className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl bg-card shadow-2xl ring-1 ring-line max-sm:fixed max-sm:inset-x-4 max-sm:top-[calc(var(--sat)+4rem)] max-sm:w-auto">
+          <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
+            <span className="text-sm font-medium text-fg">Notificaciones</span>
+            {unread.length > 0 && (
+              <button type="button" onClick={() => markRead(unread.map((n) => n.id))} className="text-xs font-medium text-goospe-green hover:underline">
+                Marcar todas como leídas
+              </button>
+            )}
+          </div>
           {list.length === 0 ? (
             <p className="px-4 py-6 text-center text-sm text-muted">Nada por ahora.</p>
           ) : (
-            <ul className="max-h-80 overflow-y-auto">
-              {list.map((n) => (
-                <li key={n.id} className="border-b border-line px-4 py-2.5 last:border-0">
-                  <p className="text-sm font-medium text-fg">{n.title}</p>
-                  {n.body && <p className="text-xs text-fg-soft">{n.body}</p>}
-                </li>
-              ))}
+            <ul className="max-h-[min(24rem,60vh)] overflow-y-auto">
+              {list.map((n) => <Row key={n.id} n={n} onOpen={openItem} />)}
             </ul>
           )}
         </div>

@@ -118,6 +118,22 @@ describe('humanizeHours', () => {
     expect(humanizeHours('PH 10:00-14:00')).toEqual(['Festivos: 10:00–14:00'])
   })
 
+  it('lista las reglas con el lunes primero, aunque los días cerrados vengan antes', () => {
+    expect(humanizeHours('We off; Mo,Tu 09:00-18:00; Th-Su 10:00-14:00')).toEqual([
+      'Lun, Mar: 09:00–18:00',
+      'Mié: Cerrado',
+      'Jue a Dom: 10:00–14:00',
+    ])
+    expect(humanizeHours('Sa,Su off; Mo-Fr 09:00-18:00; PH off')).toEqual([
+      'Lun a Vie: 09:00–18:00',
+      'Sáb, Dom: Cerrado',
+      'Festivos: Cerrado',
+    ])
+    expect(humanizeHours('Mo off; Tu-Su 12:00-23:00')).toEqual(['Lun: Cerrado', 'Mar a Dom: 12:00–23:00'])
+    // "Todos los días" va primero y su excepción después (mismo día inicial: orden original).
+    expect(humanizeHours('Su closed; 09:00-18:00')).toEqual(['Todos los días: 09:00–18:00', 'Dom: Cerrado'])
+  })
+
   it('deja tal cual la regla que no sabe traducir', () => {
     expect(humanizeHours('Mo-Fr 09:00-18:00; Dec 24 09:00-13:00')).toEqual([
       'Lun a Vie: 09:00–18:00',

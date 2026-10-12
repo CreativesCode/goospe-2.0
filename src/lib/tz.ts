@@ -28,6 +28,9 @@ export function fmtInZone(iso: string, tz: Tz, opts: Intl.DateTimeFormatOptions)
   }).format(d)
 }
 
+/** Zona del equipo que opera el backoffice: las fechas de /admin no dependen del servidor (UTC). */
+export const ADMIN_TZ = 'America/Santiago'
+
 // Componentes de reloj de pared de un instante en una zona.
 function wallParts(t: number, tz: string) {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -58,6 +61,15 @@ export function zonedTimeToUtc(local: string, tz: Tz): Date | null {
   let t = asUtc - offsetMs(asUtc, zone)
   t = asUtc - offsetMs(t, zone)
   return Number.isNaN(t) ? null : new Date(t)
+}
+
+/** Instante -> valor de `datetime-local` ("YYYY-MM-DDTHH:mm") en la zona: inverso de zonedTimeToUtc. */
+export function isoToLocalInZone(iso: string, tz: Tz): string {
+  const t = new Date(iso).getTime()
+  if (Number.isNaN(t)) return ''
+  const p = wallParts(t, safeTz(tz) ?? 'UTC')
+  const z = (v: number) => String(v).padStart(2, '0')
+  return `${p.y}-${z(p.mo)}-${z(p.d)}T${z(p.h)}:${z(p.mi)}`
 }
 
 /** "Ahora" en la zona, con el formato de `datetime-local` (para el atributo `min`). */

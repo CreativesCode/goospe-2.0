@@ -3,14 +3,16 @@ import { redirect } from 'next/navigation'
 import { Sparkles, Coins, Hash, Download } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/admin-guard'
+import { ADMIN_TZ, fmtInZone } from '@/lib/tz'
 
 export const dynamic = 'force-dynamic'
 
 const DAY = 86400_000
 const fmtUsd = (n: number) => `$${n.toFixed(n < 1 ? 4 : 2)}`
 const fmtTok = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n))
-const fmtDate = (s: string) => new Date(s).toLocaleString('es-CL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-const fmtDay = (s: string) => new Date(s).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })
+const fmtDate = (s: string) => fmtInZone(s, ADMIN_TZ, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+// `day` es una clave de día que agrupa la BD (no un instante): se pinta tal cual, en UTC.
+const fmtDay = (s: string) => fmtInZone(s, 'UTC', { day: 'numeric', month: 'short' })
 
 type Usage = {
   feature: string; model: string

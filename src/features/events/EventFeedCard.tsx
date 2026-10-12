@@ -121,7 +121,7 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
 
       {/* info — pr-20 deja espacio a las acciones laterales; pb-28 a la barra Decídeme */}
       <div className="text-shadow-photo absolute inset-x-0 bottom-0 z-10 space-y-2 p-5 pb-28 pr-20 text-white">
-        <p className="text-sm font-medium capitalize text-goospe-green-light drop-shadow">{fmtWhen(ev.starts_at, ev.timezone)}</p>
+        <p className="text-sm font-medium text-goospe-green-light drop-shadow first-letter:uppercase">{fmtWhen(ev.starts_at, ev.timezone)}</p>
         <h2 className="text-3xl font-medium leading-tight drop-shadow">{ev.name}</h2>
         <Link href={`/places/${ev.place_slug}`} className="block text-white/80">
           en {ev.place_name} · {fmtDist(ev.distance_m)}

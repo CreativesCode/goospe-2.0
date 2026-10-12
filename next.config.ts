@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
     mcpServer: true,
     // Tree-shaking agresivo de imports nombrados (iconos) → bundle más chico.
     optimizePackageImports: ['lucide-react'],
+    // Las subidas (portada, logo, fotos, imagen de evento, carta) viajan por server actions y
+    // admiten hasta 5 MB; el tope por defecto de Next es 1 MB y cortaba cualquier foto de móvil.
+    serverActions: { bodySizeLimit: '6mb' },
   },
   images: {
     // Sirve AVIF/WebP automáticamente cuando el navegador lo soporta.

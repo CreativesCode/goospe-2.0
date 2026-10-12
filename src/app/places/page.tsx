@@ -25,7 +25,8 @@ type PlaceRow = {
   tags: string[] | null
   price_level: number | null
   address: { city?: string; formatted?: string } | null
-  place_photos: { url: string; status: string | null }[]
+  cover_url: string | null
+    place_photos: { url: string; status: string | null }[]
   place_categories: { categories: { emoji: string | null; name: string } | null }[]
 }
 
@@ -50,7 +51,7 @@ export default async function PlacesPage({ searchParams }: { searchParams: Promi
   const { data, error, count } = await sb
     .from('places')
     .select(
-      'id, slug, name, description, vibe_line, tags, price_level, address, place_photos(url, status), place_categories(categories(emoji, name))',
+      'id, slug, name, description, vibe_line, tags, price_level, address, cover_url, place_photos(url, status), place_categories(categories(emoji, name))',
       { count: 'exact' }
     )
     .eq('is_published', true)
@@ -84,7 +85,7 @@ export default async function PlacesPage({ searchParams }: { searchParams: Promi
       <div className="mx-auto w-full max-w-7xl px-5 py-8">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {places.map((p) => {
-            const photo = p.place_photos?.find((ph) => ph.status === 'approved')?.url
+            const photo = p.cover_url || p.place_photos?.find((ph) => ph.status === 'approved')?.url // portada del dueño primero
             const Cat = categoryIcon(p.place_categories?.[0]?.categories?.emoji)
             const city = p.address?.city ?? null
             return (

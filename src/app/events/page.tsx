@@ -83,7 +83,7 @@ export default async function EventosPage() {
                   )}
                   <div className="flex min-w-0 flex-1 flex-col justify-between p-4">
                     <div>
-                      <p className="text-xs font-medium capitalize text-goospe-green">{fmt(ev.starts_at, ev.places?.cities?.timezone)}</p>
+                      <p className="text-xs font-medium text-goospe-green first-letter:uppercase">{fmt(ev.starts_at, ev.places?.cities?.timezone)}</p>
                       <h2 className="mt-0.5 font-medium text-fg">{ev.name}</h2>
                       {ev.places && (
                         <Link href={`/places/${ev.places.slug}`} className="text-sm text-fg-soft hover:text-goospe-green">

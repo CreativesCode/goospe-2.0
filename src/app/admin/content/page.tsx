@@ -3,11 +3,11 @@ import { Star } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ModStatusButtons } from '@/features/admin/ModStatusButtons'
 import { requireAdmin } from '@/lib/admin-guard'
-import { fmtInZone } from '@/lib/tz'
+import { ADMIN_TZ, fmtInZone } from '@/lib/tz'
 
 export const dynamic = 'force-dynamic'
 
-const fmt = (s: string) => new Date(s).toLocaleString('es-CL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+const fmt = (s: string) => fmtInZone(s, ADMIN_TZ, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 // Hora del evento en la zona de la ciudad de su lugar.
 const fmtEvent = (s: string, tz: string | null | undefined) =>
   fmtInZone(s, tz, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })

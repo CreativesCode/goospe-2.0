@@ -4,11 +4,12 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { UnclaimButton } from '@/features/admin/UnclaimButton'
 import { ClaimReviewButtons } from '@/features/admin/ClaimReviewButtons'
 import { requireAdmin } from '@/lib/admin-guard'
+import { ADMIN_TZ, fmtInZone } from '@/lib/tz'
 
 export const dynamic = 'force-dynamic'
 
-const fmt = (s: string | null) => (s ? new Date(s).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' }) : '—')
-const fmtFull = (s: string | null) => (s ? new Date(s).toLocaleString('es-CL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—')
+const fmt = (s: string | null) => (s ? fmtInZone(s, ADMIN_TZ, { day: 'numeric', month: 'short', year: 'numeric' }) : '—')
+const fmtFull = (s: string | null) => (s ? fmtInZone(s, ADMIN_TZ, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—')
 
 type PlaceRow = { id: string; name: string; slug: string; business_id: string | null; is_published: boolean | null }
 type Evidence = { contact_name?: string | null; phone?: string | null; email?: string | null; message?: string | null } | null
@@ -53,15 +54,22 @@ export default async function AdminClaimsPage() {
 
   const [members, claims] = await Promise.all([
     bizIds.length
-      ? admin.from('business_members').select('business_id, role, profiles(id, display_name)').in('business_id', bizIds).eq('role', 'owner')
+      ? admin.from('business_members').select('business_id, user_id').in('business_id', bizIds).eq('role', 'owner')
       : Promise.resolve({ data: [] as unknown[] }),
     placeIds.length
       ? admin.from('claims').select('place_id, created_at, status, method').in('place_id', placeIds)
       : Promise.resolve({ data: [] as unknown[] }),
   ])
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ownerByBiz = Object.fromEntries(((members.data ?? []) as any[]).map((m) => [m.business_id, m.profiles]))
+  // business_members.user_id apunta a auth.users, no a profiles: el embed `profiles(...)` no
+  // resuelve en PostgREST. Los nombres se consultan aparte.
+  const owners = (members.data ?? []) as { business_id: string; user_id: string }[]
+  const ownerIds = [...new Set(owners.map((m) => m.user_id))]
+  const { data: ownerProfs } = ownerIds.length
+    ? await admin.from('profiles').select('id, display_name').in('id', ownerIds)
+    : { data: [] as { id: string; display_name: string | null }[] }
+  const nameByOwner = Object.fromEntries(((ownerProfs ?? []) as { id: string; display_name: string | null }[]).map((p) => [p.id, p.display_name]))
+  const ownerByBiz: Record<string, string | null | undefined> = Object.fromEntries(owners.map((m) => [m.business_id, nameByOwner[m.user_id]]))
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const claimByPlace = Object.fromEntries(((claims.data ?? []) as any[]).map((c) => [c.place_id, c]))
 
@@ -69,7 +77,7 @@ export default async function AdminClaimsPage() {
     <div className="space-y-8">
       <header>
         <h1 className="text-2xl font-medium text-fg">Reclamos</h1>
-        <p className="text-sm text-fg-soft">Revisa cada solicitud de forma personal antes de dar acceso, y administra los lugares ya reclamados.</p>
+        <p className="text-sm text-fg-soft">Revisa cada solicitud de forma personal antes de dar acceso, y administra los lugares ya reclamados. Al rechazar, el motivo es obligatorio: el solicitante lo ve en su campana y en “Mis solicitudes”.</p>
       </header>
 
       {/* Cola de moderación: solicitudes pendientes */}
@@ -97,7 +105,7 @@ export default async function AdminClaimsPage() {
               const ev = c.evidence ?? {}
               const requester = ev.contact_name || pendNameByUser[c.user_id] || 'Solicitante'
               return (
-                <li key={c.id} className="rounded-2xl border border-amber-300/50 bg-amber-50/40 p-4 shadow-sm">
+                <li key={c.id} className="rounded-2xl border border-amber-300/50 bg-amber-500/5 p-4 shadow-sm">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0 space-y-2">
                       <div>
@@ -121,7 +129,7 @@ export default async function AdminClaimsPage() {
                         </p>
                       )}
                     </div>
-                    <div className="shrink-0">
+                    <div className="w-full shrink-0 sm:w-auto">
                       <ClaimReviewButtons claimId={c.id} placeName={place?.name ?? 'este lugar'} />
                     </div>
                   </div>
@@ -164,7 +172,7 @@ export default async function AdminClaimsPage() {
                       <Link href={`/admin/places/${p.id}`} className="font-medium text-fg hover:text-goospe-green">{p.name}</Link>
                     </td>
                     <td className="px-3 py-3">
-                      <span className="inline-flex items-center gap-1 text-goospe-green-dark"><BadgeCheck size={14} /> {owner?.display_name || 'Dueño'}</span>
+                      <span className="inline-flex items-center gap-1 text-goospe-green-dark"><BadgeCheck size={14} /> {owner || 'Dueño'}</span>
                     </td>
                     <td className="px-3 py-3 text-fg-soft">{fmt(claim?.created_at ?? null)}</td>
                     <td className="px-3 py-3 text-fg-soft">{claim?.status ?? 'aprobado'}{claim?.method ? ` · ${claim.method}` : ''}</td>

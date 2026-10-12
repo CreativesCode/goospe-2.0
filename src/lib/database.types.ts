@@ -88,6 +88,7 @@ export type Database = {
       }
       boosts: {
         Row: {
+          ended_at: string | null
           amount_usd: number | null
           business_id: string
           ends_at: string
@@ -98,6 +99,7 @@ export type Database = {
           status: string | null
         }
         Insert: {
+          ended_at?: string | null
           amount_usd?: number | null
           business_id: string
           ends_at: string
@@ -108,6 +110,7 @@ export type Database = {
           status?: string | null
         }
         Update: {
+          ended_at?: string | null
           amount_usd?: number | null
           business_id?: string
           ends_at?: string
@@ -334,6 +337,9 @@ export type Database = {
       }
       claims: {
         Row: {
+          reject_reason: string | null
+          resolved_at: string | null
+          resolved_by: string | null
           created_at: string | null
           evidence: Json | null
           id: string
@@ -343,6 +349,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          reject_reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           created_at?: string | null
           evidence?: Json | null
           id?: string
@@ -352,6 +361,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          reject_reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           created_at?: string | null
           evidence?: Json | null
           id?: string
@@ -656,6 +668,9 @@ export type Database = {
       }
       notifications: {
         Row: {
+          dedupe_key: string | null
+          link: string | null
+          place_id: string | null
           body: string | null
           created_at: string | null
           event_id: string | null
@@ -666,6 +681,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          dedupe_key?: string | null
+          link?: string | null
+          place_id?: string | null
           body?: string | null
           created_at?: string | null
           event_id?: string | null
@@ -676,6 +694,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          dedupe_key?: string | null
+          link?: string | null
+          place_id?: string | null
           body?: string | null
           created_at?: string | null
           event_id?: string | null
@@ -718,6 +739,62 @@ export type Database = {
           },
           {
             foreignKeyName: "place_categories_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      place_change_requests: {
+        Row: {
+          business_id: string | null
+          created_at: string
+          current_value: Json | null
+          id: string
+          kind: string
+          message: string | null
+          payload: Json
+          place_id: string
+          reject_reason: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string
+          current_value?: Json | null
+          id?: string
+          kind: string
+          message?: string | null
+          payload?: Json
+          place_id: string
+          reject_reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string
+          current_value?: Json | null
+          id?: string
+          kind?: string
+          message?: string | null
+          payload?: Json
+          place_id?: string
+          reject_reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_change_requests_place_id_fkey"
             columns: ["place_id"]
             isOneToOne: false
             referencedRelation: "places"
@@ -818,6 +895,7 @@ export type Database = {
       }
       places: {
         Row: {
+          owner_paused_at: string | null
           address: Json | null
           ai_enriched_at: string | null
           business_id: string | null
@@ -851,6 +929,7 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          owner_paused_at?: string | null
           address?: Json | null
           ai_enriched_at?: string | null
           business_id?: string | null
@@ -884,6 +963,7 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          owner_paused_at?: string | null
           address?: Json | null
           ai_enriched_at?: string | null
           business_id?: string | null
@@ -1059,6 +1139,9 @@ export type Database = {
       }
       reviews: {
         Row: {
+          owner_replied_at: string | null
+          owner_reply: string | null
+          owner_reply_by: string | null
           body: string | null
           created_at: string | null
           id: string
@@ -1069,6 +1152,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          owner_replied_at?: string | null
+          owner_reply?: string | null
+          owner_reply_by?: string | null
           body?: string | null
           created_at?: string | null
           id?: string
@@ -1079,6 +1165,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          owner_replied_at?: string | null
+          owner_reply?: string | null
+          owner_reply_by?: string | null
           body?: string | null
           created_at?: string | null
           id?: string
@@ -1295,6 +1384,10 @@ export type Database = {
         }
         Returns: string
       }
+      admin_set_place_location: {
+        Args: { p_lat: number; p_lng: number; p_place_id: string }
+        Returns: undefined
+      }
       admin_top_places: {
         Args: { p_limit?: number; p_value_only?: boolean }
         Returns: {
@@ -1420,9 +1513,30 @@ export type Database = {
         }[]
       }
       ping: { Args: never; Returns: string }
+      place_boost_stats: {
+        Args: { p_place_id: string }
+        Returns: {
+          actions: number
+          boost_id: string
+          clicks: number
+          ended_at: string | null
+          ends_at: string
+          impressions: number
+          starts_at: string
+          status: string | null
+        }[]
+      }
       place_metrics: {
         Args: { p_days?: number; p_place_id: string }
         Returns: {
+          kind: string
+          n: number
+        }[]
+      }
+      place_metrics_series: {
+        Args: { p_days?: number; p_group?: string; p_place_id: string }
+        Returns: {
+          bucket: string
           kind: string
           n: number
         }[]

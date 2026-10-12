@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
-  LayoutDashboard, Store, Users, BadgeCheck, Sparkles, BarChart3, Image, MessageSquare, Globe, MapPin,
+  LayoutDashboard, Store, Users, BadgeCheck, Sparkles, BarChart3, Image, MessageSquare, Globe, MapPin, PencilLine,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -15,6 +15,7 @@ const ITEMS: Item[] = [
   { href: '/admin/places', label: 'Lugares', icon: Store },
   { href: '/admin/users', label: 'Usuarios', icon: Users },
   { href: '/admin/claims', label: 'Reclamos', icon: BadgeCheck },
+  { href: '/admin/requests', label: 'Solicitudes de cambio', icon: PencilLine },
   { href: '/admin/ai-costs', label: 'Gastos IA', icon: Sparkles },
   { href: '/admin/stats', label: 'Estadísticas', icon: BarChart3 },
   { href: '/admin/zones', label: 'Zonas sin cobertura', icon: MapPin },
@@ -29,8 +30,11 @@ const LOADER_ITEM: Item = { href: '/admin/loader', label: 'Cargador de zonas', i
 const active = (pathname: string, href: string) =>
   href === '/admin' ? pathname === '/admin' : pathname.startsWith(href)
 
-/** Navegación del backoffice: sidebar en `lg:`, tabs con scroll horizontal en móvil. */
-export function AdminNav() {
+/**
+ * Navegación del backoffice: sidebar en `lg:`, tabs con scroll horizontal en móvil.
+ * `badges` = pendientes por ruta (reclamos y solicitudes de cambio por revisar).
+ */
+export function AdminNav({ badges = {} }: { badges?: Record<string, number> }) {
   const pathname = usePathname()
   const [isLocal, setIsLocal] = useState(false)
   useEffect(() => {
@@ -44,6 +48,7 @@ export function AdminNav() {
       <ul className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0">
         {items.map(({ href, label, icon: Icon }) => {
           const on = active(pathname, href)
+          const count = badges[href] ?? 0
           return (
             <li key={href} className="shrink-0">
               <Link
@@ -53,6 +58,11 @@ export function AdminNav() {
                 }`}
               >
                 <Icon size={17} strokeWidth={1.75} /> {label}
+                {count > 0 && (
+                  <span className="ml-auto rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-amber-700 dark:text-amber-400" aria-label={`${count} pendientes`}>
+                    {count}
+                  </span>
+                )}
               </Link>
             </li>
           )

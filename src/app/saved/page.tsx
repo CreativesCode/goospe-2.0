@@ -19,6 +19,7 @@ type SavedRow = {
     vibe_line: string | null
     description: string | null
     price_level: number | null
+    cover_url: string | null
     place_photos: { url: string; status: string | null }[]
     place_categories: { categories: { emoji: string | null; name: string } | null }[]
   } | null
@@ -32,7 +33,7 @@ export default async function SavedPage() {
   const { data, error } = await supabase
     .from('favorites')
     .select(
-      'place_id, places(id, slug, name, vibe_line, description, price_level, place_photos(url, status), place_categories(categories(emoji, name)))'
+      'place_id, places(id, slug, name, vibe_line, description, price_level, cover_url, place_photos(url, status), place_categories(categories(emoji, name)))'
     )
     .order('created_at', { ascending: false })
 
@@ -73,7 +74,7 @@ export default async function SavedPage() {
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {places.map((p) => {
-            const photo = p.place_photos?.find((ph) => ph.status === 'approved')?.url
+            const photo = p.cover_url || p.place_photos?.find((ph) => ph.status === 'approved')?.url // portada del dueño primero
             const Cat = categoryIcon(p.place_categories?.[0]?.categories?.emoji)
             return (
               <Link

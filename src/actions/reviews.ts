@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { containsProfanity } from '@/lib/profanity'
 import { rateLimit } from '@/lib/rate-limit'
 import { isUuid } from '@/lib/validation'
+import { assertPlaceMembership } from '@/lib/ownership'
 
 // Reseñas: el usuario autenticado escribe la suya (1 por lugar, unique user_id+place_id).
 // En el piloto se auto-aprueban (status='approved') para que se vean y alimenten el rating de
@@ -15,6 +16,15 @@ import { isUuid } from '@/lib/validation'
 const REVIEW_RATE_WINDOW_S = 600 // ventana de rate-limit (10 min)
 const REVIEW_RATE_MAX = 5 // máx. reseñas nuevas por usuario en la ventana
 const SAVE_FAILED = 'No pudimos guardar tu reseña. Intenta de nuevo.'
+const OWN_PLACE = 'Administras este lugar: no puedes reseñar tu propio negocio.'
+
+/** ¿El usuario en sesión administra este lugar? La ficha lo usa para ocultar el formulario. */
+export async function managesPlace(placeId: string): Promise<boolean> {
+  if (!isUuid(placeId)) return false
+  const sb = await createClient()
+  const { data: { user } } = await sb.auth.getUser()
+  return !!user && !!(await assertPlaceMembership(user.id, placeId))
+}
 
 export async function submitReview(formData: FormData) {
   const placeId = formData.get('place_id')
@@ -30,6 +40,8 @@ export async function submitReview(formData: FormData) {
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
   if (!user) return { error: 'Inicia sesión para opinar' }
+  // El negocio no se reseña a sí mismo (ni crea ni edita): inflaría su propia nota.
+  if (await assertPlaceMembership(user.id, placeId)) return { error: OWN_PLACE }
 
   const admin = createAdminClient()
   const { data: existing } = await admin

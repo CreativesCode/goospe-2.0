@@ -34,22 +34,24 @@ export async function createBoost(formData: FormData) {
     .gt('ends_at', new Date(now).toISOString())
     .limit(1)
   if (current?.length) return { error: 'Este lugar ya está destacado' }
-  const { error } = await admin.from('boosts').insert({
+  const endsAt = new Date(now + days * 86400_000).toISOString()
+  const { data: created, error } = await admin.from('boosts').insert({
     business_id: businessId,
     place_id: placeId,
     starts_at: new Date(now).toISOString(),
-    ends_at: new Date(now + days * 86400_000).toISOString(),
+    ends_at: endsAt,
     amount_usd: 0,
     status: 'active',
-  })
-  if (error) {
-    console.error('[createBoost]', error.message)
+  }).select('id').single()
+  if (error || !created) {
+    console.error('[createBoost]', error?.message)
     return { error: SAVE_FAILED }
   }
 
   revalidatePath(`/panel/${placeId}`)
   revalidatePath('/feed')
-  return { success: true }
+  // El panel pinta el boost con esto sin esperar al refresh.
+  return { success: true, boost: { id: (created as { id: string }).id, ends_at: endsAt } }
 }
 
 // Destaca un EVENTO en el feed por N días (boosts.event_id). Valida membresía vía el lugar del evento.
@@ -99,7 +101,7 @@ export async function endEventBoost(formData: FormData) {
   const placeId = (ev as { place_id: string } | null)?.place_id
   if (!placeId || !(await assertPlaceMembership(user.id, placeId))) return { error: 'Sin permiso' }
 
-  await admin.from('boosts').update({ status: 'ended' }).eq('event_id', eventId).eq('status', 'active')
+  await admin.from('boosts').update({ status: 'ended', ended_at: new Date().toISOString() }).eq('event_id', eventId).eq('status', 'active')
   await admin.from('events').update({ is_boosted: false }).eq('id', eventId)
   revalidatePath(`/panel/${placeId}`)
   revalidatePath('/feed')
@@ -120,7 +122,7 @@ export async function endBoost(formData: FormData) {
   const admin = createAdminClient()
   const { error } = await admin
     .from('boosts')
-    .update({ status: 'ended' })
+    .update({ status: 'ended', ended_at: new Date().toISOString() }) // fin real: mide el rendimiento
     .eq('id', boostId)
     .eq('business_id', businessId)
   if (error) {

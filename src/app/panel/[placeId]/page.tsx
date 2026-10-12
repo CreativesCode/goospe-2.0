@@ -1,256 +1,193 @@
 import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, EyeOff } from 'lucide-react'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isUuid } from '@/lib/validation'
 import { ListingForm } from '@/features/business/ListingForm'
 import { EventManager } from '@/features/business/EventManager'
 import { BoostControl } from '@/features/business/BoostControl'
-import { StatsPanel } from '@/features/business/StatsPanel'
 import { ReviewReplies } from '@/features/business/ReviewReplies'
 import { MenuUpload } from '@/features/business/MenuUpload'
 import { WeeklyReport } from '@/features/business/WeeklyReport'
-
-const toMetricsMap = (rows: { kind: string; n: number }[] | null) =>
-  Object.fromEntries((rows ?? []).map((r) => [r.kind, Number(r.n)]))
+import { PlaceMedia } from '@/features/business/PlaceMedia'
+import { BrandVoiceForm, PlaceIdentity, PlaceStatus, type PlaceVisibility } from '@/features/business/PlaceSettings'
+import { cardClass } from '@/features/business/ui'
+import {
+  loadActiveBoost, loadCategories, loadLatestReport, loadOwnerPhotos, loadOwnerReviews, loadPanelEvents, loadPanelPlace,
+} from '@/features/business/panel-data'
+import { StatsDashboard } from '@/features/analytics/StatsDashboard'
+import { BoostPerformance } from '@/features/analytics/BoostPerformance'
+import { loadBoostStats, loadPlaceSeries } from '@/features/analytics/load'
 
 export const dynamic = 'force-dynamic'
 
-type PlaceEdit = {
-  id: string
-  slug: string
-  name: string
-  business_id: string | null
-  description: string | null
-  vibe_line: string | null
-  phone: string | null
-  whatsapp: string | null
-  website: string | null
-  instagram: string | null
-  price_level: number | null
-  tags: string[] | null
-  menu: unknown | null
-  cities: { name: string; timezone: string } | null
+type Admin = ReturnType<typeof createAdminClient>
+type Sibling = { id: string; name: string; is_published: boolean | null }
+
+const SECTIONS = [
+  ['#estadisticas', 'Estadísticas'], ['#ficha', 'Ficha'], ['#fotos', 'Imágenes'],
+  ['#eventos', 'Eventos'], ['#resenas', 'Reseñas'], ['#negocio', 'Negocio'],
+] as const
+
+const pill = (on: boolean) =>
+  `mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${on ? 'bg-goospe-green/10 text-goospe-green-dark' : 'bg-line text-muted'}`
+
+// Datos del negocio para el panel: rol del usuario, tono de marca y sus otros lugares.
+async function loadBusiness(admin: Admin, businessId: string, userId: string) {
+  const [{ data: member }, { data: biz }, { data: sib }] = await Promise.all([
+    admin.from('business_members').select('role').eq('business_id', businessId).eq('user_id', userId).maybeSingle(),
+    admin.from('businesses').select('brand_voice').eq('id', businessId).maybeSingle(),
+    admin.from('places').select('id, name, is_published').eq('business_id', businessId).order('name'),
+  ])
+  return {
+    // null = no es miembro; un miembro sin rol explícito cuenta como 'member'.
+    role: member ? ((member as { role: string | null }).role ?? 'member') : null,
+    brandVoice: (biz as { brand_voice: string | null } | null)?.brand_voice ?? null,
+    siblings: (sib ?? []) as Sibling[],
+  }
 }
 
-export default async function EditListingPage({
-  params,
-}: {
-  params: Promise<{ placeId: string }>
-}) {
+async function loadExtras(admin: Admin, placeId: string) {
+  const [{ data: stats }, { data: coords }, { data: pending }] = await Promise.all([
+    admin.from('place_stats').select('saves_count, rating, reviews_count').eq('place_id', placeId).maybeSingle(),
+    admin.rpc('places_lnglat', { ids: [placeId] }),
+    admin.from('place_change_requests').select('kind').eq('place_id', placeId).eq('status', 'pending'),
+  ])
+  const ll = (coords ?? [])[0] as { lat: number; lng: number } | undefined
+  return {
+    stats: (stats ?? {}) as { saves_count?: number | null; rating?: number | null; reviews_count?: number | null },
+    mapUrl: ll ? `https://www.openstreetmap.org/?mlat=${ll.lat}&mlon=${ll.lng}#map=18/${ll.lat}/${ll.lng}` : null,
+    pendingKinds: ((pending ?? []) as { kind: string }[]).map((p) => p.kind),
+  }
+}
+
+export default async function EditListingPage({ params }: { params: Promise<{ placeId: string }> }) {
   const { placeId } = await params
+  if (!isUuid(placeId)) notFound()
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
   if (!user) redirect(`/login?next=/panel/${placeId}`)
 
   const admin = createAdminClient()
-  const { data } = await admin
-    .from('places')
-    .select('id, slug, name, business_id, description, vibe_line, phone, whatsapp, website, instagram, price_level, tags, menu, cities(name, timezone)')
-    .eq('id', placeId)
-    .single()
-  const place = data as unknown as PlaceEdit | null
+  const place = await loadPanelPlace(admin, placeId)
   if (!place) notFound()
+  // Verificar membresía ANTES de cargar nada más: el usuario debe pertenecer al negocio dueño.
+  if (!place.business_id) redirect('/panel')
+  const business = await loadBusiness(admin, place.business_id, user.id)
+  if (!business.role) redirect('/panel')
 
-  // Verificar membresía: el usuario debe pertenecer al negocio dueño del place.
-  let allowed = false
-  if (place.business_id) {
-    const { data: member } = await admin
-      .from('business_members')
-      .select('user_id')
-      .eq('business_id', place.business_id)
-      .eq('user_id', user.id)
-      .maybeSingle()
-    allowed = !!member
-  }
-  if (!allowed) redirect('/panel')
-
-  // Maestro-detalle (tablet/web): lista de lugares del dueño para la barra lateral.
-  const { data: memberships } = await admin
-    .from('business_members')
-    .select('business_id')
-    .eq('user_id', user.id)
-  const businessIds = ((memberships ?? []) as { business_id: string }[]).map((m) => m.business_id)
-  let siblings: { id: string; name: string; is_published: boolean }[] = []
-  if (businessIds.length) {
-    const { data: sib } = await admin
-      .from('places')
-      .select('id, name, is_published')
-      .in('business_id', businessIds)
-      .order('name')
-    siblings = (sib ?? []) as unknown as { id: string; name: string; is_published: boolean }[]
-  }
-
-  // Eventos del lugar + boost activo (para los controles del dueño).
-  const { data: evRows } = await admin
-    .from('events')
-    .select('id, name, starts_at, ends_at, description, image_url, is_boosted')
-    .eq('place_id', placeId)
-    .order('starts_at', { ascending: false })
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const evList = (evRows ?? []) as any[]
-
-  // Participaciones (RSVPs) por evento: conteo + lista de asistentes con su nombre.
-  // La RLS "own rsvps" no deja al dueño leerlos con el cliente normal → admin client.
-  const evIds = evList.map((e) => e.id as string)
-  let rsvpsByEvent: Record<string, { user_id: string; status: string; created_at: string }[]> = {}
-  let rsvpNameByUser: Record<string, string> = {}
-  if (evIds.length) {
-    const { data: rsvpRows } = await admin
-      .from('event_rsvps')
-      .select('event_id, user_id, status, created_at')
-      .in('event_id', evIds)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rsvps = (rsvpRows ?? []) as any[]
-    rsvpsByEvent = rsvps.reduce((acc, r) => {
-      (acc[r.event_id] ??= []).push({ user_id: r.user_id, status: r.status, created_at: r.created_at })
-      return acc
-    }, {} as Record<string, { user_id: string; status: string; created_at: string }[]>)
-    const rsvpUserIds = [...new Set(rsvps.map((r) => r.user_id as string))]
-    if (rsvpUserIds.length) {
-      const { data: profs } = await admin.from('profiles').select('id, display_name').in('id', rsvpUserIds)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      rsvpNameByUser = Object.fromEntries(((profs ?? []) as any[]).map((p) => [p.id, p.display_name]))
-    }
-  }
-
-  const events = evList.map((e) => {
-    const rs = rsvpsByEvent[e.id] ?? []
-    const attendees = rs
-      .map((r) => ({ name: rsvpNameByUser[r.user_id] || 'Usuario', status: r.status, when: r.created_at }))
-      .sort((a, b) => (a.when < b.when ? 1 : -1))
-    return {
-      ...e,
-      goingCount: rs.filter((r) => r.status === 'going').length,
-      interestedCount: rs.filter((r) => r.status === 'interested').length,
-      attendees,
-    }
-  })
-
-  const { data: boostRows } = await admin
-    .from('boosts')
-    .select('id, ends_at, status, starts_at')
-    .eq('place_id', placeId)
-    .eq('status', 'active')
-    .order('ends_at', { ascending: false })
-    .limit(1)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const activeBoostRow = (boostRows ?? [])[0] as any
   const now = Date.now()
-  const activeBoost =
-    activeBoostRow && new Date(activeBoostRow.ends_at).getTime() > now
-      ? { id: activeBoostRow.id as string, ends_at: activeBoostRow.ends_at as string }
-      : null
-
-  // Métricas de comportamiento (7 y 30 días) + agregados de place_stats.
-  const [{ data: m30 }, { data: m7 }, { data: stats }] = await Promise.all([
-    admin.rpc('place_metrics', { p_place_id: placeId, p_days: 30 }),
-    admin.rpc('place_metrics', { p_place_id: placeId, p_days: 7 }),
-    admin.from('place_stats').select('saves_count, rating, reviews_count').eq('place_id', placeId).maybeSingle(),
+  const tz = place.cities?.timezone ?? null
+  const [events, activeBoost, reviews, latestReport, series, boostStats, categories, photos, extras] = await Promise.all([
+    loadPanelEvents(admin, placeId),
+    loadActiveBoost(admin, placeId, now),
+    loadOwnerReviews(admin, placeId),
+    loadLatestReport(admin, place.business_id, placeId),
+    loadPlaceSeries(placeId, 30, 'day'),
+    loadBoostStats(placeId),
+    loadCategories(admin),
+    loadOwnerPhotos(admin, placeId),
+    loadExtras(admin, placeId),
   ])
-  const d30 = toMetricsMap(m30 as { kind: string; n: number }[] | null)
-  const d7 = toMetricsMap(m7 as { kind: string; n: number }[] | null)
-  const st = (stats ?? {}) as { saves_count?: number; rating?: number; reviews_count?: number }
 
-  const { data: revRows } = await admin
-    .from('reviews')
-    .select('id, rating, body, created_at')
-    .eq('place_id', placeId)
-    .eq('status', 'approved')
-    .order('created_at', { ascending: false })
-    .limit(10)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const reviews = (revRows ?? []) as any[]
-
-  // Último informe semanal de ESTE lugar (filtrado por place_id dentro del content).
-  const { data: reportRows } = await admin
-    .from('business_reports')
-    .select('content, created_at')
-    .eq('business_id', place.business_id as string)
-    .eq('kind', 'weekly')
-    .order('created_at', { ascending: false })
-    .limit(10)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const latestReportRow = ((reportRows ?? []) as any[]).find((r) => r.content?.place_id === placeId)
-  const latestReport = latestReportRow
-    ? { summary: latestReportRow.content.summary as string, created_at: latestReportRow.created_at as string }
-    : null
+  const visibility: PlaceVisibility = place.is_published ? 'visible' : place.owner_paused_at ? 'paused' : 'hidden_by_admin'
+  const addressLine = [place.address?.formatted, place.address?.city].filter(Boolean).join(', ') || null
+  const { siblings } = business
 
   return (
     <main className="flex min-h-screen flex-col bg-surface">
       <AppNav />
 
-      <div className="mx-auto flex max-w-6xl gap-8 px-5 py-8">
+      <div className="mx-auto flex w-full max-w-6xl gap-8 px-4 py-6 sm:px-5 sm:py-8">
         {/* maestro: lista de lugares (solo tablet/web) */}
         {siblings.length > 1 && (
           <aside className="hidden w-64 shrink-0 lg:block">
             <h2 className="mb-3 px-1 text-xs font-medium uppercase tracking-[0.08em] text-muted">Mis lugares</h2>
             <nav className="flex flex-col gap-2">
-              {siblings.map((s) => {
-                const current = s.id === place.id
-                return (
-                  <Link
-                    key={s.id}
-                    href={`/panel/${s.id}`}
-                    className={`rounded-2xl border bg-card px-4 py-3 transition ${current ? 'border-goospe-green ring-1 ring-goospe-green' : 'border-line hover:border-goospe-green/40'}`}
-                  >
-                    <div className="truncate text-sm font-medium text-fg">{s.name}</div>
-                    <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${s.is_published ? 'bg-goospe-green/10 text-goospe-green-dark' : 'bg-line text-muted'}`}>
-                      {s.is_published ? 'Publicado' : 'Oculto'}
-                    </span>
-                  </Link>
-                )
-              })}
+              {siblings.map((s) => (
+                <Link key={s.id} href={`/panel/${s.id}`} aria-current={s.id === place.id ? 'page' : undefined}
+                  className={`rounded-2xl border bg-card px-4 py-3 transition ${s.id === place.id ? 'border-goospe-green ring-1 ring-goospe-green' : 'border-line hover:border-goospe-green/40'}`}>
+                  <div className="truncate text-sm font-medium text-fg">{s.name}</div>
+                  <span className={pill(!!s.is_published)}>{s.is_published ? 'Publicado' : 'Oculto'}</span>
+                </Link>
+              ))}
             </nav>
           </aside>
         )}
 
         {/* detalle */}
         <div className="min-w-0 flex-1">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-medium text-fg">{place.name}</h1>
-            <p className="text-sm text-muted">Edita cómo se ve tu ficha en Goospe</p>
-          </div>
-          <Link
-            href={`/places/${place.slug}`}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-goospe-green/40 px-4 py-2 text-sm font-medium text-goospe-green-dark hover:bg-goospe-green/10"
-          >
-            Ver ficha pública <ArrowRight size={14} strokeWidth={1.75} />
-          </Link>
-        </div>
-
-        <div className="space-y-6">
-          <StatsPanel
-            d7={d7}
-            d30={d30}
-            savesTotal={st.saves_count ?? 0}
-            rating={st.rating ?? 0}
-            reviewsCount={st.reviews_count ?? 0}
-          />
-
-          <WeeklyReport placeId={place.id} latest={latestReport} />
-
-          <BoostControl placeId={place.id} active={activeBoost} timeZone={place.cities?.timezone ?? null} />
-
-          <div className="rounded-2xl border border-line bg-card p-6 shadow-sm">
-            <ListingForm place={place} />
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <Link href="/panel" className="text-xs text-fg-soft hover:text-goospe-green lg:hidden">← Mis lugares</Link>
+              <h1 className="text-2xl font-medium text-fg [overflow-wrap:anywhere]">{place.name}</h1>
+              <p className="text-sm text-muted">Administra cómo se ve tu lugar en Goospe</p>
+            </div>
+            <Link href={`/places/${place.slug}`}
+              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-goospe-green/40 px-4 py-2 text-sm font-medium text-goospe-green-dark hover:bg-goospe-green/10">
+              Ver ficha pública <ArrowRight size={14} strokeWidth={1.75} />
+            </Link>
           </div>
 
-          <MenuUpload placeId={place.id} hasMenu={!!place.menu} />
+          {visibility !== 'visible' && (
+            <p role="status" className="mb-4 flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-fg">
+              <EyeOff size={16} strokeWidth={1.75} className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-400" />
+              {visibility === 'paused' ? 'Tu lugar está cerrado temporalmente: no aparece en Goospe. Reactívalo en “Visibilidad”.' : 'Este lugar está oculto por el equipo de Goospe.'}
+            </p>
+          )}
 
-          {/* Las horas de los eventos se escriben y se muestran en la zona de la ciudad del lugar. */}
-          <EventManager
-            placeId={place.id}
-            events={events}
-            timeZone={place.cities?.timezone ?? null}
-            cityName={place.cities?.name ?? null}
-          />
+          {/* Atajos a las secciones: el panel es largo, sobre todo en móvil. */}
+          <nav aria-label="Secciones del panel" className="-mx-4 mb-5 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+            {SECTIONS.map(([href, label]) => (
+              <a key={href} href={href} className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-line bg-card px-4 text-sm font-medium text-fg-soft transition hover:border-goospe-green/40 hover:text-fg">{label}</a>
+            ))}
+          </nav>
 
-          <ReviewReplies placeId={place.id} reviews={reviews} />
-        </div>
+          <div className="space-y-6">
+            <StatsDashboard
+              placeId={place.id} timeZone={tz} cityName={place.cities?.name ?? null}
+              initialRows={series.rows} initialOk={series.ok}
+              savesTotal={extras.stats.saves_count ?? 0} rating={extras.stats.rating ?? 0} reviewsCount={extras.stats.reviews_count ?? 0}
+            />
+
+            <WeeklyReport placeId={place.id} latest={latestReport} />
+
+            <BoostControl placeId={place.id} active={activeBoost} timeZone={tz}>
+              <BoostPerformance boosts={boostStats} timeZone={tz} now={now} />
+            </BoostControl>
+
+            <section id="ficha" className={`scroll-mt-32 ${cardClass}`}>
+              <h2 className="mb-4 font-medium text-fg">Ficha</h2>
+              <ListingForm
+                categories={categories}
+                place={{
+                  id: place.id, description: place.description, vibe_line: place.vibe_line, phone: place.phone,
+                  whatsapp: place.whatsapp, website: place.website, instagram: place.instagram, email: place.email,
+                  price_level: place.price_level, tags: place.tags, address: place.address,
+                  hoursRaw: place.hours?.osm_raw ?? null,
+                  categoryIds: (place.place_categories ?? []).map((c) => c.category_id),
+                }}
+              />
+            </section>
+
+            <PlaceIdentity placeId={place.id} name={place.name} addressLine={addressLine} mapUrl={extras.mapUrl} pendingKinds={extras.pendingKinds} />
+
+            <PlaceMedia placeId={place.id} name={place.name} coverUrl={place.cover_url} logoUrl={place.logo_url} photos={photos} />
+
+            <MenuUpload placeId={place.id} hasMenu={!!place.menu} />
+
+            {/* Las horas de los eventos se escriben y se muestran en la zona de la ciudad del lugar. */}
+            <EventManager placeId={place.id} events={events} timeZone={tz} cityName={place.cities?.name ?? null} now={now} />
+
+            <ReviewReplies placeId={place.id} reviews={reviews} timeZone={tz} />
+
+            <BrandVoiceForm placeId={place.id} brandVoice={business.brandVoice} canEdit={business.role === 'owner'} placesCount={siblings.length} />
+
+            <PlaceStatus placeId={place.id} visibility={visibility} />
+          </div>
         </div>
       </div>
 
