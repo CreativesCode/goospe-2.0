@@ -49,7 +49,7 @@ export async function saveOnboarding(formData: FormData) {
   const prev = (prevRow as { onboarding: Record<string, unknown> | null } | null)?.onboarding ?? {}
   const { error: profErr } = await admin
     .from('profiles')
-    .update({ onboarding: { ...prev, likes, budget, gender } } as never)
+    .update({ onboarding: { ...prev, likes, budget, gender } })
     .eq('id', user.id)
   if (profErr) {
     console.error('[saveOnboarding] profiles:', profErr.message)

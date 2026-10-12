@@ -80,7 +80,7 @@ export async function claimPlace(formData: FormData) {
 
   await admin
     .from('claims')
-    .insert({ place_id: placeId, user_id: user.id, method: 'manual', status: 'pending', evidence } as never)
+    .insert({ place_id: placeId, user_id: user.id, method: 'manual', status: 'pending', evidence })
 
   revalidatePath('/admin/claims')
   redirect('/panel/claim?sent=1')
@@ -110,7 +110,7 @@ export async function updateListing(formData: FormData) {
 
   const patch = { ...parsed.data, updated_at: new Date().toISOString() }
 
-  const { error } = await admin.from('places').update(patch as never).eq('id', placeId)
+  const { error } = await admin.from('places').update(patch).eq('id', placeId)
   if (error) {
     // Nunca devolver el mensaje de Postgres al cliente.
     console.error('[updateListing]', error.message)

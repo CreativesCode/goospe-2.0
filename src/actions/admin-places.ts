@@ -110,7 +110,7 @@ export async function setPublished(formData: FormData) {
   if (!isUuid(id)) return { error: 'Lugar inválido' }
   const next = formData.get('next') === 'true'
   const admin = createAdminClient()
-  const { error } = await admin.from('places').update({ is_published: next, updated_at: new Date().toISOString() } as never).eq('id', id)
+  const { error } = await admin.from('places').update({ is_published: next, updated_at: new Date().toISOString() }).eq('id', id)
   if (error) return { error: error.message }
   revalidatePath('/admin/places')
   revalidatePath('/places')

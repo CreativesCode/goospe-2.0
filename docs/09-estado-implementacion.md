@@ -1,5 +1,10 @@
 # 09 — Estado de Implementación y Análisis de Brechas
 
+> ⚠️ **Documento desactualizado.** Refleja el código al 16-jun-2026 y ya no describe el estado
+> real (ni lo construido después ni las brechas vigentes). La foto de estado actual, con el QA
+> real y las brechas consolidadas, está en **[15-analisis-brechas-y-qa.md](15-analisis-brechas-y-qa.md)**.
+> Se conserva solo como registro histórico.
+
 > Fecha de corte: **2026-06-16** · Ciudad piloto: **Puerto Varas, Chile** (city id=1)
 > Este documento inventaría lo construido y lo contrasta contra el plan (docs 02, 03, 06)
 > para ver qué falta antes del lanzamiento. **Decisión de equipo: no activar cobros**

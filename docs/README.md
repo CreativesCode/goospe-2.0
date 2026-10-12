@@ -17,7 +17,8 @@
 | [06-plan-de-implementacion.md](06-plan-de-implementacion.md) | 14 semanas en 6 fases con checklists y criterios de salida; backlog post-lanzamiento; riesgos de ejecución | vas a planificar el trabajo |
 | [07-gpt-conversation.md](07-gpt-conversation.md) | Evaluación externa (segunda opinión): factibilidad 7.5/10, ranking de mercados (Chile #1, Uruguay laboratorio, España después), pricing regional, recorte de MVP y una fase de validación de 4 semanas antes de construir | quieres una crítica externa antes de invertir tiempo/dinero |
 | [08-identidad-visual.md](08-identidad-visual.md) | Marca Goospe (heredada): nombre, logo del eslabón, paleta (verde `#2dc186` + gris + gradiente), tipografía Roboto, variantes de logo y nota del splash animado. Ya integrada en `public/brand/` + Tailwind | vas a construir UI |
-| [09-estado-implementacion.md](09-estado-implementacion.md) | **Estado actual del código**: inventario de lo construido (feed, conserje, auth, reseñas, panel B2B, eventos, boosts, fotos con moderación) + **análisis de brechas por fase** vs. el plan + orden recomendado. Pagos diferidos por decisión de equipo | quieres saber qué hay hecho y qué falta |
+| [09-estado-implementacion.md](09-estado-implementacion.md) | **Estado actual del código**: inventario de lo construido (feed, conserje, auth, reseñas, panel B2B, eventos, boosts, fotos con moderación) + **análisis de brechas por fase** vs. el plan + orden recomendado. Pagos diferidos por decisión de equipo | quieres ver el registro histórico de junio (⚠️ **desactualizado**: usa el doc 15) |
+| [15-analisis-brechas-y-qa.md](15-analisis-brechas-y-qa.md) | **Foto de estado vigente (12-oct-2026)**: estado real de datos e ingeniería, resultado del QA (seguridad, funcionalidad rota, panel de negocio), brechas consolidadas frente al legacy y al plan propio, y orden sugerido. Sustituye al doc 09 | quieres saber qué hay hecho, qué está roto y qué falta |
 
 ## Resumen en 10 líneas
 

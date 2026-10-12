@@ -26,7 +26,7 @@ export async function generateWeeklyReport(formData: FormData) {
   const admin = createAdminClient()
   const since = new Date(Date.now() - 7 * 86400_000)
   const [{ data: metricsRows }, { data: place }, { data: reviews }] = await Promise.all([
-    admin.rpc('place_metrics', { p_place_id: placeId, p_days: 7 } as never),
+    admin.rpc('place_metrics', { p_place_id: placeId, p_days: 7 }),
     admin.from('places').select('name').eq('id', placeId).single(),
     admin.from('reviews').select('rating, body').eq('place_id', placeId).eq('status', 'approved')
       .gte('created_at', since.toISOString()).order('created_at', { ascending: false }).limit(15),
@@ -56,12 +56,12 @@ Reseñas nuevas: ${reviewsText}.`
       period_start: since.toISOString().slice(0, 10),
       period_end: periodEnd.toISOString().slice(0, 10),
       content: { summary: text, metrics, place_id: placeId, place_name: placeName },
-    } as never)
+    })
     fireAndForget(admin.from('ai_usage').insert({
       feature: 'weekly_report', model: process.env.OPENAI_TEXT_MODEL ?? 'gpt-4o',
       input_tokens: usage.input_tokens, output_tokens: usage.output_tokens,
       cost_usd: COST(usage), user_id: user.id, business_id: businessId,
-    } as never), 'ai_usage:weekly_report')
+    }), 'ai_usage:weekly_report')
     revalidatePath(`/panel/${placeId}`)
     return { success: true, summary: text }
   } catch (e) {

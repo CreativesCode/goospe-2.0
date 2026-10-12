@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
     kind: e.kind,
     context: { ...(e.context ?? {}), anon_id: e.anon_id ?? null },
   }))
-  const { error } = await admin.from('interactions').insert(rows as never)
+  const { error } = await admin.from('interactions').insert(rows)
   if (error) {
     console.error('[track] insert falló:', error.message)
     return bad(500)

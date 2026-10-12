@@ -99,27 +99,6 @@ Para cada uno da una razón de UNA línea, concreta y honesta, citando señales 
 (vibe, precio, distancia, categoría, tags). NO inventes datos (horarios, platos, precios exactos).
 Habla en español chileno cercano. Devuelve los id tal cual te los doy.`
 
-const PICK_SCHEMA = {
-  name: 'concierge_picks',
-  strict: true,
-  schema: {
-    type: 'object',
-    additionalProperties: false,
-    properties: {
-      picks: {
-        type: 'array',
-        items: {
-          type: 'object',
-          additionalProperties: false,
-          properties: { id: { type: 'string' }, reason: { type: 'string' } },
-          required: ['id', 'reason'],
-        },
-      },
-    },
-    required: ['picks'],
-  },
-}
-
 // Variante en streaming: emite cada pick {id, reason} en cuanto el modelo completa su línea
 // (NDJSON), para render incremental en el conserje. Devuelve el usage al final.
 export async function pickPlacesStream(
@@ -188,34 +167,4 @@ Una sola línea por pick, sin comas finales, sin markdown, sin texto fuera de lo
   // por si el último pick no terminó en salto de línea
   text += '\n'; flushLines()
   return usage
-}
-
-export async function pickPlaces(
-  query: string,
-  candidates: Candidate[]
-): Promise<{ picks: { id: string; reason: string }[]; usage: Usage }> {
-  const compact = candidates.map((c) => ({
-    id: c.id,
-    nombre: c.name,
-    vibe: c.vibe_line,
-    categoria: c.category_name,
-    precio: c.price_level,
-    distancia_m: Math.round(c.distance_m),
-    tags: c.tags,
-  }))
-  const data = await openai('chat/completions', {
-    model: TEXT_MODEL,
-    temperature: 0.5,
-    messages: [
-      { role: 'system', content: SYSTEM },
-      { role: 'user', content: `Pedido del usuario: "${query}"\n\nCandidatos:\n${JSON.stringify(compact)}` },
-    ],
-    response_format: { type: 'json_schema', json_schema: PICK_SCHEMA },
-  })
-  const out = JSON.parse(data.choices[0].message.content) as { picks: { id: string; reason: string }[] }
-  const u = data.usage ?? {}
-  return {
-    picks: (out.picks ?? []).slice(0, 3),
-    usage: { input_tokens: u.prompt_tokens ?? 0, output_tokens: u.completion_tokens ?? 0 },
-  }
 }

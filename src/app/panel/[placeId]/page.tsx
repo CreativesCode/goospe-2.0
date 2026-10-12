@@ -146,8 +146,8 @@ export default async function EditListingPage({
 
   // Métricas de comportamiento (7 y 30 días) + agregados de place_stats.
   const [{ data: m30 }, { data: m7 }, { data: stats }] = await Promise.all([
-    admin.rpc('place_metrics', { p_place_id: placeId, p_days: 30 } as never),
-    admin.rpc('place_metrics', { p_place_id: placeId, p_days: 7 } as never),
+    admin.rpc('place_metrics', { p_place_id: placeId, p_days: 30 }),
+    admin.rpc('place_metrics', { p_place_id: placeId, p_days: 7 }),
     admin.from('place_stats').select('saves_count, rating, reviews_count').eq('place_id', placeId).maybeSingle(),
   ])
   const d30 = toMetricsMap(m30 as { kind: string; n: number }[] | null)

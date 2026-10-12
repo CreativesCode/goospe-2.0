@@ -130,7 +130,7 @@ export async function startZoneLoad(input: unknown): Promise<StartResult> {
       bbox: zone,
       status: 'queued',
       created_by: user.id,
-    } as never)
+    })
     .select('id')
     .single()
   if (error || !data) return { error: error?.message ?? 'No se pudo crear el job.' }
@@ -144,7 +144,7 @@ export async function startZoneLoad(input: unknown): Promise<StartResult> {
     })
     child.unref()
   } catch (e) {
-    await admin.from('region_jobs').update({ status: 'error', error: `spawn: ${(e as Error).message}` } as never).eq('id', jobId)
+    await admin.from('region_jobs').update({ status: 'error', error: `spawn: ${(e as Error).message}` }).eq('id', jobId)
     return { error: `No se pudo lanzar el runner: ${(e as Error).message}` }
   }
 

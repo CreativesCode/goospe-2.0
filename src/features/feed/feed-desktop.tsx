@@ -17,8 +17,8 @@ import { fmtDistDrive, type FeedController, type FeedItem } from './use-feed'
 function Thumb({ p, className, priority, iconSize = 32 }: { p: FeedItem; className?: string; priority?: boolean; iconSize?: number }) {
   const img = useImgFallback()
   if (p.photo_url && !img.failed) {
-    // eslint-disable-next-line @next/next/no-img-element
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         ref={img.ref}
         src={p.photo_url}

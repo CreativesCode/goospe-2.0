@@ -254,10 +254,11 @@ execute_sql, apply_migration, list_tables, get_advisors
 ## Comandos npm
 
 ```bash
-npm run dev          # Servidor (auto-detecta puerto 3000-3006)
-npm run build        # Build produccion
-npm run typecheck    # Verificar tipos
-npm run lint         # ESLint
+npm run dev          # Servidor de desarrollo (next dev --turbopack)
+npm run build        # Build produccion (next build)
+npm run typecheck    # Verificar tipos (tsc --noEmit)
+npm run lint         # ESLint (eslint .)
+npm test             # Tests unitarios (vitest run)
 ```
 
 ---

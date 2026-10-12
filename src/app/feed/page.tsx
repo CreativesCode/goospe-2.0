@@ -11,10 +11,9 @@ export const revalidate = 300
 
 export default async function FeedPage() {
   const admin = createAdminClient()
-  // `as never` en los args: workaround del tipado de rpc de supabase-js para funciones tabla.
   const [places, evs] = await Promise.all([
-    admin.rpc('get_feed', { p_lat: SEED.lat, p_lng: SEED.lng, p_radius_m: 25000, p_limit: 40, p_offset: 0 } as never),
-    admin.rpc('get_feed_events', { p_lat: SEED.lat, p_lng: SEED.lng, p_radius_m: 25000, p_limit: 8 } as never),
+    admin.rpc('get_feed', { p_lat: SEED.lat, p_lng: SEED.lng, p_radius_m: 25000, p_limit: 40, p_offset: 0 }),
+    admin.rpc('get_feed_events', { p_lat: SEED.lat, p_lng: SEED.lng, p_radius_m: 25000, p_limit: 8 }),
   ])
   const items = (places.data ?? []) as FeedItem[]
   const events = (evs.data ?? []) as FeedEvent[]

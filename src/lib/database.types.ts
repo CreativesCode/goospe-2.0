@@ -388,6 +388,33 @@ export type Database = {
         }
         Relationships: []
       }
+      coverage_requests: {
+        Row: {
+          created_at: string
+          id: string
+          lat: number
+          lng: number
+          locale: string | null
+          tz: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lat: number
+          lng: number
+          locale?: string | null
+          tz?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lat?: number
+          lng?: number
+          locale?: string | null
+          tz?: string | null
+        }
+        Relationships: []
+      }
       devices: {
         Row: {
           fcm_token: string | null
@@ -803,6 +830,7 @@ export type Database = {
           email: string | null
           embedding: string | null
           embedding_model: string | null
+          enrich_tier: string
           hours: Json | null
           id: string
           instagram: string | null
@@ -835,6 +863,7 @@ export type Database = {
           email?: string | null
           embedding?: string | null
           embedding_model?: string | null
+          enrich_tier?: string
           hours?: Json | null
           id?: string
           instagram?: string | null
@@ -867,6 +896,7 @@ export type Database = {
           email?: string | null
           embedding?: string | null
           embedding_model?: string | null
+          enrich_tier?: string
           hours?: Json | null
           id?: string
           instagram?: string | null
@@ -943,6 +973,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rate_limits: {
+        Row: {
+          expires_at: string
+          hits: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          expires_at: string
+          hits?: number
+          key: string
+          window_start: string
+        }
+        Update: {
+          expires_at?: string
+          hits?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
       }
       region_jobs: {
         Row: {
@@ -1138,7 +1189,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          display_name: string | null
+          id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          display_name?: string | null
+          id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          display_name?: string | null
+          id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_ai_usage_breakdown: {
@@ -1177,6 +1245,17 @@ export type Database = {
           usd: number
         }[]
       }
+      admin_coverage_zones: {
+        Args: { p_days?: number; p_limit?: number }
+        Returns: {
+          hits: number
+          last_seen: string
+          lat: number
+          lng: number
+          locale: string
+          tz: string
+        }[]
+      }
       admin_interaction_counts: {
         Args: never
         Returns: {
@@ -1197,6 +1276,7 @@ export type Database = {
       admin_save_place: {
         Args: {
           p_category_ids: number[]
+          p_city_id?: number
           p_description: string
           p_email: string
           p_id: string
@@ -1234,7 +1314,26 @@ export type Database = {
           user_id: string
         }[]
       }
+      assign_nearest_city: {
+        Args: {
+          p_city_id: number
+          p_e: number
+          p_n: number
+          p_s: number
+          p_w: number
+        }
+        Returns: number
+      }
       enqueue_event_reminders: { Args: never; Returns: undefined }
+      event_gender_stats: {
+        Args: { p_event_ids: string[] }
+        Returns: {
+          event_id: string
+          female: number
+          going: number
+          male: number
+        }[]
+      }
       get_feed: {
         Args: {
           p_lat: number
@@ -1249,6 +1348,7 @@ export type Database = {
           category_name: string
           description: string
           distance_m: number
+          hours: Json
           id: string
           lat: number
           lng: number
@@ -1260,6 +1360,7 @@ export type Database = {
           score: number
           slug: string
           tags: string[]
+          timezone: string
           vibe_line: string
         }[]
       }
@@ -1284,6 +1385,7 @@ export type Database = {
           place_name: string
           place_slug: string
           starts_at: string
+          timezone: string
         }[]
       }
       increment_concierge_quota: {
@@ -1333,6 +1435,10 @@ export type Database = {
           lng: number
         }[]
       }
+      rate_limit_hit: {
+        Args: { p_key: string; p_max: number; p_window_seconds: number }
+        Returns: boolean
+      }
       recompute_place_stats: { Args: { p_place: string }; Returns: undefined }
       recompute_trending: { Args: never; Returns: undefined }
       resolve_coverage: {
@@ -1365,6 +1471,7 @@ export type Database = {
           price_level: number
           rating: number
           slug: string
+          timezone: string
           vibe_line: string
         }[]
       }

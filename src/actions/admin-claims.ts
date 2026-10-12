@@ -38,38 +38,38 @@ export async function approveClaim(formData: FormData) {
   if (!place) return { error: 'Lugar no encontrado' }
   if (place.claimed || place.business_id) {
     // Ya fue reclamado por otra vía → cierra este como rechazado para no dejarlo colgado.
-    await admin.from('claims').update({ status: 'rejected' } as never).eq('id', claimId)
+    await admin.from('claims').update({ status: 'rejected' }).eq('id', claimId)
     return { error: 'Ese lugar ya fue reclamado' }
   }
 
-  const { data: biz, error: bizErr } = await admin.from('businesses').insert({ name: place.name } as never).select('id').single()
+  const { data: biz, error: bizErr } = await admin.from('businesses').insert({ name: place.name }).select('id').single()
   if (bizErr || !biz) return { error: 'No se pudo crear el negocio' }
   const businessId = (biz as { id: string }).id
 
   // Si algo falla a mitad, se deshace lo hecho: no debe quedar un negocio sin lugar ni dueño.
   const fail = async (step: string, message: string) => {
     console.error(`[approveClaim] ${step}:`, message)
-    await admin.from('places').update({ business_id: null, claimed: false, source: place.source } as never).eq('id', place.id).eq('business_id', businessId)
+    await admin.from('places').update({ business_id: null, claimed: false, source: place.source }).eq('id', place.id).eq('business_id', businessId)
     await admin.from('businesses').delete().eq('id', businessId) // business_members cae por cascade
     return { error: 'No pudimos aprobar el reclamo. Intenta de nuevo.' }
   }
 
-  const { error: memErr } = await admin.from('business_members').insert({ business_id: businessId, user_id: claim.user_id, role: 'owner' } as never)
+  const { error: memErr } = await admin.from('business_members').insert({ business_id: businessId, user_id: claim.user_id, role: 'owner' })
   if (memErr) return fail('miembro', memErr.message)
 
   const { error: placeErr } = await admin.from('places')
-    .update({ business_id: businessId, claimed: true, source: 'owner', updated_at: new Date().toISOString() } as never)
+    .update({ business_id: businessId, claimed: true, source: 'owner', updated_at: new Date().toISOString() })
     .eq('id', claim.place_id)
   if (placeErr) return fail('lugar', placeErr.message)
 
   // Se guarda el origen previo del lugar en la evidencia: des-reclamar lo restaura.
   const { error: claimErr } = await admin.from('claims')
-    .update({ status: 'approved', evidence: { ...(claim.evidence ?? {}), prev_source: place.source } } as never)
+    .update({ status: 'approved', evidence: { ...(claim.evidence ?? {}), prev_source: place.source } })
     .eq('id', claimId)
   if (claimErr) return fail('reclamo', claimErr.message)
 
   // Cierra las demás solicitudes pendientes del mismo lugar.
-  await admin.from('claims').update({ status: 'rejected' } as never).eq('place_id', claim.place_id).eq('status', 'pending').neq('id', claimId)
+  await admin.from('claims').update({ status: 'rejected' }).eq('place_id', claim.place_id).eq('status', 'pending').neq('id', claimId)
 
   revalidatePath('/admin/claims')
   revalidatePath('/admin/places')
@@ -84,7 +84,7 @@ export async function rejectClaim(formData: FormData) {
   const claimId = formData.get('claim_id')
   if (!isUuid(claimId)) return { error: 'Falta el reclamo' }
   const admin = createAdminClient()
-  const { error } = await admin.from('claims').update({ status: 'rejected' } as never).eq('id', claimId)
+  const { error } = await admin.from('claims').update({ status: 'rejected' }).eq('id', claimId)
   if (error) {
     console.error('[rejectClaim]', error.message)
     return { error: 'No pudimos rechazar el reclamo. Intenta de nuevo.' }
@@ -130,7 +130,7 @@ export async function unclaimPlace(formData: FormData) {
     if (evReadErr) return stop('leer eventos', evReadErr.message)
     const eventIds = ((evRows ?? []) as { id: string }[]).map((e) => e.id)
     if (eventIds.length) {
-      const { error: e1 } = await admin.from('interactions').update({ event_id: null } as never).in('event_id', eventIds)
+      const { error: e1 } = await admin.from('interactions').update({ event_id: null }).in('event_id', eventIds)
       if (e1) return stop('soltar interacciones', e1.message)
       const { error: e2 } = await admin.from('boosts').delete().in('event_id', eventIds)
       if (e2) return stop('borrar boosts de eventos', e2.message)
@@ -145,7 +145,7 @@ export async function unclaimPlace(formData: FormData) {
   if (claimErr) return stop('borrar reclamos', claimErr.message)
 
   const { error: placeErr } = await admin.from('places')
-    .update({ business_id: null, claimed: false, source: restoredSource, updated_at: new Date().toISOString() } as never)
+    .update({ business_id: null, claimed: false, source: restoredSource, updated_at: new Date().toISOString() })
     .eq('id', placeId)
   if (placeErr) return stop('liberar el lugar', placeErr.message)
 
@@ -158,7 +158,7 @@ export async function unclaimPlace(formData: FormData) {
       if (r1) return stop('borrar informes', r1.message)
       const { error: r2 } = await admin.from('boosts').delete().eq('business_id', businessId)
       if (r2) return stop('borrar boosts del negocio', r2.message)
-      const { error: r3 } = await admin.from('events').update({ business_id: null } as never).eq('business_id', businessId)
+      const { error: r3 } = await admin.from('events').update({ business_id: null }).eq('business_id', businessId)
       if (r3) return stop('soltar eventos del negocio', r3.message)
       const { error: r4 } = await admin.from('business_members').delete().eq('business_id', businessId)
       if (r4) return stop('borrar miembros', r4.message)

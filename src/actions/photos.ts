@@ -76,7 +76,7 @@ export async function uploadPlacePhoto(formData: FormData) {
     status: 'pending',
     source: 'user',
     storage_path: path,
-  } as never)
+  })
   if (insErr) {
     await admin.storage.from('places').remove([path]) // rollback del objeto huérfano
     console.error('[uploadPlacePhoto] insert:', insErr.message)
@@ -100,7 +100,7 @@ export async function moderatePhoto(formData: FormData) {
   const { data: row } = await admin.from('place_photos').select('place_id').eq('id', photoId).maybeSingle()
   const placeId = (row as { place_id: string } | null)?.place_id ?? null
   if (decision === 'approve') {
-    const { error } = await admin.from('place_photos').update({ status: 'approved' } as never).eq('id', photoId)
+    const { error } = await admin.from('place_photos').update({ status: 'approved' }).eq('id', photoId)
     if (error) {
       console.error('[moderatePhoto]', error.message)
       return { error: 'No pudimos guardar. Intenta de nuevo.' }

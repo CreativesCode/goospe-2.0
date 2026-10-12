@@ -23,6 +23,13 @@ function fold(text: string): string {
 
 const BLOCKED = new Set(BLOCKLIST.map(fold))
 
+// Una racha de letras sueltas puede arrastrar palabras reales de una letra ("a p u t a y" →
+// "aputay"): además de la racha entera se añaden las palabras bloqueadas que contenga.
+function pushRun(out: string[], run: string) {
+  out.push(run)
+  for (const b of BLOCKED) if (run.length > b.length && run.includes(b)) out.push(b)
+}
+
 // Palabras del texto. Las rachas de letras sueltas ("p u t a") se unen en una sola palabra.
 function tokenize(text: string): string[] {
   const words = fold(text).split(/[^a-zñ]+/).filter(Boolean)
@@ -30,10 +37,10 @@ function tokenize(text: string): string[] {
   let run = ''
   for (const w of words) {
     if (w.length === 1) { run += w; continue }
-    if (run) { out.push(run); run = '' }
+    if (run) { pushRun(out, run); run = '' }
     out.push(w)
   }
-  if (run) out.push(run)
+  if (run) pushRun(out, run)
   return out
 }
 

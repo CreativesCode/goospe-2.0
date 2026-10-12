@@ -22,11 +22,11 @@ export async function setReviewStatus(formData: FormData) {
 
   const admin = createAdminClient()
   const { data: r } = await admin.from('reviews').select('place_id').eq('id', id).maybeSingle()
-  const { error } = await admin.from('reviews').update({ status } as never).eq('id', id)
+  const { error } = await admin.from('reviews').update({ status }).eq('id', id)
   if (error) return { error: error.message }
   // Recalcular el rating (el trigger sólo cuenta 'approved').
   const placeId = (r as { place_id: string } | null)?.place_id
-  if (placeId) await admin.rpc('recompute_place_stats', { p_place: placeId } as never)
+  if (placeId) await admin.rpc('recompute_place_stats', { p_place: placeId })
   revalidatePath('/admin/content')
   return { success: true }
 }
@@ -40,7 +40,7 @@ export async function setEventStatus(formData: FormData) {
 
   const admin = createAdminClient()
   const { data: ev } = await admin.from('events').select('place_id').eq('id', id).maybeSingle()
-  const { error } = await admin.from('events').update({ status } as never).eq('id', id)
+  const { error } = await admin.from('events').update({ status }).eq('id', id)
   if (error) return { error: error.message }
   revalidatePath('/admin/content')
   revalidatePath('/events')

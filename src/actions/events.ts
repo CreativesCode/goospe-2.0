@@ -95,7 +95,7 @@ export async function createEvent(formData: FormData) {
     starts_at: startsDate.toISOString(),
     ends_at: endsDate ? endsDate.toISOString() : null,
     status: 'approved',
-  } as never)
+  })
   if (error) {
     // Nunca devolver el mensaje de Postgres al cliente.
     console.error('[createEvent] insert:', error.message)
@@ -128,7 +128,7 @@ export async function deleteEvent(formData: FormData) {
   // boost en boosts): se sueltan aquí para que el borrado no falle con un error de clave
   // foránea. La migración 0035 hace lo mismo en la BD (set null / cascade); esto lo cubre
   // también antes de aplicarla. RSVPs y notificaciones ya caen por cascade.
-  const { error: intErr } = await admin.from('interactions').update({ event_id: null } as never).eq('event_id', eventId)
+  const { error: intErr } = await admin.from('interactions').update({ event_id: null }).eq('event_id', eventId)
   const { error: boostErr } = await admin.from('boosts').delete().eq('event_id', eventId)
   if (intErr || boostErr) console.error('[deleteEvent] dependientes:', intErr?.message ?? boostErr?.message)
 

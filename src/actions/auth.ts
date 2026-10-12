@@ -101,23 +101,3 @@ export async function updatePassword(formData: FormData) {
   revalidatePath('/', 'layout')
   redirect('/feed')
 }
-
-export async function updateProfile(formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
-  const rawName = formData.get('display_name')
-  const displayName = typeof rawName === 'string' ? rawName.trim().slice(0, 80) : ''
-  if (!displayName) return { error: 'Escribe tu nombre' }
-  // `as never`: workaround del tipado de mutaciones de supabase-js (infiere el payload como never).
-  const { error } = await supabase
-    .from('profiles')
-    .update({ display_name: displayName } as never)
-    .eq('id', user.id)
-  if (error) {
-    console.error('[updateProfile]', error.message)
-    return { error: 'No pudimos guardar tu perfil. Intenta de nuevo.' }
-  }
-  revalidatePath('/', 'layout')
-  return { success: true }
-}

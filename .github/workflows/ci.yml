@@ -1,0 +1,47 @@
+name: CI
+
+# Red de seguridad mínima: tipos, lint y tests unitarios en cada push / PR a main.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # package-lock.json NO está versionado (.gitignore), así que `npm ci` fallaría.
+      # TODO: versionar el lockfile y cambiar a `npm ci` + `cache: npm` en setup-node
+      # (instalaciones reproducibles y más rápidas).
+      - name: Instalar dependencias
+        run: npm install --no-audit --no-fund
+
+      - name: Tipos
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests unitarios
+        run: npm test
+
+      # TODO (Fase 3, pendiente): añadir `npm run build` y el smoke e2e con Playwright.
+      # El build necesita NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY /
+      # SUPABASE_SERVICE_ROLE_KEY como secretos del repo (idealmente de un proyecto de staging)
+      # y tarda varios minutos; el e2e además necesita datos de prueba.

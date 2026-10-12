@@ -42,7 +42,7 @@ export async function submitReview(formData: FormData) {
     const patch = prev.status === 'pending'
       ? { rating, body: body || null, status: 'approved' }
       : { rating, body: body || null }
-    const { error } = await admin.from('reviews').update(patch as never).eq('id', prev.id)
+    const { error } = await admin.from('reviews').update(patch).eq('id', prev.id)
     if (error) {
       console.error('[submitReview] update:', error.message)
       return { error: SAVE_FAILED }
@@ -59,7 +59,7 @@ export async function submitReview(formData: FormData) {
   const { error } = await admin
     .from('reviews')
     .upsert(
-      { user_id: user.id, place_id: placeId, rating, body: body || null, status: 'approved' } as never,
+      { user_id: user.id, place_id: placeId, rating, body: body || null, status: 'approved' },
       { onConflict: 'user_id,place_id', ignoreDuplicates: true }
     )
   if (error) {

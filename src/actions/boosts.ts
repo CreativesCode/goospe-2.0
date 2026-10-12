@@ -41,7 +41,7 @@ export async function createBoost(formData: FormData) {
     ends_at: new Date(now + days * 86400_000).toISOString(),
     amount_usd: 0,
     status: 'active',
-  } as never)
+  })
   if (error) {
     console.error('[createBoost]', error.message)
     return { error: SAVE_FAILED }
@@ -75,12 +75,12 @@ export async function boostEvent(formData: FormData) {
     starts_at: new Date(now).toISOString(),
     ends_at: new Date(now + days * 86400_000).toISOString(),
     amount_usd: 0, status: 'active',
-  } as never)
+  })
   if (error) {
     console.error('[boostEvent]', error.message)
     return { error: SAVE_FAILED }
   }
-  await admin.from('events').update({ is_boosted: true } as never).eq('id', eventId)
+  await admin.from('events').update({ is_boosted: true }).eq('id', eventId)
 
   revalidatePath(`/panel/${placeId}`)
   revalidatePath('/feed')
@@ -99,8 +99,8 @@ export async function endEventBoost(formData: FormData) {
   const placeId = (ev as { place_id: string } | null)?.place_id
   if (!placeId || !(await assertPlaceMembership(user.id, placeId))) return { error: 'Sin permiso' }
 
-  await admin.from('boosts').update({ status: 'ended' } as never).eq('event_id', eventId).eq('status', 'active')
-  await admin.from('events').update({ is_boosted: false } as never).eq('id', eventId)
+  await admin.from('boosts').update({ status: 'ended' }).eq('event_id', eventId).eq('status', 'active')
+  await admin.from('events').update({ is_boosted: false }).eq('id', eventId)
   revalidatePath(`/panel/${placeId}`)
   revalidatePath('/feed')
   return { success: true }
@@ -120,7 +120,7 @@ export async function endBoost(formData: FormData) {
   const admin = createAdminClient()
   const { error } = await admin
     .from('boosts')
-    .update({ status: 'ended' } as never)
+    .update({ status: 'ended' })
     .eq('id', boostId)
     .eq('business_id', businessId)
   if (error) {

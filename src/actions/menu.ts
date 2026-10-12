@@ -111,12 +111,12 @@ export async function uploadMenu(formData: FormData) {
         feature: 'menu_vision', model: process.env.OPENAI_TEXT_MODEL ?? 'gpt-4o',
         input_tokens: usage.input_tokens, output_tokens: usage.output_tokens,
         cost_usd: COST(usage), user_id: user.id, business_id: businessId,
-      } as never), 'ai_usage:menu_vision')
+      }), 'ai_usage:menu_vision')
     }
 
     await admin
       .from('places')
-      .update({ menu: { sections: merged }, menu_updated_at: new Date().toISOString() } as never)
+      .update({ menu: { sections: merged }, menu_updated_at: new Date().toISOString() })
       .eq('id', placeId)
     await admin.storage.from('places').remove(uploaded) // las imágenes eran sólo para el OCR
     revalidatePath(`/panel/${placeId}`)
@@ -135,7 +135,7 @@ export async function clearMenu(formData: FormData) {
   if (!user) return { error: 'No autenticado' }
   if (!(await assertPlaceMembership(user.id, placeId))) return { error: 'Sin permiso' }
   const admin = createAdminClient()
-  await admin.from('places').update({ menu: null, menu_updated_at: null } as never).eq('id', placeId)
+  await admin.from('places').update({ menu: null, menu_updated_at: null }).eq('id', placeId)
   revalidatePath(`/panel/${placeId}`)
   await revalidatePlace(placeId)
   return { success: true }

@@ -24,7 +24,7 @@ export async function setUserAdmin(formData: FormData) {
   if (userId === me.id && !next) return { error: 'No puedes quitarte el admin a ti mismo' }
 
   const admin = createAdminClient()
-  const { error } = await admin.from('profiles').update({ is_admin: next } as never).eq('id', userId)
+  const { error } = await admin.from('profiles').update({ is_admin: next }).eq('id', userId)
   if (error) return { error: error.message }
 
   revalidatePath('/admin/users')

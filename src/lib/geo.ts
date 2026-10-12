@@ -48,12 +48,6 @@ function writeCache(result: GeoResult) {
   try { localStorage?.setItem(GEO_CACHE_KEY, JSON.stringify(memo)) } catch { /* modo privado, etc. */ }
 }
 
-// Limpia la ubicación cacheada (ej. "reintentar" tras activar el permiso a mano).
-export function clearCachedPosition() {
-  memo = null
-  try { localStorage?.removeItem(GEO_CACHE_KEY) } catch { /* no-op */ }
-}
-
 // Resuelve la ubicación del usuario: override de dev → cache → geolocalización → fallback.
 export function getPosition(): Promise<GeoResult> {
   if (FORCE) return Promise.resolve({ ...FORCED, source: 'forced' })

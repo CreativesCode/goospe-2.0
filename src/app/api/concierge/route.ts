@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
   // La cuota se RESERVA antes de llamar a OpenAI (no al terminar el stream): así N peticiones
   // en paralelo no pasan todas con used=0.
   if (user) {
-    const { error: quotaErr } = await admin.rpc('increment_concierge_quota', { p_user: user.id, p_month: month } as never)
+    const { error: quotaErr } = await admin.rpc('increment_concierge_quota', { p_user: user.id, p_month: month })
     if (quotaErr) {
       console.error('[concierge] cuota:', quotaErr.message)
       return NextResponse.json({ error: 'No pudimos buscar ahora. Intenta de nuevo.' }, { status: 500 })
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     const { data: candidates, error } = await admin.rpc('match_places', {
       p_embedding: JSON.stringify(embedding),
       p_lat: lat, p_lng: lng, p_radius_m: 25000, p_limit: 12,
-    } as never)
+    })
     if (error) throw new Error(error.message)
     cands = (candidates ?? []) as typeof cands
   } catch (e) {
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
           feature: 'concierge', model: process.env.OPENAI_TEXT_MODEL ?? 'gpt-4o',
           input_tokens: usage.input_tokens, output_tokens: usage.output_tokens,
           cost_usd: COST(usage), user_id: user?.id ?? null,
-        } as never), 'ai_usage:concierge')
+        }), 'ai_usage:concierge')
         send({ type: 'done' })
       } catch (e) {
         console.error('[concierge] stream:', (e as Error).message)
