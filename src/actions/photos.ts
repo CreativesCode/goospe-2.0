@@ -7,6 +7,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdmin } from '@/lib/ownership'
 import { rateLimit } from '@/lib/rate-limit'
 import { isUuid } from '@/lib/validation'
+import { revalidatePlace } from '@/lib/revalidate-place'
 
 const MAX_BYTES = 5 * 1024 * 1024
 const UPLOADS_PER_HOUR = 10
@@ -87,14 +88,17 @@ export async function uploadPlacePhoto(formData: FormData) {
 
 // Moderación (sólo admin): aprobar o rechazar. Rechazar borra la fila y el objeto del bucket.
 export async function moderatePhoto(formData: FormData) {
-  const photoId = formData.get('photo_id') as string
-  const decision = formData.get('decision') as string // 'approve' | 'reject'
+  const photoId = formData.get('photo_id')
+  const decision = formData.get('decision') // 'approve' | 'reject'
+  if (!isUuid(photoId) || (decision !== 'approve' && decision !== 'reject')) return { error: 'Solicitud inválida' }
 
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
   if (!user || !(await isAdmin(user.id))) return { error: 'No autorizado' }
 
   const admin = createAdminClient()
+  const { data: row } = await admin.from('place_photos').select('place_id').eq('id', photoId).maybeSingle()
+  const placeId = (row as { place_id: string } | null)?.place_id ?? null
   if (decision === 'approve') {
     const { error } = await admin.from('place_photos').update({ status: 'approved' } as never).eq('id', photoId)
     if (error) {
@@ -109,5 +113,7 @@ export async function moderatePhoto(formData: FormData) {
   }
 
   revalidatePath('/admin/photos')
+  // Una foto recién aprobada debe verse ya en la ficha pública (ISR de 1 h).
+  if (placeId && decision === 'approve') await revalidatePlace(placeId)
   return { success: true }
 }

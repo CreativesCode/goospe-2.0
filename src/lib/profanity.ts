@@ -1,7 +1,8 @@
 // Filtro de groserías mínimo para contenido generado por usuarios (reseñas, fotos, etc.).
 // No pretende ser exhaustivo: bloquea insultos evidentes en español para el piloto.
-// Normaliza acentos y separadores comunes (espacios/puntos/guiones entre letras) para
-// atrapar evasiones simples ("i d i o t a", "p-u-t-a"). Ante duda, deja pasar.
+// Compara PALABRAS completas (antes buscaba subcadenas sobre el texto sin espacios y
+// rechazaba "económico", "conocí" o "computador"). Sigue atrapando evasiones simples:
+// letras separadas ("p u t a", "p-u-t-a") y letras estiradas ("puuuta"). Ante duda, deja pasar.
 
 const BLOCKLIST = [
   'puta', 'puto', 'putos', 'putas', 'mierda', 'concha', 'conchetumadre', 'ctm',
@@ -10,17 +11,36 @@ const BLOCKLIST = [
   'verga', 'pija', 'polla', 'coño', 'cabron', 'cabrón', 'joder', 'gilipollas', 'zorra',
 ]
 
-function normalize(text: string): string {
+// Minúsculas y sin acentos, CONSERVANDO la ñ: NFD la partiría en n + tilde y "coño" pasaría
+// a "cono" (de ahí el falso positivo con "conocí"). Se protege con un marcador temporal.
+function fold(text: string): string {
   return text
     .toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '') // quita acentos
-    .replace(/[^a-zñ]+/g, '') // deja solo letras (incl. ñ) → colapsa "p u t a" → "puta"
+    .replace(/ñ/g, '\u0001')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/\u0001/g, 'ñ')
 }
+
+const BLOCKED = new Set(BLOCKLIST.map(fold))
+
+// Palabras del texto. Las rachas de letras sueltas ("p u t a") se unen en una sola palabra.
+function tokenize(text: string): string[] {
+  const words = fold(text).split(/[^a-zñ]+/).filter(Boolean)
+  const out: string[] = []
+  let run = ''
+  for (const w of words) {
+    if (w.length === 1) { run += w; continue }
+    if (run) { out.push(run); run = '' }
+    out.push(w)
+  }
+  if (run) out.push(run)
+  return out
+}
+
+const isBlocked = (w: string) => BLOCKED.has(w) || (w.endsWith('s') && BLOCKED.has(w.slice(0, -1)))
 
 // true si el texto contiene una palabra de la blocklist.
 export function containsProfanity(text: string | null | undefined): boolean {
   if (!text) return false
-  const flat = normalize(text)
-  if (!flat) return false
-  return BLOCKLIST.some((w) => flat.includes(normalize(w)))
+  return tokenize(text).some((w) => isBlocked(w) || isBlocked(w.replace(/(.)\1{2,}/g, '$1')))
 }

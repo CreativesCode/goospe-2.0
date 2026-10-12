@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdmin } from '@/lib/ownership'
+import { revalidatePlace } from '@/lib/revalidate-place'
 
 async function requireAdmin() {
   const sb = await createClient()
@@ -38,9 +39,14 @@ export async function setEventStatus(formData: FormData) {
   if (!['approved', 'rejected'].includes(status)) return { error: 'Estado inválido' }
 
   const admin = createAdminClient()
+  const { data: ev } = await admin.from('events').select('place_id').eq('id', id).maybeSingle()
   const { error } = await admin.from('events').update({ status } as never).eq('id', id)
   if (error) return { error: error.message }
   revalidatePath('/admin/content')
   revalidatePath('/events')
+  revalidatePath('/feed')
+  // La ficha del lugar lista sus próximos eventos aprobados.
+  const evPlaceId = (ev as { place_id: string } | null)?.place_id
+  if (evPlaceId) await revalidatePlace(evPlaceId)
   return { success: true }
 }

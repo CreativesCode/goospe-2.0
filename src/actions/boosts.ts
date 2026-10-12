@@ -4,12 +4,16 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { assertPlaceMembership } from '@/lib/ownership'
+import { isUuid } from '@/lib/validation'
+
+const SAVE_FAILED = 'No pudimos guardar el cambio. Intenta de nuevo.'
 
 // Destaca un lugar en el feed por N días. En el piloto el boost es manual/gratuito
 // (sin cobro todavía); cuando se integren pagos, este mismo registro se crea tras el pago.
 export async function createBoost(formData: FormData) {
-  const placeId = formData.get('place_id') as string
-  const days = Math.min(Math.max(Number(formData.get('days')) || 7, 1), 30)
+  const placeId = formData.get('place_id')
+  if (!isUuid(placeId)) return { error: 'Lugar inválido' }
+  const days = Math.min(Math.max(Math.floor(Number(formData.get('days'))) || 7, 1), 30)
 
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
@@ -20,6 +24,16 @@ export async function createBoost(formData: FormData) {
 
   const admin = createAdminClient()
   const now = Date.now()
+  // Un solo boost activo por lugar: sin esta comprobación se apilaban al pulsar dos veces.
+  const { data: current } = await admin
+    .from('boosts')
+    .select('id')
+    .eq('place_id', placeId)
+    .is('event_id', null)
+    .eq('status', 'active')
+    .gt('ends_at', new Date(now).toISOString())
+    .limit(1)
+  if (current?.length) return { error: 'Este lugar ya está destacado' }
   const { error } = await admin.from('boosts').insert({
     business_id: businessId,
     place_id: placeId,
@@ -28,7 +42,10 @@ export async function createBoost(formData: FormData) {
     amount_usd: 0,
     status: 'active',
   } as never)
-  if (error) return { error: error.message }
+  if (error) {
+    console.error('[createBoost]', error.message)
+    return { error: SAVE_FAILED }
+  }
 
   revalidatePath(`/panel/${placeId}`)
   revalidatePath('/feed')
@@ -37,8 +54,9 @@ export async function createBoost(formData: FormData) {
 
 // Destaca un EVENTO en el feed por N días (boosts.event_id). Valida membresía vía el lugar del evento.
 export async function boostEvent(formData: FormData) {
-  const eventId = formData.get('event_id') as string
-  const days = Math.min(Math.max(Number(formData.get('days')) || 7, 1), 30)
+  const eventId = formData.get('event_id')
+  if (!isUuid(eventId)) return { error: 'Evento inválido' }
+  const days = Math.min(Math.max(Math.floor(Number(formData.get('days'))) || 7, 1), 30)
 
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
@@ -58,7 +76,10 @@ export async function boostEvent(formData: FormData) {
     ends_at: new Date(now + days * 86400_000).toISOString(),
     amount_usd: 0, status: 'active',
   } as never)
-  if (error) return { error: error.message }
+  if (error) {
+    console.error('[boostEvent]', error.message)
+    return { error: SAVE_FAILED }
+  }
   await admin.from('events').update({ is_boosted: true } as never).eq('id', eventId)
 
   revalidatePath(`/panel/${placeId}`)
@@ -67,7 +88,8 @@ export async function boostEvent(formData: FormData) {
 }
 
 export async function endEventBoost(formData: FormData) {
-  const eventId = formData.get('event_id') as string
+  const eventId = formData.get('event_id')
+  if (!isUuid(eventId)) return { error: 'Evento inválido' }
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
   if (!user) return { error: 'No autenticado' }
@@ -85,8 +107,9 @@ export async function endEventBoost(formData: FormData) {
 }
 
 export async function endBoost(formData: FormData) {
-  const boostId = formData.get('boost_id') as string
-  const placeId = formData.get('place_id') as string
+  const boostId = formData.get('boost_id')
+  const placeId = formData.get('place_id')
+  if (!isUuid(boostId) || !isUuid(placeId)) return { error: 'Boost inválido' }
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
   if (!user) return { error: 'No autenticado' }
@@ -100,7 +123,10 @@ export async function endBoost(formData: FormData) {
     .update({ status: 'ended' } as never)
     .eq('id', boostId)
     .eq('business_id', businessId)
-  if (error) return { error: error.message }
+  if (error) {
+    console.error('[endBoost]', error.message)
+    return { error: SAVE_FAILED }
+  }
   revalidatePath(`/panel/${placeId}`)
   revalidatePath('/feed')
   return { success: true }

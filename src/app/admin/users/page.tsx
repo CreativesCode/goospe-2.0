@@ -53,7 +53,8 @@ export default async function AdminUsersPage() {
       </header>
 
       <div className="overflow-x-auto rounded-2xl border border-line bg-card">
-        <table className="w-full min-w-[960px] text-sm">
+        {/* min-w ajustado al ancho útil del backoffice: con 960px la columna "Rol" quedaba cortada */}
+        <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
               <th className="px-4 py-3 font-medium">Usuario</th>
@@ -69,15 +70,15 @@ export default async function AdminUsersPage() {
           <tbody>
             {rows.map((u) => (
               <tr key={u.id} className="border-b border-line/60 last:border-0">
-                <td className="px-4 py-3">
+                <td className="max-w-[220px] px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-fg">{u.profile?.display_name || u.email.split('@')[0]}</span>
+                    <span className="truncate font-medium text-fg">{u.profile?.display_name || u.email.split('@')[0]}</span>
                     {u.profile?.is_admin && <span className="inline-flex items-center gap-1 rounded-full bg-goospe-green/10 px-2 py-0.5 text-[10px] font-medium text-goospe-green-dark"><ShieldCheck size={11} /> admin</span>}
                   </div>
-                  <span className="text-xs text-muted">{u.email}</span>
+                  <span className="block truncate text-xs text-muted">{u.email}</span>
                 </td>
-                <td className="px-3 py-3 text-fg-soft">{fmt(u.createdAt)}</td>
-                <td className="px-3 py-3 text-fg-soft">{fmt(u.lastSignIn)}</td>
+                <td className="whitespace-nowrap px-3 py-3 text-fg-soft">{fmt(u.createdAt)}</td>
+                <td className="whitespace-nowrap px-3 py-3 text-fg-soft">{fmt(u.lastSignIn)}</td>
                 <td className="px-3 py-3 text-right tabular-nums text-fg-soft">{favN(u.id)}</td>
                 <td className="px-3 py-3 text-right tabular-nums text-fg-soft">{revN(u.id)}</td>
                 <td className="px-3 py-3 text-right tabular-nums text-fg-soft">{rsvpN(u.id)}</td>

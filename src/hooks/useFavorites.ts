@@ -17,6 +17,27 @@ const loadLocal = (): string[] => {
 }
 const saveLocal = (ids: string[]) => localStorage.setItem(SAVED_KEY, JSON.stringify(ids))
 
+/**
+ * Sube a la BD los guardados hechos sin sesión y vacía el almacén local. Idempotente (PK
+ * compuesta). Devuelve cuántos migró. La usan el hook y <FavoritesMigrator /> (/saved).
+ */
+export async function migrateLocalFavorites(sb: ReturnType<typeof createClient>, userId: string): Promise<number> {
+  const local = loadLocal().filter((id) => typeof id === 'string')
+  if (!local.length) return 0
+  const { error } = await sb
+    .from('favorites')
+    .upsert(local.map((place_id) => ({ user_id: userId, place_id })) as never, { onConflict: 'user_id,place_id' })
+  if (error) {
+    console.error('[favorites] no se pudieron migrar los guardados locales:', error.message)
+    // 23503 / 22P02: algún id local ya no existe o es inválido → no se puede migrar nunca;
+    // se descarta para no reintentar en cada carga. Otros errores (red) se reintentan luego.
+    if (error.code === '23503' || error.code === '22P02') saveLocal([])
+    return 0
+  }
+  saveLocal([])
+  return local.length
+}
+
 export function useFavorites() {
   const [ids, setIds] = useState<Set<string>>(new Set())
   const [ready, setReady] = useState(false)
@@ -44,15 +65,7 @@ export function useFavorites() {
 
       userId.current = user.id
       // Migrar guardados locales pendientes a la DB (idempotente: PK compuesta).
-      const local = loadLocal()
-      if (local.length) {
-        await sb
-          .from('favorites')
-          .upsert(local.map((place_id) => ({ user_id: user.id, place_id })) as never, {
-            onConflict: 'user_id,place_id',
-          })
-        saveLocal([])
-      }
+      await migrateLocalFavorites(sb, user.id)
       const { data } = await sb.from('favorites').select('place_id').eq('user_id', user.id)
       if (!active) return
       const rows = (data ?? []) as { place_id: string }[]

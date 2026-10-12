@@ -8,6 +8,7 @@ import { generatePromo } from '@/actions/ai-assist'
 import { boostEvent, endEventBoost } from '@/actions/boosts'
 import { toast } from '@/shared/components/toast'
 import { PhotoImg } from '@/shared/components/photo-img'
+import { fmtInZone, nowLocalInZone } from '@/lib/tz'
 
 type Attendee = { name: string; status: string; when: string }
 type Ev = {
@@ -23,22 +24,31 @@ type Ev = {
   attendees: Attendee[]
 }
 
-const fmt = (s: string) =>
-  new Date(s).toLocaleString('es-CL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-const fmtDay = (s: string) =>
-  new Date(s).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })
+// Fechas SIEMPRE en la zona de la ciudad del lugar: servidor (UTC) y navegador dan el mismo
+// texto → sin error de hidratación, y el dueño ve la hora que escribió.
+const fmt = (s: string, tz: string | null) =>
+  fmtInZone(s, tz, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+const fmtDay = (s: string, tz: string | null) => fmtInZone(s, tz, { day: 'numeric', month: 'short' })
 
 const inp = 'w-full rounded-lg border border-line bg-card px-3 py-2 text-sm text-fg outline-none transition placeholder:text-muted focus:border-goospe-green'
 
-// Fecha/hora mínima para el input (ahora, en formato datetime-local local).
-function nowLocal() {
-  const d = new Date()
-  d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
-  return d.toISOString().slice(0, 16)
-}
-
-export function EventManager({ placeId, events }: { placeId: string; events: Ev[] }) {
+/**
+ * `timeZone` = zona horaria de la ciudad del lugar (cities.timezone). Las horas del formulario
+ * se escriben y se leen en ESA zona, esté donde esté el dueño o el servidor.
+ */
+export function EventManager({
+  placeId,
+  events,
+  timeZone,
+  cityName,
+}: {
+  placeId: string
+  events: Ev[]
+  timeZone: string | null
+  cityName?: string | null
+}) {
   const router = useRouter()
+  const formRef = useRef<HTMLFormElement>(null)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
@@ -52,11 +62,13 @@ export function EventManager({ placeId, events }: { placeId: string; events: Ev[
   const fileRef = useRef<HTMLInputElement>(null)
 
   // Evita mismatch de hidratación: el mínimo del datepicker se fija en el cliente.
-  useEffect(() => { setMinStart(nowLocal()) }, [])
+  // Es "ahora" en la zona del lugar, no en la del navegador.
+  useEffect(() => { setMinStart(nowLocalInZone(timeZone)) }, [timeZone])
 
   function resetForm() {
     setName(''); setDescription(''); setBrief(''); setMsg(null)
     setPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return null })
+    formRef.current?.reset() // fechas e imagen (campos no controlados)
     if (fileRef.current) fileRef.current.value = ''
   }
 
@@ -77,7 +89,12 @@ export function EventManager({ placeId, events }: { placeId: string; events: Ev[
     if (res.description) setDescription(res.description)
   }
 
-  async function onCreate(formData: FormData) {
+  // Se envía con onSubmit (no con `<form action>`): React reinicia los campos no controlados
+  // al terminar una acción, así que tras un error del servidor se perdían fechas e imagen.
+  // Ahora el formulario solo se limpia cuando el evento se creó.
+  async function onCreate(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
     setSaving(true); setMsg(null)
     const res = await createEvent(formData)
     setSaving(false)
@@ -115,7 +132,7 @@ export function EventManager({ placeId, events }: { placeId: string; events: Ev[
       </div>
 
       {open && (
-        <form action={onCreate} className="mb-5 space-y-4 rounded-xl bg-surface p-4">
+        <form ref={formRef} onSubmit={onCreate} className="mb-5 space-y-4 rounded-xl bg-surface p-4">
           <input type="hidden" name="place_id" value={placeId} />
 
           {/* Asistente Decídeme: redacta el evento a partir de una idea corta. */}
@@ -171,6 +188,7 @@ export function EventManager({ placeId, events }: { placeId: string; events: Ev[
               <input name="ends_at" type="datetime-local" min={minStart} className={`mt-1 ${inp}`} />
             </label>
           </div>
+          <p className="-mt-2 text-xs text-muted">Hora local {cityName ? `de ${cityName}` : 'del lugar'}.</p>
 
           <label className="block text-xs font-medium text-fg-soft">Descripción (opcional)
             <textarea name="description" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="¿Qué pueden esperar los asistentes?" className={`mt-1 ${inp}`} />
@@ -181,7 +199,7 @@ export function EventManager({ placeId, events }: { placeId: string; events: Ev[
               className="rounded-full bg-goospe-gradient px-5 py-2 text-sm font-medium text-white shadow disabled:opacity-60">
               {saving ? 'Creando…' : 'Crear evento'}
             </button>
-            {msg && <span className="text-sm text-red-600">{msg}</span>}
+            {msg && <span role="alert" className="text-sm text-red-600">{msg}</span>}
           </div>
         </form>
       )}
@@ -204,7 +222,7 @@ export function EventManager({ placeId, events }: { placeId: string; events: Ev[
                       <p className="truncate text-sm font-medium text-fg">
                         {ev.name}{ev.is_boosted && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-goospe-green/15 px-2 py-0.5 text-[10px] font-medium text-goospe-green-dark"><Sparkles size={10} strokeWidth={2} /> Destacado</span>}
                       </p>
-                      <p className="flex items-center gap-1 text-xs text-goospe-green"><Calendar size={11} strokeWidth={1.75} /> {fmt(ev.starts_at)}</p>
+                      <p className="flex items-center gap-1 text-xs text-goospe-green"><Calendar size={11} strokeWidth={1.75} /> {fmt(ev.starts_at, timeZone)}</p>
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
@@ -249,7 +267,7 @@ export function EventManager({ placeId, events }: { placeId: string; events: Ev[
                           <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${a.status === 'going' ? 'bg-goospe-green/15 text-goospe-green-dark' : 'bg-line text-muted'}`}>
                             {a.status === 'going' ? 'Asistirá' : 'Interesado'}
                           </span>
-                          {fmtDay(a.when)}
+                          {fmtDay(a.when, timeZone)}
                         </span>
                       </li>
                     ))}

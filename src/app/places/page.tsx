@@ -1,11 +1,20 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { categoryIcon } from '@/shared/lib/icons'
 import { AppNav } from '@/shared/components/app-nav'
+import { PhotoImg } from '@/shared/components/photo-img'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 // Grid de descubrimiento de lugares (cards de marca con foto aprobada cuando existe).
-// Sin searchParams → ISR seguro (antes el toggle de debug `?photos=` la forzaba a dynamic).
-export const revalidate = 3600
+// Paginado en la BD con `?page=`: antes traía el catálogo entero en una sola respuesta
+// (truncada a 1.000 filas por la API y de ~5 MB de HTML).
+const PAGE = 48
+
+export const metadata: Metadata = {
+  title: 'Lugares | Goospe',
+  description: 'Todos los lugares de Goospe: dónde comer, tomar café, salir de noche y más.',
+}
 
 type PlaceRow = {
   id: string
@@ -30,22 +39,34 @@ function Price({ level }: { level: number | null }) {
   )
 }
 
-export default async function PlacesPage() {
+const pageHref = (n: number) => (n <= 1 ? '/places' : `/places?page=${n}`)
+
+export default async function PlacesPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+  const sp = await searchParams
+  const reqPage = Math.max(1, Math.floor(Number(sp.page)) || 1)
+  const from = (reqPage - 1) * PAGE
+
   const sb = createAdminClient()
-  const { data, error } = await sb
+  const { data, error, count } = await sb
     .from('places')
     .select(
-      'id, slug, name, description, vibe_line, tags, price_level, address, place_photos(url, status), place_categories(categories(emoji, name))'
+      'id, slug, name, description, vibe_line, tags, price_level, address, place_photos(url, status), place_categories(categories(emoji, name))',
+      { count: 'exact' }
     )
     .eq('is_published', true)
     // Oculta lugares marcados como cerrados definitivos por Google (NULL = sin dato → visible).
     .or('business_status.is.null,business_status.neq.CLOSED_PERMANENTLY')
     .order('name')
+    .order('id') // desempate: sin él, dos lugares con el mismo nombre saltan entre páginas
+    .range(from, from + PAGE - 1)
 
+  // Página fuera de rango (la API responde 416) → a la primera, no a un "0 lugares".
+  if (reqPage > 1 && (error || !data?.length)) redirect('/places')
   // Lanza para que lo capture src/app/error.tsx (UI amigable + reintento), no un crudo en rojo.
   if (error) throw new Error(error.message)
   const places = (data ?? []) as unknown as PlaceRow[]
-  const withPhoto = places.filter((p) => p.place_photos?.length).length
+  const total = count ?? places.length
+  const pages = Math.max(1, Math.ceil(total / PAGE))
 
   return (
     <main className="flex min-h-screen flex-col bg-surface">
@@ -53,14 +74,14 @@ export default async function PlacesPage() {
       <div className="border-b border-line bg-surface/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm text-fg-soft">
           <span>
-            <strong className="text-fg">{places.length}</strong> lugares ·{' '}
-            <span className="text-goospe-green">{withPhoto}</span> con foto
+            <strong className="text-fg">{total.toLocaleString('es-CL')}</strong> lugares
           </span>
+          {pages > 1 && <span>Página {reqPage} de {pages}</span>}
         </div>
       </div>
 
       {/* grid */}
-      <div className="mx-auto max-w-7xl px-5 py-8">
+      <div className="mx-auto w-full max-w-7xl px-5 py-8">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {places.map((p) => {
             const photo = p.place_photos?.find((ph) => ph.status === 'approved')?.url
@@ -72,30 +93,14 @@ export default async function PlacesPage() {
                 key={p.id}
                 className="group block overflow-hidden rounded-2xl border border-line bg-card shadow-sm transition hover:shadow-md"
               >
-                {/* media */}
+                {/* media: foto, o gradiente + icono de categoría si no hay o no carga */}
                 <div className="relative aspect-[4/3] overflow-hidden">
-                  {photo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={photo}
-                      alt={p.name}
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="relative flex h-full w-full items-center justify-center bg-goospe-gradient text-white">
-                      <Cat size={44} strokeWidth={1.5} />
-                      <img
-                        src="/brand/isotipo-white.svg"
-                        alt=""
-                        className="absolute bottom-2 right-2 h-6 w-6 opacity-70"
-                      />
-                    </div>
-                  )}
-                  {!photo && (
-                    <span className="absolute left-3 top-3 flex items-center justify-center rounded-full bg-card/90 p-2 text-fg shadow-sm">
-                      <Cat size={16} strokeWidth={1.75} />
-                    </span>
-                  )}
+                  <PhotoImg
+                    src={photo}
+                    alt={p.name}
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    fallback={<Cat size={44} strokeWidth={1.5} />}
+                  />
                 </div>
 
                 {/* body */}
@@ -126,6 +131,22 @@ export default async function PlacesPage() {
             )
           })}
         </div>
+
+        {pages > 1 && (
+          <nav aria-label="Paginación" className="mt-8 flex items-center justify-between gap-3 text-sm">
+            {reqPage > 1 ? (
+              <Link href={pageHref(reqPage - 1)} rel="prev" className="rounded-full border border-line bg-card px-4 py-2 font-medium text-fg-soft transition hover:text-fg">
+                Anterior
+              </Link>
+            ) : <span className="rounded-full border border-line px-4 py-2 text-muted opacity-50">Anterior</span>}
+            <span className="text-muted">Página {reqPage} de {pages}</span>
+            {reqPage < pages ? (
+              <Link href={pageHref(reqPage + 1)} rel="next" className="rounded-full border border-line bg-card px-4 py-2 font-medium text-fg-soft transition hover:text-fg">
+                Siguiente
+              </Link>
+            ) : <span className="rounded-full border border-line px-4 py-2 text-muted opacity-50">Siguiente</span>}
+          </nav>
+        )}
       </div>
 
       <footer className="mt-auto border-t border-line pb-24 pt-6 text-center text-xs text-muted md:pb-6">

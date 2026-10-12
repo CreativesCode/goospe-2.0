@@ -5,6 +5,7 @@ import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { PhotoImg } from '@/shared/components/photo-img'
 
 export const dynamic = 'force-dynamic'
 
@@ -81,14 +82,7 @@ export default async function PanelPage() {
                   className="group overflow-hidden rounded-2xl border border-line bg-card shadow-sm transition hover:shadow-md"
                 >
                   <div className="relative aspect-[16/9] overflow-hidden">
-                    {photo ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={photo} alt={p.name} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-goospe-gradient">
-                        <img src="/brand/isotipo-white.svg" alt="" className="h-10 w-10 opacity-90" />
-                      </div>
-                    )}
+                    <PhotoImg src={photo} alt={p.name} className="h-full w-full object-cover" isoClassName="h-10 w-10" />
                   </div>
                   <div className="space-y-1 p-4">
                     <div className="flex items-center justify-between gap-2">

@@ -5,13 +5,18 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { login } from '@/actions/auth'
 import { safeNext } from '@/lib/safe-next'
+import { authReasonMessage } from '@/lib/auth-errors'
 import { fieldClass, primaryBtn } from '@/shared/lib/ui'
 import { PasswordField } from './PasswordField'
 
 export function LoginForm() {
-  const next = safeNext(useSearchParams().get('next'))
-  const [error, setError] = useState<string | null>(null)
+  const sp = useSearchParams()
+  const next = safeNext(sp.get('next'))
+  // `?error=link`: llega de /auth/callback cuando el enlace del email ya no sirve.
+  const [error, setError] = useState<string | null>(authReasonMessage(sp.get('error')))
   const [loading, setLoading] = useState(false)
+  // Controlado: React 19 reinicia los campos no controlados tras un <form action>; el email se conserva.
+  const [email, setEmail] = useState('')
 
   async function handle(formData: FormData) {
     setLoading(true); setError(null)
@@ -33,6 +38,8 @@ export function LoginForm() {
           inputMode="email"
           autoCapitalize="none"
           spellCheck={false}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className={fieldClass}
         />
       </div>

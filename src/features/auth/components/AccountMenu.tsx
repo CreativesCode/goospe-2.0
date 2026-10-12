@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { User, Heart, Store, Calendar, Sparkles, LayoutDashboard, Sun, Moon, LogOut, type LucideIcon } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { signout } from '@/actions/auth'
+import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/shared/components/theme-provider'
 
 // Indicador de sesión para el feed: avatar con inicial + menú (Guardados / tema / Cerrar sesión).
@@ -13,8 +14,20 @@ export function AccountMenu() {
   const { user, profile, loading } = useAuth()
   const { theme, toggle } = useTheme()
   const [open, setOpen] = useState(false)
+  const [leaving, setLeaving] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+
+  // Cerrar sesión: PRIMERO en el cliente del navegador (dispara onAuthStateChange → el store de
+  // useAuth, la campana y el menú se actualizan al instante) y luego en el servidor (limpia
+  // cookies y redirige). Antes solo se hacía en el servidor y la UI seguía mostrando al
+  // usuario hasta recargar.
+  async function onSignOut() {
+    setLeaving(true)
+    setOpen(false)
+    try { await createClient().auth.signOut() } catch { /* el servidor cierra igual */ }
+    await signout()
+  }
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -74,7 +87,7 @@ export function AccountMenu() {
       </button>
 
       {open && (
-        <div ref={menuRef} role="menu" className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl bg-card shadow-2xl ring-1 ring-line">
+        <div ref={menuRef} role="menu" className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl bg-card shadow-2xl ring-1 ring-line">
           <div className="border-b border-line px-4 py-3">
             <p className="truncate text-sm font-medium text-fg">{label}</p>
             <p className="truncate text-xs text-muted">{user.email}</p>
@@ -102,14 +115,14 @@ export function AccountMenu() {
               ? <><Sun size={17} strokeWidth={1.75} className="text-fg-soft" /> Modo claro</>
               : <><Moon size={17} strokeWidth={1.75} className="text-fg-soft" /> Modo oscuro</>}
           </button>
-          <form action={signout}>
-            <button
-              type="submit"
-              className="flex w-full items-center gap-2.5 border-t border-line px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-500/10"
-            >
-              <LogOut size={17} strokeWidth={1.75} /> Cerrar sesión
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={onSignOut}
+            disabled={leaving}
+            className="flex w-full items-center gap-2.5 border-t border-line px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-500/10 disabled:opacity-60"
+          >
+            <LogOut size={17} strokeWidth={1.75} /> Cerrar sesión
+          </button>
         </div>
       )}
     </div>

@@ -5,6 +5,8 @@ import { categoryIcon } from '@/shared/lib/icons'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
 import { createClient } from '@/lib/supabase/server'
+import { PhotoImg } from '@/shared/components/photo-img'
+import { FavoritesMigrator } from '@/features/places/FavoritesMigrator'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,6 +44,8 @@ export default async function SavedPage() {
   return (
     <main className="flex min-h-screen flex-col bg-surface">
       <AppNav />
+      {/* Sube los guardados hechos sin sesión y refresca (el login puede aterrizar aquí). */}
+      <FavoritesMigrator />
 
       <div className="mx-auto max-w-5xl px-5 py-8">
         <h1 className="mb-6 inline-flex items-center gap-2 text-2xl font-medium text-fg">
@@ -78,18 +82,13 @@ export default async function SavedPage() {
                 className="group block overflow-hidden rounded-2xl border border-line bg-card shadow-sm transition hover:shadow-md"
               >
                 <div className="relative aspect-[4/3] overflow-hidden">
-                  {photo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={photo}
-                      alt={p.name}
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-goospe-gradient text-white">
-                      <Cat size={44} strokeWidth={1.5} />
-                    </div>
-                  )}
+                  {/* foto, o gradiente + icono de categoría si no hay o no carga */}
+                  <PhotoImg
+                    src={photo}
+                    alt={p.name}
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    fallback={<Cat size={44} strokeWidth={1.5} />}
+                  />
                 </div>
                 <div className="space-y-1.5 p-4">
                   <h2 className="font-medium leading-tight text-fg">{p.name}</h2>

@@ -2,25 +2,30 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Heart, Compass, Share2, Star, MapPin, RefreshCw } from 'lucide-react'
+import { Heart, Compass, Share2, Star, MapPin, RefreshCw, Sparkles } from 'lucide-react'
 import { categoryIcon } from '@/shared/lib/icons'
 import { AppNav } from '@/shared/components/app-nav'
+import { useImgFallback } from '@/shared/components/photo-img'
+import { OpenNowBadge } from '@/features/places/OpenNowBadge'
 import { track } from '@/lib/track'
+import { DotList } from './dot-list'
+import { LoadMore } from './load-more'
 import { directionsHref, fmtDistDrive, type FeedController, type FeedItem } from './use-feed'
 
-/** Miniatura de foto o gradiente de marca (fallback sin foto). */
-function Thumb({ p, className, priority }: { p: FeedItem; className?: string; priority?: boolean }) {
-  const [imgError, setImgError] = useState(false)
-  if (p.photo_url && !imgError) {
+/** Miniatura de foto o gradiente de marca + icono de categoría (sin foto o si falla). */
+function Thumb({ p, className, priority, iconSize = 28 }: { p: FeedItem; className?: string; priority?: boolean; iconSize?: number }) {
+  const img = useImgFallback()
+  if (p.photo_url && !img.failed) {
     // eslint-disable-next-line @next/next/no-img-element
     return (
       <img
+        ref={img.ref}
         src={p.photo_url}
         alt={p.name}
         loading={priority ? 'eager' : 'lazy'}
         fetchPriority={priority ? 'high' : 'auto'}
         decoding="async"
-        onError={() => setImgError(true)}
+        onError={img.onError}
         className={`object-cover ${className ?? ''}`}
       />
     )
@@ -28,25 +33,24 @@ function Thumb({ p, className, priority }: { p: FeedItem; className?: string; pr
   const Cat = categoryIcon(p.category_emoji)
   return (
     <div className={`flex items-center justify-center bg-goospe-gradient text-white ${className ?? ''}`}>
-      <Cat size={28} strokeWidth={1.5} />
+      <Cat size={iconSize} strokeWidth={1.5} />
     </div>
   )
 }
 
 /**
  * Feed tablet — maestro / detalle (claro). Hero grande del lugar seleccionado +
- * columna "A continuación" navegable. Sigue el mock `01 · Feed — maestro / detalle`.
+ * columna "A continuación" navegable (scroll infinito). Sigue el mock `01 · Feed — maestro / detalle`.
  */
 export function FeedTablet({ feed }: { feed: FeedController }) {
-  const { items, isSaved, onSave, onDismiss, onShare, onDirections, location, whenLabel, geoSource, retryLocation } = feed
-  const [selected, setSelected] = useState(0)
+  const { items, isSaved, onSave, onDismiss, onShare, onDirections, location, whenLabel, geoSource, retryLocation, hasMore, loadingMore, loadMore, feedPage } = feed
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const seen = useRef<Set<string>>(new Set())
+  const listRef = useRef<HTMLDivElement>(null)
 
-  const hero = items[selected]
-  const next = items.filter((_, i) => i !== selected).slice(0, 6)
-
-  // Mantiene la selección válida si la lista cambia (p. ej. tras descartar).
-  useEffect(() => { if (selected >= items.length) setSelected(0) }, [items.length, selected])
+  // La selección va por id (no por índice): al cargar más páginas o descartar no salta de lugar.
+  const hero = items.find((p) => p.id === selectedId) ?? items[0]
+  const next = hero ? items.filter((p) => p.id !== hero.id) : []
 
   // view_card al cambiar de hero.
   useEffect(() => {
@@ -77,7 +81,7 @@ export function FeedTablet({ feed }: { feed: FeedController }) {
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-baseline gap-3">
             <h1 className="text-3xl font-light tracking-tight text-fg">Para ti</h1>
-            {whenLabel && <span className="text-sm text-muted">{whenLabel}</span>}
+            {whenLabel && <span className="whitespace-nowrap text-sm text-muted">{whenLabel}</span>}
           </div>
           {geoSource === 'fallback' ? (
             <button
@@ -102,28 +106,30 @@ export function FeedTablet({ feed }: { feed: FeedController }) {
             href={`/places/${hero.slug}`}
             className="group relative overflow-hidden rounded-3xl shadow-lg"
           >
-            <Thumb p={hero} priority className="absolute inset-0 h-full w-full transition duration-500 group-hover:scale-[1.03]" />
+            {/* key: al cambiar de hero se reinicia el estado "foto fallida" de la miniatura */}
+            <Thumb key={hero.id} p={hero} priority iconSize={72} className="absolute inset-0 h-full w-full transition duration-500 group-hover:scale-[1.03]" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/25" />
-            <div className="absolute inset-x-5 top-5 flex items-center justify-between">
+            <div className="absolute inset-x-5 top-5 flex flex-wrap items-center gap-2">
               {hero.category_name && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-black/30 px-3.5 py-1.5 text-sm font-medium text-white ring-1 ring-white/15 backdrop-blur">
                   <HeroCat size={14} strokeWidth={2} /> {hero.category_name}
                 </span>
               )}
+              <OpenNowBadge hours={hero.hours} timezone={hero.timezone} onlyOpen className="px-3.5 py-1.5 text-sm" />
               {hero.boosted && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-goospe-gradient px-3.5 py-1.5 text-sm font-semibold text-white ring-1 ring-white/40">
-                  Destacado
+                <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-goospe-gradient px-3.5 py-1.5 text-sm font-semibold text-white ring-1 ring-white/40">
+                  <Sparkles size={14} strokeWidth={2} /> Destacado
                 </span>
               )}
             </div>
             <div className="text-shadow-photo absolute inset-x-7 bottom-7 text-white">
               <h2 className="text-4xl font-medium leading-tight tracking-tight drop-shadow">{hero.name}</h2>
               {hero.vibe_line && <p className="mt-2 text-xl font-medium text-goospe-green-light drop-shadow">{hero.vibe_line}</p>}
-              <div className="mt-3 flex items-center gap-3 text-sm text-white/85">
-                {hero.rating > 0 && <span className="inline-flex items-center gap-1"><Star size={15} strokeWidth={1.75} fill="currentColor" /> {Number(hero.rating).toFixed(1)}</span>}
-                {hero.price_level ? <><span className="opacity-50">·</span><span>{'$'.repeat(hero.price_level)}</span></> : null}
-                <span className="opacity-50">·</span><span>{fmtDistDrive(hero.distance_m)}</span>
-              </div>
+              <DotList className="mt-3 flex items-center gap-3 text-sm text-white/85">
+                {hero.rating > 0 ? <span className="inline-flex items-center gap-1"><Star size={15} strokeWidth={1.75} fill="currentColor" /> {Number(hero.rating).toFixed(1)}</span> : null}
+                {hero.price_level ? <span>{'$'.repeat(hero.price_level)}</span> : null}
+                <span>{fmtDistDrive(hero.distance_m)}</span>
+              </DotList>
             </div>
           </Link>
 
@@ -153,13 +159,23 @@ export function FeedTablet({ feed }: { feed: FeedController }) {
             </div>
 
             {/* a continuación */}
-            <div className="text-xs font-medium uppercase tracking-wider text-muted">A continuación</div>
-            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-medium uppercase tracking-wider text-muted">A continuación</span>
+              {next.length > 0 && (
+                <button
+                  onClick={() => onDismiss(hero.id)}
+                  className="text-xs text-muted underline-offset-2 transition hover:text-fg hover:underline"
+                >
+                  No me interesa este
+                </button>
+              )}
+            </div>
+            <div ref={listRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
               {next.map((p) => (
                 <button
                   key={p.id}
-                  onClick={() => setSelected(items.indexOf(p))}
-                  className="flex items-center gap-3 rounded-2xl border border-line bg-card p-3 text-left transition hover:border-goospe-green/40 hover:shadow-sm"
+                  onClick={() => setSelectedId(p.id)}
+                  className="flex shrink-0 items-center gap-3 rounded-2xl border border-line bg-card p-3 text-left transition hover:border-goospe-green/40 hover:shadow-sm"
                 >
                   <Thumb p={p} className="h-14 w-14 shrink-0 rounded-xl" />
                   <div className="min-w-0 flex-1">
@@ -171,14 +187,15 @@ export function FeedTablet({ feed }: { feed: FeedController }) {
                   </div>
                 </button>
               ))}
-              {next.length > 1 && (
-                <button
-                  onClick={() => onDismiss(hero.id)}
-                  className="mt-1 self-start text-xs text-muted underline-offset-2 transition hover:text-fg hover:underline"
-                >
-                  No me interesa este
-                </button>
-              )}
+              <LoadMore
+                hasMore={hasMore}
+                loading={loadingMore}
+                onLoadMore={loadMore}
+                watch={feedPage}
+                root={listRef}
+                rootMargin="300px 0px"
+                className="shrink-0"
+              />
             </div>
           </div>
         </div>

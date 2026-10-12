@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { Unlink } from 'lucide-react'
 import { unclaimPlace } from '@/actions/admin-claims'
+import { toast } from '@/shared/components/toast'
 
 /** Rompe la relación de un lugar reclamado con su dueño (sin borrar el lugar). */
 export function UnclaimButton({ placeId, placeName }: { placeId: string; placeName: string }) {
@@ -12,7 +13,12 @@ export function UnclaimButton({ placeId, placeName }: { placeId: string; placeNa
   function run() {
     const fd = new FormData()
     fd.set('place_id', placeId)
-    startTransition(() => { void unclaimPlace(fd) })
+    // El des-reclamo comprueba cada paso: si alguno falla hay que enseñarlo, no callarlo.
+    startTransition(async () => {
+      const res = await unclaimPlace(fd)
+      if (res?.error) toast.error(res.error)
+      else { toast.success('Lugar liberado'); setConfirming(false) }
+    })
   }
 
   if (confirming) {

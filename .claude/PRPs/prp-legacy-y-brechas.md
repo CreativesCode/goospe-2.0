@@ -300,7 +300,23 @@ competitivo y clustering — que el doc 15 difiere hasta tener volumen de intera
 
 > Esta sección CRECE con cada error encontrado durante la implementación.
 
-_(vacío — se llena durante la ejecución)_
+### 2026-10-12 (Fase 2): `<form action>` borra los campos tras un error
+- **Error**: React 19 reinicia los campos no controlados al terminar una acción; si el servidor devolvía un error se perdía lo escrito (P8, y también ficha y admin).
+- **Fix**: enviar con `onSubmit` + `new FormData(e.currentTarget)` y limpiar el formulario solo si la acción tuvo éxito.
+- **Aplicar en**: todo formulario con campos no controlados cuya acción pueda devolver un error.
+
+### 2026-10-12 (Fase 2): `onError` de un `<img>` no salta si falló antes de hidratar
+- **Error**: las fotos que ya venían rotas en el HTML del servidor nunca mostraban el placeholder.
+- **Fix**: `useImgFallback` (`src/shared/components/photo-img.tsx`) revisa `complete && naturalWidth === 0` al montar.
+- **Aplicar en**: cualquier `<img>` con fallback; usar `PhotoImg` / `useImgFallback`, no un `useState` suelto.
+
+### 2026-10-12 (Fase 2): importar una constante de un módulo `'use client'` desde el servidor
+- **Error**: en un server component llega una referencia de cliente, no el valor.
+- **Fix**: las constantes compartidas entre servidor y cliente viven en un módulo sin `'use client'`.
+
+### 2026-10-12 (Fase 2): cambiar el retorno de una función SQL
+- **Error**: `create or replace` no admite cambiar columnas de `returns table`.
+- **Fix**: `drop function if exists` + `create` en la misma transacción y **volver a dar los grants** (se pierden con el drop). Tras aplicar: `notify pgrst, 'reload schema'`.
 
 ---
 

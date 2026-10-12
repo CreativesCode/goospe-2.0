@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isUuid } from '@/lib/validation'
+import { revalidatePlace } from '@/lib/revalidate-place'
 import { claimSchema, listingSchema, firstIssue } from '@/features/business/listing-schema'
 
 // Las escrituras a places/businesses sólo las permite service_role (ver 0004_rls).
@@ -118,5 +119,7 @@ export async function updateListing(formData: FormData) {
 
   revalidatePath(`/panel/${placeId}`)
   revalidatePath('/panel')
+  // La ficha pública es ISR de 1 h: sin esto el cambio del dueño tardaba hasta una hora en verse.
+  await revalidatePlace(placeId)
   return { success: true }
 }

@@ -4,12 +4,14 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sparkles } from 'lucide-react'
 import { createBoost, endBoost } from '@/actions/boosts'
+import { fmtInZone } from '@/lib/tz'
 
 type Boost = { id: string; ends_at: string }
 
-const fmt = (s: string) => new Date(s).toLocaleDateString('es-CL', { day: 'numeric', month: 'long' })
+// Fecha en la zona de la ciudad del lugar (mismo texto en servidor y navegador).
+const fmt = (s: string, tz: string | null) => fmtInZone(s, tz, { day: 'numeric', month: 'long' })
 
-export function BoostControl({ placeId, active }: { placeId: string; active: Boost | null }) {
+export function BoostControl({ placeId, active, timeZone = null }: { placeId: string; active: Boost | null; timeZone?: string | null }) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [days, setDays] = useState(7)
@@ -32,8 +34,9 @@ export function BoostControl({ placeId, active }: { placeId: string; active: Boo
     const fd = new FormData()
     fd.set('boost_id', active.id)
     fd.set('place_id', placeId)
-    await endBoost(fd)
+    const res = await endBoost(fd)
     setBusy(false)
+    if (res?.error) { setMsg(res.error); return }
     router.refresh()
   }
 
@@ -47,7 +50,7 @@ export function BoostControl({ placeId, active }: { placeId: string; active: Boo
       {active ? (
         <div className="mt-3 flex items-center justify-between gap-4">
           <p className="text-sm text-fg">
-            Tu lugar está <strong className="text-goospe-green-dark">destacado</strong> hasta el {fmt(active.ends_at)}.
+            Tu lugar está <strong className="text-goospe-green-dark">destacado</strong> hasta el {fmt(active.ends_at, timeZone)}.
           </p>
           <button onClick={onEnd} disabled={busy} className="shrink-0 text-sm text-red-600 hover:underline disabled:opacity-60">
             Terminar

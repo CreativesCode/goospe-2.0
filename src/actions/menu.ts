@@ -7,6 +7,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { assertPlaceMembership } from '@/lib/ownership'
 import { visionJson, type Usage } from '@/lib/ai/openai'
 import { fireAndForget } from '@/lib/fire'
+import { revalidatePlace } from '@/lib/revalidate-place'
 
 const MAX_BYTES = 8 * 1024 * 1024
 const OK_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -119,6 +120,7 @@ export async function uploadMenu(formData: FormData) {
       .eq('id', placeId)
     await admin.storage.from('places').remove(uploaded) // las imágenes eran sólo para el OCR
     revalidatePath(`/panel/${placeId}`)
+    await revalidatePlace(placeId) // la carta se muestra en la ficha pública (ISR)
     return { success: true, count: merged.length }
   } catch (e) {
     if (uploaded.length) await admin.storage.from('places').remove(uploaded)
@@ -135,5 +137,6 @@ export async function clearMenu(formData: FormData) {
   const admin = createAdminClient()
   await admin.from('places').update({ menu: null, menu_updated_at: null } as never).eq('id', placeId)
   revalidatePath(`/panel/${placeId}`)
+  await revalidatePlace(placeId)
   return { success: true }
 }

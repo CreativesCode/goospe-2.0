@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { Sparkles, Coins, Hash, Download } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/admin-guard'
@@ -28,8 +29,11 @@ type Breakdown = [string, { usd: number; tok: number; n: number }][]
 export default async function GastosIaPage({ searchParams }: { searchParams: Promise<{ range?: string; page?: string }> }) {
   await requireAdmin('/admin/ai-costs') // guard propio: el del layout no evita que la página consulte
   const sp = await searchParams
-  const range = sp.range ?? '30'
-  const days = RANGES.find((r) => r.key === range)?.days ?? 30
+  // Rango desconocido → 30 días. OJO: `days` de "Todo" es null a propósito (sin filtro); con
+  // `?? 30` ese null se convertía en 30 y "Todo" mostraba lo mismo que "30 días".
+  const rangeDef = RANGES.find((r) => r.key === sp.range) ?? RANGES[1]
+  const range = rangeDef.key
+  const days = rangeDef.days
   const admin = createAdminClient()
   const arpc = admin.rpc.bind(admin) as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown }>
 
@@ -85,6 +89,8 @@ export default async function GastosIaPage({ searchParams }: { searchParams: Pro
     : { data: [] }
   const userName = Object.fromEntries(((profs ?? []) as { id: string; display_name: string | null }[]).map((p) => [p.id, p.display_name || 'Usuario']))
 
+  // Página fuera de rango → a la primera del mismo rango (antes: tabla vacía).
+  if (reqPage > 1 && detail.length === 0) redirect(`/admin/ai-costs?range=${range}`)
   const pages = Math.max(1, Math.ceil(totalRows / PAGE))
   const page = Math.min(pages, reqPage)
 
@@ -107,7 +113,7 @@ export default async function GastosIaPage({ searchParams }: { searchParams: Pro
               </Link>
             ))}
           </nav>
-          <a href="/admin/ai-costs/export" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3 py-1.5 text-sm font-medium text-fg-soft transition hover:text-fg">
+          <a href={`/admin/ai-costs/export?range=${range}`} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3 py-1.5 text-sm font-medium text-fg-soft transition hover:text-fg">
             <Download size={15} /> CSV
           </a>
         </div>
@@ -122,7 +128,7 @@ export default async function GastosIaPage({ searchParams }: { searchParams: Pro
       </section>
 
       {/* serie por día */}
-      <Card title="Costo por día">
+      <Card title={days === null ? 'Costo por día · últimos 30 días con gasto' : 'Costo por día'}>
         {series.length === 0 ? (
           <p className="text-sm text-muted">Sin datos en el rango.</p>
         ) : (

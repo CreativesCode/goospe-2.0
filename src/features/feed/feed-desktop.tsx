@@ -7,21 +7,26 @@ import { categoryIcon } from '@/shared/lib/icons'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
 import { LocationNotice } from '@/shared/components/location-notice'
+import { useImgFallback } from '@/shared/components/photo-img'
+import { OpenNowBadge } from '@/features/places/OpenNowBadge'
 import { track } from '@/lib/track'
+import { DotList } from './dot-list'
+import { LoadMore } from './load-more'
 import { fmtDistDrive, type FeedController, type FeedItem } from './use-feed'
 
-function Thumb({ p, className, priority }: { p: FeedItem; className?: string; priority?: boolean }) {
-  const [imgError, setImgError] = useState(false)
-  if (p.photo_url && !imgError) {
+function Thumb({ p, className, priority, iconSize = 32 }: { p: FeedItem; className?: string; priority?: boolean; iconSize?: number }) {
+  const img = useImgFallback()
+  if (p.photo_url && !img.failed) {
     // eslint-disable-next-line @next/next/no-img-element
     return (
       <img
+        ref={img.ref}
         src={p.photo_url}
         alt={p.name}
         loading={priority ? 'eager' : 'lazy'}
         fetchPriority={priority ? 'high' : 'auto'}
         decoding="async"
-        onError={() => setImgError(true)}
+        onError={img.onError}
         className={`object-cover ${className ?? ''}`}
       />
     )
@@ -29,7 +34,7 @@ function Thumb({ p, className, priority }: { p: FeedItem; className?: string; pr
   const Cat = categoryIcon(p.category_emoji)
   return (
     <div className={`flex items-center justify-center bg-goospe-gradient text-white ${className ?? ''}`}>
-      <Cat size={32} strokeWidth={1.5} />
+      <Cat size={iconSize} strokeWidth={1.5} />
     </div>
   )
 }
@@ -45,6 +50,7 @@ const PlaceCard = memo(function PlaceCard({ p, saved, onSave }: { p: FeedItem; s
       className="group relative overflow-hidden rounded-2xl border border-line bg-card transition hover:shadow-md"
     >
       <Thumb p={p} className="h-32 w-full" />
+      <OpenNowBadge hours={p.hours} timezone={p.timezone} onlyOpen className="absolute left-3 top-3 shadow" />
       <button
         onClick={(e) => { e.preventDefault(); onSave(p) }}
         aria-pressed={saved}
@@ -69,7 +75,7 @@ const PlaceCard = memo(function PlaceCard({ p, saved, onSave }: { p: FeedItem; s
  * cards, con chips de filtro por categoría. Sigue el mock `02 · Feed — tablero`.
  */
 export function FeedDesktop({ feed }: { feed: FeedController }) {
-  const { items, isSaved, onSave, location, whenLabel, geoSource, retryLocation } = feed
+  const { items, isSaved, onSave, location, whenLabel, geoSource, retryLocation, hasMore, loadingMore, loadMore, feedPage } = feed
   const [cat, setCat] = useState<string | null>(null)
   const seen = useRef<Set<string>>(new Set())
 
@@ -85,7 +91,7 @@ export function FeedDesktop({ feed }: { feed: FeedController }) {
     [items, cat]
   )
 
-  // Destacado: el primer boosted, o el primero de la lista filtrada.
+  // Card grande: el primer lugar con boost activo, o el primero de la lista filtrada.
   const featured = filtered.find((p) => p.boosted) ?? filtered[0]
   const rest = filtered.filter((p) => p.id !== featured?.id)
 
@@ -104,7 +110,7 @@ export function FeedDesktop({ feed }: { feed: FeedController }) {
         {/* encabezado + filtros */}
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
-            <div className="text-sm text-muted">{whenLabel} · {location}</div>
+            <div className="text-sm text-muted">{[whenLabel, location].filter(Boolean).join(' · ')}</div>
             <h1 className="mt-1 text-4xl font-light tracking-tight text-fg">
               Para <span className="font-medium">ti</span>
             </h1>
@@ -132,24 +138,30 @@ export function FeedDesktop({ feed }: { feed: FeedController }) {
           <p className="py-20 text-center text-muted">No hay lugares en esta categoría.</p>
         ) : (
           <div className="grid items-stretch gap-5 [grid-auto-rows:minmax(208px,auto)] [grid-template-columns:2fr_1fr_1fr]">
-            {/* destacado */}
+            {/* card grande */}
             <Link
               href={`/places/${featured.slug}`}
               className="group relative row-span-2 overflow-hidden rounded-3xl shadow-lg"
             >
-              <Thumb p={featured} priority className="absolute inset-0 h-full w-full transition duration-500 group-hover:scale-[1.03]" />
+              <Thumb key={featured.id} p={featured} priority iconSize={72} className="absolute inset-0 h-full w-full transition duration-500 group-hover:scale-[1.03]" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/20" />
-              <span className="absolute left-5 top-5 inline-flex items-center gap-1.5 rounded-full bg-goospe-gradient px-3.5 py-1.5 text-xs font-semibold text-white ring-1 ring-white/40">
-                <Sparkles size={13} strokeWidth={2} /> Destacado
-              </span>
+              <div className="absolute left-5 top-5 flex flex-wrap items-center gap-2">
+                {/* "Destacado" solo si el lugar tiene un boost activo (antes salía siempre). */}
+                {featured.boosted && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-goospe-gradient px-3.5 py-1.5 text-xs font-semibold text-white ring-1 ring-white/40">
+                    <Sparkles size={13} strokeWidth={2} /> Destacado
+                  </span>
+                )}
+                <OpenNowBadge hours={featured.hours} timezone={featured.timezone} onlyOpen className="px-3.5 py-1.5" />
+              </div>
               <div className="text-shadow-photo absolute inset-x-6 bottom-6 text-white">
                 <h2 className="text-3xl font-medium leading-tight tracking-tight drop-shadow">{featured.name}</h2>
                 {featured.vibe_line && <p className="mt-1.5 text-lg text-goospe-green-light drop-shadow">{featured.vibe_line}</p>}
-                <div className="mt-2.5 flex items-center gap-2 text-sm text-white/85">
-                  {featured.rating > 0 && <span className="inline-flex items-center gap-1"><Star size={14} strokeWidth={1.75} fill="currentColor" /> {Number(featured.rating).toFixed(1)}</span>}
-                  {featured.price_level ? <><span className="opacity-50">·</span><span>{'$'.repeat(featured.price_level)}</span></> : null}
-                  <span className="opacity-50">·</span><span>{fmtDistDrive(featured.distance_m)}</span>
-                </div>
+                <DotList className="mt-2.5 flex items-center gap-2 text-sm text-white/85">
+                  {featured.rating > 0 ? <span className="inline-flex items-center gap-1"><Star size={14} strokeWidth={1.75} fill="currentColor" /> {Number(featured.rating).toFixed(1)}</span> : null}
+                  {featured.price_level ? <span>{'$'.repeat(featured.price_level)}</span> : null}
+                  <span>{fmtDistDrive(featured.distance_m)}</span>
+                </DotList>
               </div>
             </Link>
 
@@ -159,6 +171,17 @@ export function FeedDesktop({ feed }: { feed: FeedController }) {
             ))}
           </div>
         )}
+
+        {/* Con un filtro activo el "cargar más" es manual: en automático recorrería toda la
+            ciudad buscando esa categoría. */}
+        <LoadMore
+          hasMore={hasMore}
+          loading={loadingMore}
+          onLoadMore={loadMore}
+          watch={feedPage}
+          auto={cat === null}
+          className="mt-6"
+        />
       </div>
 
       <AppFooter />

@@ -43,11 +43,18 @@ export async function saveOnboarding(formData: FormData) {
 
   const admin = createAdminClient()
 
-  // perfil crudo (gender se guarda aquí para el desglose agregado de asistentes por evento)
-  await admin
+  // perfil crudo (gender se guarda aquí para el desglose agregado de asistentes por evento).
+  // Se FUSIONA con lo guardado: cualquier otra clave de `onboarding` se conserva.
+  const { data: prevRow } = await admin.from('profiles').select('onboarding').eq('id', user.id).maybeSingle()
+  const prev = (prevRow as { onboarding: Record<string, unknown> | null } | null)?.onboarding ?? {}
+  const { error: profErr } = await admin
     .from('profiles')
-    .update({ onboarding: { likes, budget, gender } } as never)
+    .update({ onboarding: { ...prev, likes, budget, gender } } as never)
     .eq('id', user.id)
+  if (profErr) {
+    console.error('[saveOnboarding] profiles:', profErr.message)
+    return { error: 'No pudimos guardar tus gustos. Intenta de nuevo.' }
+  }
 
   // perfil de gusto + embedding
   let embedding: number[] | null = null
@@ -68,8 +75,12 @@ export async function saveOnboarding(formData: FormData) {
   const { error } = await admin
     .from('taste_profiles')
     .upsert(payload as never, { onConflict: 'user_id' })
-  if (error) return { error: error.message }
+  if (error) {
+    console.error('[saveOnboarding] taste_profiles:', error.message)
+    return { error: 'No pudimos guardar tus gustos. Intenta de nuevo.' }
+  }
 
   revalidatePath('/feed')
+  revalidatePath('/profile')
   return { success: true }
 }

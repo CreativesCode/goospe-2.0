@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
 import { PhotoImg } from '@/shared/components/photo-img'
+import { fmtInZone } from '@/lib/tz'
 
 // Conteos agregados de asistentes por evento (solo números, sin PII). El RPC es SECURITY
 // DEFINER; si aún no está aplicado en la BD, degradamos a un mapa vacío (no muestra conteos).
@@ -32,14 +33,15 @@ export const metadata: Metadata = {
   alternates: { canonical: '/events' },
 }
 
-const fmt = (s: string) =>
-  new Date(s).toLocaleString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+// Cada evento se muestra en la hora de SU ciudad (la cartelera mezcla Chile y España).
+const fmt = (s: string, tz: string | null | undefined) =>
+  fmtInZone(s, tz, { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
 
 export default async function EventosPage() {
   const sb = createAdminClient()
   const { data } = await sb
     .from('events')
-    .select('id, name, description, image_url, starts_at, places(slug, name)')
+    .select('id, name, description, image_url, starts_at, places(slug, name, cities(timezone))')
     .eq('status', 'approved')
     .gte('starts_at', new Date(Date.now() - 86400_000).toISOString())
     .order('starts_at')
@@ -81,7 +83,7 @@ export default async function EventosPage() {
                   )}
                   <div className="flex min-w-0 flex-1 flex-col justify-between p-4">
                     <div>
-                      <p className="text-xs font-medium capitalize text-goospe-green">{fmt(ev.starts_at)}</p>
+                      <p className="text-xs font-medium capitalize text-goospe-green">{fmt(ev.starts_at, ev.places?.cities?.timezone)}</p>
                       <h2 className="mt-0.5 font-medium text-fg">{ev.name}</h2>
                       {ev.places && (
                         <Link href={`/places/${ev.places.slug}`} className="text-sm text-fg-soft hover:text-goospe-green">

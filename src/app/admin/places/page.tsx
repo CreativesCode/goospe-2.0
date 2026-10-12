@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { Plus, Star, Bookmark, Image as ImageIcon, Search, BadgeCheck } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { PublishToggle } from '@/features/admin/PublishToggle'
@@ -59,6 +60,17 @@ export default async function AdminLugaresPage({ searchParams }: { searchParams:
   const cities = (cityRows ?? []) as { id: number; name: string; is_active: boolean | null }[]
   const cityById = Object.fromEntries(cities.map((c) => [c.id, c.name])) as Record<number, string>
   const pageRows = (placesRes.data ?? []) as unknown as Row[]
+  // Página fuera de rango (la API responde 416 y sin count) → a la primera con los mismos
+  // filtros, en vez de mostrar "0 lugares".
+  if (reqPage > 1 && pageRows.length === 0) {
+    const keep = new URLSearchParams()
+    if (q) keep.set('q', q)
+    if (estado !== 'all') keep.set('estado', estado)
+    if (cat !== 'all') keep.set('cat', cat)
+    if (ciudad !== 'all') keep.set('ciudad', ciudad)
+    const s = keep.toString()
+    redirect(`/admin/places${s ? `?${s}` : ''}`)
+  }
   const totalRows = placesRes.count ?? 0
   const pages = Math.max(1, Math.ceil(totalRows / PAGE))
   const page = Math.min(pages, reqPage)
@@ -67,13 +79,22 @@ export default async function AdminLugaresPage({ searchParams }: { searchParams:
   const bizIds = [...new Set(pageRows.map((r) => r.business_id).filter(Boolean))] as string[]
   let ownerByBiz: Record<string, string> = {}
   if (bizIds.length) {
+    // business_members.user_id apunta a auth.users, no a profiles: el embed `profiles(...)`
+    // no existe para PostgREST y la columna nunca mostraba el nombre. Se consulta aparte.
     const { data: members } = await admin
       .from('business_members')
-      .select('business_id, profiles(display_name)')
+      .select('business_id, user_id')
       .in('business_id', bizIds)
       .eq('role', 'owner')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ownerByBiz = Object.fromEntries(((members ?? []) as any[]).map((m) => [m.business_id, m.profiles?.display_name || 'Dueño']))
+    const owners = (members ?? []) as { business_id: string; user_id: string }[]
+    const ownerIds = [...new Set(owners.map((m) => m.user_id))]
+    const { data: profs } = ownerIds.length
+      ? await admin.from('profiles').select('id, display_name').in('id', ownerIds)
+      : { data: [] }
+    const nameById = Object.fromEntries(
+      ((profs ?? []) as { id: string; display_name: string | null }[]).map((p) => [p.id, p.display_name])
+    )
+    ownerByBiz = Object.fromEntries(owners.map((m) => [m.business_id, nameById[m.user_id] || 'Dueño']))
   }
 
   const filterLink = (patch: Record<string, string>) => {

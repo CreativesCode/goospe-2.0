@@ -1,7 +1,7 @@
 'use client'
 
 /* eslint-disable @next/next/no-img-element */
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 
 type Photo = { id?: string; url: string }
@@ -10,19 +10,37 @@ type Photo = { id?: string; url: string }
  * Galería de fotos del lugar. Al tocar una foto se abre a pantalla completa
  * (lightbox) con navegación entre fotos, cierre con Escape / clic en el fondo
  * y bloqueo del scroll de fondo mientras está abierta.
+ *
+ * Las fotos que no cargan (p. ej. las de Google mientras su API no responde) se QUITAN de la
+ * galería en vez de dejar un mosaico de huecos; si no queda ninguna se pinta `empty`.
  */
-export function PhotoGallery({ photos, alt }: { photos: Photo[]; alt: string }) {
+export function PhotoGallery({ photos, alt, empty = null }: { photos: Photo[]; alt: string; empty?: ReactNode }) {
+  const [failed, setFailed] = useState<Set<string>>(new Set())
+  const markFailed = useCallback(
+    (url: string) => setFailed((s) => (s.has(url) ? s : new Set(s).add(url))),
+    [],
+  )
+  // Las que fallaron antes de hidratar no disparan onError: se detectan al montar el <img>.
+  const checkBroken = useCallback(
+    (el: HTMLImageElement | null, url: string) => {
+      if (el && el.complete && el.naturalWidth === 0) markFailed(url)
+    },
+    [markFailed],
+  )
+  const visible = photos.filter((ph) => !failed.has(ph.url))
+
   const [index, setIndex] = useState<number | null>(null)
-  const open = index !== null
+  // Si la foto abierta falla y la lista se acorta, el índice se reajusta (o se cierra).
+  const current = index === null || visible.length === 0 ? null : Math.min(index, visible.length - 1)
+  const open = current !== null
   const close = useCallback(() => setIndex(null), [])
+  const count = visible.length
   const step = useCallback(
-    (dir: number) => setIndex((i) => (i === null ? i : (i + dir + photos.length) % photos.length)),
-    [photos.length],
+    (dir: number) => setIndex((i) => (i === null || count === 0 ? null : (Math.min(i, count - 1) + dir + count) % count)),
+    [count],
   )
   const dialogRef = useRef<HTMLDivElement>(null)
   const closeBtnRef = useRef<HTMLButtonElement>(null)
-  const [failed, setFailed] = useState<Set<number>>(new Set())
-  const markFailed = (i: number) => setFailed((s) => (s.has(i) ? s : new Set(s).add(i)))
 
   useEffect(() => {
     if (!open) return
@@ -53,34 +71,31 @@ export function PhotoGallery({ photos, alt }: { photos: Photo[]; alt: string }) 
     }
   }, [open, close, step])
 
+  if (visible.length === 0) return <>{empty}</>
+
   return (
     <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {photos.map((ph, i) => (
+        {visible.map((ph, i) => (
           <button
-            key={ph.id ?? i}
+            key={ph.id ?? ph.url}
             type="button"
             onClick={() => setIndex(i)}
             className="overflow-hidden rounded-xl"
             aria-label="Ver foto a pantalla completa"
           >
-            {failed.has(i) ? (
-              <div className="flex aspect-[4/3] w-full items-center justify-center bg-goospe-gradient">
-                <img src="/brand/isotipo-white.svg" alt="" className="h-10 w-10 opacity-80" />
-              </div>
-            ) : (
-              <img
-                src={ph.url}
-                alt={alt}
-                onError={() => markFailed(i)}
-                className="aspect-[4/3] w-full cursor-zoom-in object-cover transition duration-300 hover:scale-105"
-              />
-            )}
+            <img
+              ref={(el) => checkBroken(el, ph.url)}
+              src={ph.url}
+              alt={alt}
+              onError={() => markFailed(ph.url)}
+              className="aspect-[4/3] w-full cursor-zoom-in object-cover transition duration-300 hover:scale-105"
+            />
           </button>
         ))}
       </div>
 
-      {open && (
+      {current !== null && (
         <div
           ref={dialogRef}
           role="dialog"
@@ -99,7 +114,7 @@ export function PhotoGallery({ photos, alt }: { photos: Photo[]; alt: string }) 
             <X size={22} strokeWidth={2} />
           </button>
 
-          {photos.length > 1 && (
+          {visible.length > 1 && (
             <>
               <button
                 type="button"
@@ -120,23 +135,17 @@ export function PhotoGallery({ photos, alt }: { photos: Photo[]; alt: string }) 
             </>
           )}
 
-          {failed.has(index) ? (
-            <div onClick={(e) => e.stopPropagation()} className="flex h-[60vh] w-[85vw] max-w-2xl items-center justify-center rounded-lg bg-goospe-gradient">
-              <img src="/brand/isotipo-white.svg" alt="" className="h-20 w-20 opacity-80" />
-            </div>
-          ) : (
-            <img
-              src={photos[index].url}
-              alt={alt}
-              onClick={(e) => e.stopPropagation()}
-              onError={() => markFailed(index)}
-              className="max-h-[90vh] max-w-[95vw] rounded-lg object-contain"
-            />
-          )}
+          <img
+            src={visible[current].url}
+            alt={alt}
+            onClick={(e) => e.stopPropagation()}
+            onError={() => markFailed(visible[current].url)}
+            className="max-h-[90vh] max-w-[95vw] rounded-lg object-contain"
+          />
 
-          {photos.length > 1 && (
+          {visible.length > 1 && (
             <span className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-sm text-white">
-              {index + 1} / {photos.length}
+              {current + 1} / {visible.length}
             </span>
           )}
         </div>

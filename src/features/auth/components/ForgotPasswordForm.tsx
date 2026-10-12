@@ -4,8 +4,9 @@ import { useState } from 'react'
 import { resetPassword } from '@/actions/auth'
 import { fieldClass, primaryBtn } from '@/shared/lib/ui'
 
-export function ForgotPasswordForm() {
-  const [error, setError] = useState<string | null>(null)
+/** `notice`: aviso inicial (p. ej. "tu enlace expiró") que llega desde la página. */
+export function ForgotPasswordForm({ notice = null }: { notice?: string | null }) {
+  const [error, setError] = useState<string | null>(notice)
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 

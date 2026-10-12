@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Calendar, Search, Sparkles, Heart, Compass, Share2, Ban, Star, MapPin, Users, RefreshCw } from 'lucide-react'
 import { categoryIcon } from '@/shared/lib/icons'
@@ -8,7 +8,11 @@ import { ThemeToggle } from '@/shared/components/theme-toggle'
 import { AccountMenu } from '@/features/auth/components'
 import { EventFeedCard } from '@/features/events/EventFeedCard'
 import { Notifications } from '@/features/notifications/Notifications'
+import { useImgFallback } from '@/shared/components/photo-img'
+import { OpenNowBadge } from '@/features/places/OpenNowBadge'
 import { track } from '@/lib/track'
+import { DotList } from './dot-list'
+import { LoadMore } from './load-more'
 import { directionsHref, fmtDistDrive, type FeedController, type FeedItem, type FeedRow } from './use-feed'
 
 const SCROLL_KEY = 'goospe:feed-scroll'
@@ -37,24 +41,26 @@ const FeedCardMobile = memo(function FeedCardMobile({
   onDirections: (p: FeedItem) => void
 }) {
   const Cat = categoryIcon(p.category_emoji)
-  const [imgError, setImgError] = useState(false)
+  const img = useImgFallback()
   return (
     <section data-track-id={p.id} data-kind="place" className="relative h-[100dvh] w-full snap-start snap-always">
       {/* foto */}
-      {p.photo_url && !imgError ? (
+      {p.photo_url && !img.failed ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          ref={img.ref}
           src={p.photo_url}
           alt={p.name}
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? 'high' : 'auto'}
           decoding="async"
-          onError={() => setImgError(true)}
+          onError={img.onError}
           className="absolute inset-0 h-full w-full object-cover"
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-goospe-gradient">
-          <img src="/brand/isotipo-white.svg" alt="" className="h-20 w-20 opacity-90" />
+        // Sin foto (o no cargó): gradiente de marca + icono de la categoría.
+        <div className="absolute inset-0 flex items-center justify-center bg-goospe-gradient text-white/90">
+          <Cat size={96} strokeWidth={1.1} />
         </div>
       )}
       {/* overlay */}
@@ -73,10 +79,12 @@ const FeedCardMobile = memo(function FeedCardMobile({
             <Sparkles size={13} strokeWidth={2} /> Destacado
           </span>
         )}
+        <OpenNowBadge hours={p.hours} timezone={p.timezone} onlyOpen className="px-3 py-1" />
       </div>
 
-      {/* acciones laterales */}
-      <div className="text-shadow-photo absolute bottom-40 right-4 z-10 flex flex-col gap-5 text-white">
+      {/* acciones laterales. z por ENCIMA del bloque de info: este va después en el DOM y con
+          el mismo z-index tapaba "Compartir" y "Paso" (no recibían toques). */}
+      <div className="text-shadow-photo absolute bottom-40 right-4 z-[11] flex flex-col gap-5 text-white">
         <button onClick={() => onSave(p)} aria-pressed={saved} aria-label={saved ? 'Quitar de guardados' : 'Guardar'} className="flex flex-col items-center gap-1">
           <span className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur transition ${saved ? 'bg-goospe-green' : 'bg-white/20'}`}>
             <Heart size={22} strokeWidth={1.75} fill={saved ? 'currentColor' : 'none'} />
@@ -105,11 +113,11 @@ const FeedCardMobile = memo(function FeedCardMobile({
 
       {/* info — pr-20 deja espacio a las acciones laterales; pb-28 a la barra Decídeme */}
       <div className="text-shadow-photo absolute inset-x-0 bottom-0 z-10 space-y-2 p-5 pb-28 pr-20 text-white">
-        <div className="flex items-center gap-2 text-sm text-white/80">
+        <DotList className="flex items-center gap-2 text-sm text-white/80">
           <span>{fmtDistDrive(p.distance_m)}</span>
-          {p.rating > 0 && <><span>·</span><span className="inline-flex items-center gap-1"><Star size={13} strokeWidth={1.75} fill="currentColor" /> {Number(p.rating).toFixed(1)}</span></>}
-          {p.price_level ? <><span>·</span><span>{'$'.repeat(p.price_level)}</span></> : null}
-        </div>
+          {p.rating > 0 ? <span className="inline-flex items-center gap-1"><Star size={13} strokeWidth={1.75} fill="currentColor" /> {Number(p.rating).toFixed(1)}</span> : null}
+          {p.price_level ? <span>{'$'.repeat(p.price_level)}</span> : null}
+        </DotList>
         <Link href={`/places/${p.slug}`} className="block">
           <h2 className="text-3xl font-medium leading-tight drop-shadow">{p.name}</h2>
         </Link>
@@ -138,7 +146,7 @@ const FeedCardMobile = memo(function FeedCardMobile({
  * mock `03 · Feed — mazo de decisión` (context strip, pill de categoría, prueba social).
  */
 export function FeedMobile({ feed }: { feed: FeedController }) {
-  const { feedList, isSaved, onSave, onDismiss, onShare, onDirections, location, whenLabel, geoSource, retryLocation } = feed
+  const { feedList, isSaved, onSave, onDismiss, onShare, onDirections, location, whenLabel, geoSource, retryLocation, hasMore, loadingMore, loadMore, feedPage } = feed
   const containerRef = useRef<HTMLElement>(null)
   const seenCards = useRef<Set<string>>(new Set())
   const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
@@ -216,12 +224,14 @@ export function FeedMobile({ feed }: { feed: FeedController }) {
           offsets fijos que colisionen). pointer-events-none deja pasar el scroll del feed;
           solo los elementos interactivos reciben pointer-events-auto. */}
       <div className="pointer-events-none fixed inset-x-4 top-[calc(1rem+var(--sat))] z-20 flex flex-col gap-2">
-        {/* fila 1 (overlay oscuro → tokens dark) */}
-        <div className="flex items-center justify-between gap-3">
+        {/* fila 1 (overlay oscuro → tokens dark). relative + z-10: los menús (campana, cuenta)
+            se despliegan POR ENCIMA de los chips de la fila 2, que antes los tapaban. */}
+        <div className="relative z-10 flex items-center justify-between gap-3">
           <Link href="/places" className="pointer-events-auto flex min-w-0 items-center gap-2.5 text-white drop-shadow">
             <img src="/brand/logo-white.svg" alt="Goospe" className="h-6 shrink-0" />
-            <span className="text-base font-light">Para ti</span>
-            {whenLabel && <span className="hidden text-xs text-white/55 min-[380px]:inline">· {whenLabel}</span>}
+            <span className="shrink-0 whitespace-nowrap text-base font-light">Para ti</span>
+            {/* Una sola línea siempre: nowrap + truncate (a 390–414 px se partía en 2–3). */}
+            {whenLabel && <span className="hidden min-w-0 truncate whitespace-nowrap text-xs text-white/55 min-[380px]:inline">· {whenLabel}</span>}
           </Link>
           <div className="dark pointer-events-auto flex shrink-0 items-center gap-2">
             <ThemeToggle />
@@ -281,11 +291,24 @@ export function FeedMobile({ feed }: { feed: FeedController }) {
         )
       )}
 
-      {/* fin */}
-      <section className="flex h-[40vh] snap-start flex-col items-center justify-center gap-2 bg-[#121311] text-white/60">
-        <img src="/brand/isotipo-white.svg" alt="" className="h-10 w-10 opacity-50" />
-        <p className="text-sm">Eso es todo cerca de ti por ahora</p>
-      </section>
+      {/* Scroll infinito: el centinela se detecta 1,5 pantallas antes de llegar al final. */}
+      <LoadMore
+        hasMore={hasMore}
+        loading={loadingMore}
+        onLoadMore={loadMore}
+        watch={feedPage}
+        root={containerRef}
+        rootMargin="150% 0px"
+        className="h-24 bg-[#121311] !text-white/60"
+      />
+
+      {/* fin (solo cuando ya no quedan páginas) */}
+      {!hasMore && (
+        <section className="flex h-[40vh] snap-start flex-col items-center justify-center gap-2 bg-[#121311] text-white/60">
+          <img src="/brand/isotipo-white.svg" alt="" className="h-10 w-10 opacity-50" />
+          <p className="text-sm">Eso es todo cerca de ti por ahora</p>
+        </section>
+      )}
     </main>
   )
 }

@@ -1,6 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
+import type { NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { isAdmin } from '@/lib/ownership'
+import { getAdminUser } from '@/lib/admin-guard'
 import { toCsv, csvResponse } from '@/lib/csv'
 
 export const dynamic = 'force-dynamic'
@@ -11,23 +11,48 @@ type Usage = {
   cost_usd: number | null; user_id: string | null; business_id: string | null; created_at: string
 }
 
-export async function GET() {
-  const sb = await createClient()
-  const { data: { user } } = await sb.auth.getUser()
-  if (!user || !(await isAdmin(user.id))) return new Response('Forbidden', { status: 403 })
+// La API corta cada respuesta en 1.000 filas: sin paginar, el CSV omitía más de la mitad del
+// gasto. Se recorre con .range hasta agotar (con un tope de seguridad).
+const CHUNK = 1000
+const MAX_ROWS = 200_000
+const DAY = 86400_000
+const RANGE_DAYS: Record<string, number | null> = { '7': 7, '30': 30, all: null }
+
+export async function GET(req: NextRequest) {
+  const { admin: isAdmin } = await getAdminUser()
+  if (!isAdmin) return new Response('Forbidden', { status: 403 })
+
+  // Mismo rango que la pantalla (?range=7|30|all). Sin parámetro: todo el histórico.
+  const days = RANGE_DAYS[req.nextUrl.searchParams.get('range') ?? 'all'] ?? null
+  const sinceIso = days ? new Date(Date.now() - days * DAY).toISOString() : null
 
   const admin = createAdminClient()
-  const { data } = await admin
-    .from('ai_usage')
-    .select('feature, model, input_tokens, output_tokens, cached_tokens, cost_usd, user_id, business_id, created_at')
-    .order('created_at', { ascending: false })
-  const rows = (data ?? []) as Usage[]
+  const rows: Usage[] = []
+  for (let from = 0; from < MAX_ROWS; from += CHUNK) {
+    let query = admin
+      .from('ai_usage')
+      .select('feature, model, input_tokens, output_tokens, cached_tokens, cost_usd, user_id, business_id, created_at')
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false }) // desempate: orden total y estable entre páginas
+      .range(from, from + CHUNK - 1)
+    if (sinceIso) query = query.gte('created_at', sinceIso)
+    const { data, error } = await query
+    if (error) {
+      console.error('[ai-costs/export]', error.message)
+      return new Response('No se pudo generar el CSV', { status: 500 })
+    }
+    const page = (data ?? []) as Usage[]
+    rows.push(...page)
+    if (page.length < CHUNK) break
+  }
 
+  // Nombres por lotes (un `in` con miles de ids no cabe en la URL).
   const userIds = [...new Set(rows.map((r) => r.user_id).filter(Boolean))] as string[]
-  const { data: profs } = userIds.length
-    ? await admin.from('profiles').select('id, display_name').in('id', userIds)
-    : { data: [] }
-  const name = Object.fromEntries(((profs ?? []) as { id: string; display_name: string | null }[]).map((p) => [p.id, p.display_name || 'Usuario']))
+  const name: Record<string, string> = {}
+  for (let i = 0; i < userIds.length; i += 200) {
+    const { data: profs } = await admin.from('profiles').select('id, display_name').in('id', userIds.slice(i, i + 200))
+    for (const p of (profs ?? []) as { id: string; display_name: string | null }[]) name[p.id] = p.display_name || 'Usuario'
+  }
 
   const csv = toCsv(
     ['fecha', 'feature', 'modelo', 'tokens_in', 'tokens_out', 'tokens_cache', 'costo_usd', 'usuario'],

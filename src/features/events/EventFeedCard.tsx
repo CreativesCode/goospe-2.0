@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/client'
 import { toggleRsvp } from '@/actions/events'
 import { track } from '@/lib/track'
 import { toast } from '@/shared/components/toast'
+import { useImgFallback } from '@/shared/components/photo-img'
+import { fmtInZone } from '@/lib/tz'
 import { EventAttendanceLive } from './EventAttendanceLive'
 
 export type FeedEvent = {
@@ -23,17 +25,20 @@ export type FeedEvent = {
   distance_m: number
   photo_url: string | null
   boosted: boolean
+  /** Zona horaria de la ciudad del lugar (migración 0035). Sin ella: la del dispositivo. */
+  timezone?: string | null
 }
 
 const fmtDist = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`)
-const fmtWhen = (s: string) =>
-  new Date(s).toLocaleString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+// La hora del evento se muestra SIEMPRE en la zona de la ciudad donde ocurre.
+const fmtWhen = (s: string, tz: string | null | undefined) =>
+  fmtInZone(s, tz, { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
 
 export function EventFeedCard({ ev }: { ev: FeedEvent }) {
   const [going, setGoing] = useState(false)
   const [authed, setAuthed] = useState<boolean | null>(null)
   const [busy, setBusy] = useState(false)
-  const [imgError, setImgError] = useState(false)
+  const img = useImgFallback()
 
   useEffect(() => {
     const sb = createClient()
@@ -58,19 +63,20 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
 
   return (
     <section data-track-id={ev.id} data-kind="event" className="relative h-[100dvh] w-full snap-start snap-always">
-      {ev.photo_url && !imgError ? (
+      {ev.photo_url && !img.failed ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          ref={img.ref}
           src={ev.photo_url}
           alt={ev.name}
           loading="lazy"
           decoding="async"
-          onError={() => setImgError(true)}
+          onError={img.onError}
           className="absolute inset-0 h-full w-full object-cover"
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-goospe-gradient">
-          <img src="/brand/isotipo-white.svg" alt="" className="h-20 w-20 opacity-90" />
+        <div className="absolute inset-0 flex items-center justify-center bg-goospe-gradient text-white/90">
+          <Calendar size={96} strokeWidth={1.1} />
         </div>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/40" />
@@ -83,8 +89,8 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
         )}
       </div>
 
-      {/* acciones laterales */}
-      <div className="text-shadow-photo absolute bottom-40 right-4 z-10 flex flex-col gap-5 text-white">
+      {/* acciones laterales (z por encima del bloque de info, que va después en el DOM) */}
+      <div className="text-shadow-photo absolute bottom-40 right-4 z-[11] flex flex-col gap-5 text-white">
         <button
           onClick={onRsvp}
           disabled={busy || authed === null}
@@ -115,7 +121,7 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
 
       {/* info — pr-20 deja espacio a las acciones laterales; pb-28 a la barra Decídeme */}
       <div className="text-shadow-photo absolute inset-x-0 bottom-0 z-10 space-y-2 p-5 pb-28 pr-20 text-white">
-        <p className="text-sm font-medium capitalize text-goospe-green-light drop-shadow">{fmtWhen(ev.starts_at)}</p>
+        <p className="text-sm font-medium capitalize text-goospe-green-light drop-shadow">{fmtWhen(ev.starts_at, ev.timezone)}</p>
         <h2 className="text-3xl font-medium leading-tight drop-shadow">{ev.name}</h2>
         <Link href={`/places/${ev.place_slug}`} className="block text-white/80">
           en {ev.place_name} · {fmtDist(ev.distance_m)}

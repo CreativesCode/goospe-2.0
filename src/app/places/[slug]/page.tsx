@@ -4,9 +4,12 @@ import { PhotoGallery } from '@/features/photos/PhotoGallery'
 import { PhotoUpload } from '@/features/photos/PhotoUpload'
 import { DetailTracker } from '@/features/places/DetailTracker'
 import { DirectionsLink } from '@/features/places/DirectionsLink'
+import { ContactLink } from '@/features/places/ContactLink'
+import { OpenNowBadge } from '@/features/places/OpenNowBadge'
 import { PlaceActions } from '@/features/places/PlaceActions'
 import { PlaceReviews } from '@/features/reviews/PlaceReviews'
 import { humanizeHours } from '@/lib/hours'
+import { fmtInZone } from '@/lib/tz'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AppFooter } from '@/shared/components/app-footer'
 import { AppNav } from '@/shared/components/app-nav'
@@ -22,7 +25,7 @@ import { BadgeCheck, ArrowRight } from 'lucide-react'
 // Select completo de la ficha. `cache()` dedupe la consulta dentro del mismo request:
 // `generateMetadata` y el render de la página comparten UNA sola query (antes eran dos).
 const PLACE_SELECT =
-  'id, slug, name, address, phone, whatsapp, website, instagram, email, hours, price_level, description, vibe_line, tags, menu, ai_enriched_at, embedding_model, source, claimed, business_id, is_published, cover_url, logo_url, created_at, updated_at, place_photos(id, url, status, source, storage_path), place_categories(categories(emoji, name, slug))'
+  'id, slug, name, address, phone, whatsapp, website, instagram, email, hours, price_level, description, vibe_line, tags, menu, ai_enriched_at, embedding_model, source, claimed, business_id, is_published, cover_url, logo_url, created_at, updated_at, place_photos(id, url, status, source, storage_path), place_categories(categories(emoji, name, slug)), cities(timezone)'
 
 const getPlace = cache(async (slug: string) => {
   const sb = createAdminClient()
@@ -45,7 +48,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   // Foto de la ficha como imagen de compartir. El proxy /api/place-photo sirve a 800px por
   // defecto; pedimos 1200px para una tarjeta OG nítida. Si no hay foto aprobada, omitimos
   // `images` y Next usa la imagen de marca por defecto (src/app/opengraph-image.tsx).
-  const ogPhoto = photo?.startsWith('/api/place-photo') ? `${photo}&w=1200` : photo
+  const ogPhoto = ogPhotoUrl(photo)
   return {
     title,
     description,
@@ -60,8 +63,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 }
 
-const fmtEventDate = (s: string) =>
-  new Date(s).toLocaleString('es-CL', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+// La URL guardada ya trae su propio `w`: se REEMPLAZA (antes se añadía un segundo `&w=`).
+function ogPhotoUrl(photo: string | undefined): string | undefined {
+  if (!photo?.startsWith('/api/place-photo')) return photo
+  const u = new URL(photo, 'http://local')
+  u.searchParams.set('w', '1200')
+  return `${u.pathname}?${u.searchParams.toString()}`
+}
+
+// Hora del evento en la zona de la CIUDAD del lugar (no la del servidor ni la del visitante).
+const fmtEventDate = (s: string, tz: string | null) =>
+  fmtInZone(s, tz, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 
 // ISR: la ficha es casi estática (contenido IA + datos del lugar). Se regenera cada hora;
 // las partes con sesión (guardar, RSVP, reseñas, subir foto) son client components que
@@ -93,7 +105,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return (
     <div className="flex gap-3 py-2 text-sm">
       <dt className="w-32 shrink-0 text-muted">{label}</dt>
-      <dd className="break-words text-fg">{children}</dd>
+      {/* min-w-0 + anywhere: una URL larga sin espacios ya no desborda la ficha en móvil */}
+      <dd className="min-w-0 flex-1 text-fg [overflow-wrap:anywhere]">{children}</dd>
     </div>
   )
 }
@@ -132,13 +145,24 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
     }
   })()
   const ll = coords?.[0]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const photos = (place.place_photos ?? []) as any[]
+  // Solo fotos APROBADAS: la consulta va con service role (salta la RLS), así que el filtro
+  // tiene que estar aquí. Antes se colaban las pendientes de moderación.
+  const photos = ((place.place_photos ?? []) as { id: string; url: string; status: string | null }[])
+    .filter((ph) => ph.status === 'approved')
+  const tz = (place as unknown as { cities: { timezone: string } | null }).cities?.timezone ?? null
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cats = (place.place_categories ?? []).map((pc: any) => pc.categories).filter(Boolean)
   const addr = place.address as { street?: string; number?: string; city?: string; formatted?: string } | null
   const hours = place.hours as { osm_raw?: string } | null
   const menu = place.menu as { sections?: { name: string; items: { name: string; price: string | null; description: string | null }[] }[] } | null
+
+  const PlaceCat = categoryIcon(cats[0]?.emoji)
+  const noPhotos = (
+    <div className="flex aspect-[16/6] flex-col items-center justify-center gap-2 rounded-2xl bg-goospe-gradient text-center text-white">
+      <PlaceCat size={44} strokeWidth={1.4} />
+      <p className="text-sm text-white/90">Sé el primero en aportar una foto de este lugar</p>
+    </div>
+  )
 
   return (
     <main className="flex min-h-screen flex-col bg-surface">
@@ -158,6 +182,7 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
           </div>
           <h1 className="text-3xl font-medium text-fg">{place.name}</h1>
           {place.vibe_line && <p className="mt-1 text-lg font-medium text-goospe-green">{place.vibe_line}</p>}
+          <OpenNowBadge hours={hours} timezone={tz} tone="surface" className="mt-2" />
         </div>
 
         {/* precio + acciones: guardar / cómo llegar / compartir (registran interacciones) */}
@@ -201,14 +226,8 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
 
         {/* fotos */}
         <section className="mb-8">
-          {photos.length ? (
-            <PhotoGallery photos={photos} alt={place.name} />
-          ) : (
-            <div className="flex aspect-[16/6] flex-col items-center justify-center gap-2 rounded-2xl bg-goospe-gradient text-center text-white">
-              <img src="/brand/isotipo-white.svg" alt="" className="h-12 w-12 opacity-90" />
-              <p className="text-sm text-white/90">Sé el primero en aportar una foto de este lugar</p>
-            </div>
-          )}
+          {/* `empty` cubre también el caso "hay fotos pero ninguna cargó" (Google caído). */}
+          <PhotoGallery photos={photos} alt={place.name} empty={noPhotos} />
           <PhotoUpload placeId={place.id} />
         </section>
 
@@ -234,8 +253,12 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
             <dl className="divide-y divide-line">
               <Field label="Dirección">{addr?.formatted ?? ([addr?.street, addr?.number].filter(Boolean).join(' ') || null)}</Field>
               <Field label="Ciudad">{addr?.city}</Field>
-              <Field label="Teléfono">{place.phone}</Field>
-              <Field label="WhatsApp">{place.whatsapp}</Field>
+              <Field label="Teléfono">
+                {place.phone && <ContactLink placeId={place.id} channel="phone" value={place.phone} />}
+              </Field>
+              <Field label="WhatsApp">
+                {place.whatsapp && <ContactLink placeId={place.id} channel="whatsapp" value={place.whatsapp} />}
+              </Field>
               <Field label="Web">
                 {place.website && <a href={webUrl(place.website)} target="_blank" rel="noreferrer" className="text-goospe-green hover:underline">{place.website}</a>}
               </Field>
@@ -246,7 +269,9 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
                   </a>
                 )}
               </Field>
-              <Field label="Email">{place.email}</Field>
+              <Field label="Email">
+                {place.email && <ContactLink placeId={place.id} channel="email" value={place.email} />}
+              </Field>
               <Field label="Horario">
                 {(() => {
                   const lines = humanizeHours(hours?.osm_raw)
@@ -312,7 +337,7 @@ export default async function PlaceDetail({ params }: { params: Promise<{ slug: 
                     <PhotoImg src={ev.image_url} alt={ev.name} className="h-16 w-16 shrink-0 rounded-lg object-cover" isoClassName="h-7 w-7" />
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium uppercase text-goospe-green">{fmtEventDate(ev.starts_at)}</p>
+                    <p className="text-xs font-medium uppercase text-goospe-green">{fmtEventDate(ev.starts_at, tz)}</p>
                     <h3 className="font-medium text-fg">{ev.name}</h3>
                     {ev.description && <p className="line-clamp-1 text-sm text-fg-soft">{ev.description}</p>}
                     {(() => { const s = eventStats[ev.id]; return s ? <AttendanceCounts going={Number(s.going)} male={Number(s.male)} female={Number(s.female)} className="mt-1 text-fg-soft" /> : null })()}

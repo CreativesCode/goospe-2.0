@@ -100,7 +100,8 @@ export function Notifications() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-72 overflow-hidden rounded-xl bg-card shadow-2xl ring-1 ring-line">
+        // z-50: por encima de los chips del feed móvil y del contenido de la página.
+        <div className="absolute right-0 z-50 mt-2 w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl bg-card shadow-2xl ring-1 ring-line">
           <div className="border-b border-line px-4 py-2.5 text-sm font-medium text-fg">Notificaciones</div>
           {list.length === 0 ? (
             <p className="px-4 py-6 text-center text-sm text-muted">Nada por ahora.</p>

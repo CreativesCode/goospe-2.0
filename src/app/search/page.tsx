@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
 import { Search, Clock, Utensils, Coffee, Martini, Moon, Ticket, type LucideIcon } from 'lucide-react'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
@@ -28,8 +29,9 @@ const CATEGORIES: { id: number; label: string; icon: LucideIcon }[] = [
   { id: 2, label: 'Café', icon: Coffee },
   { id: 3, label: 'Beber', icon: Martini },
   { id: 4, label: 'Noche', icon: Moon },
-  { id: 5, label: 'Eventos', icon: Ticket },
 ]
+// "Eventos" no es un filtro de lugares (ningún lugar lleva esa categoría: el chip salía
+// siempre vacío). Ahora es un enlace a la cartelera.
 export default function BuscarPage() {
   const [q, setQ] = useState('')
   const [cat, setCat] = useState<number | null>(null)
@@ -91,7 +93,7 @@ export default function BuscarPage() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Busca un lugar por nombre…"
+              placeholder="Busca por nombre, tipo o etiqueta…"
               type="search"
               aria-label="Buscar lugar"
               enterKeyHint="search"
@@ -110,17 +112,25 @@ export default function BuscarPage() {
                 <Icon size={15} strokeWidth={1.75} /> {label}
               </button>
             ))}
+            <Link
+              href="/events"
+              className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3 py-1.5 text-sm text-fg-soft transition hover:text-fg"
+            >
+              <Ticket size={15} strokeWidth={1.75} /> Eventos
+            </Link>
             <span className="mx-1 h-5 w-px bg-line" />
             <select
+              aria-label="Precio máximo"
               value={price ?? ''}
               onChange={(e) => setPrice(e.target.value ? Number(e.target.value) : null)}
               className="select-chevron rounded-full border border-line bg-card px-3 py-1.5 text-sm text-fg-soft outline-none focus:border-goospe-green"
             >
-              <option value="">Precio</option>
-              <option value="1">$</option>
-              <option value="2">$$</option>
-              <option value="3">$$$</option>
-              <option value="4">$$$$</option>
+              {/* Es un TOPE ("hasta"), y con filtro activo no entran los lugares sin precio. */}
+              <option value="">Cualquier precio</option>
+              <option value="1">Hasta $</option>
+              <option value="2">Hasta $$</option>
+              <option value="3">Hasta $$$</option>
+              <option value="4">Hasta $$$$</option>
             </select>
             <button
               onClick={() => setOpenNow((v) => !v)}

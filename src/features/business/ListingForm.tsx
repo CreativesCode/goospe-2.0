@@ -23,7 +23,11 @@ export function ListingForm({ place }: { place: Place }) {
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
-  async function onSubmit(formData: FormData) {
+  // onSubmit (no `<form action>`): React reinicia los campos no controlados al terminar una
+  // acción, así que un error de validación del servidor borraba lo que el dueño había escrito.
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
     setSaving(true)
     setMsg(null)
     const res = await updateListing(formData)
@@ -33,7 +37,7 @@ export function ListingForm({ place }: { place: Place }) {
   }
 
   return (
-    <form action={onSubmit} className="space-y-5">
+    <form onSubmit={onSubmit} className="space-y-5">
       <input type="hidden" name="place_id" value={place.id} />
 
       <div>

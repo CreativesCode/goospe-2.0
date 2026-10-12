@@ -1,29 +1,57 @@
-// Evaluador ligero de `opening_hours` de OSM (subconjunto suficiente para los datos del piloto:
+// Evaluador ligero de `opening_hours` de OSM (subconjunto suficiente para los datos reales:
 // "24/7", "09:00-21:00", "Mo-Fr 08:00-20:30; Sa 09:00-20:30", "Fr,Sa 12:00-22:00",
-// rangos nocturnos "18:00-02:00"). No cubre festivos ni reglas raras; ante duda devuelve null.
+// reglas separadas por coma "Mo-Fr 07:00-24:00, Sa,Su 08:00-24:00", rangos nocturnos
+// "18:00-02:00" y "Tu off"). No cubre festivos ni meses; ante duda devuelve null.
+import { zoneNowParts } from '@/lib/tz'
 
 const OSM_DAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'] // índice 0..6
-// JS getDay(): Su=0..Sa=6 → índice OSM
-const JS_TO_OSM = [6, 0, 1, 2, 3, 4, 5]
+const ALL_DAYS = new Set([0, 1, 2, 3, 4, 5, 6])
+const HOLIDAY = /^(PH|SH|FP)$/ // festivos: se ignoran (no se evalúan)
+const TIME_RE = /\d{1,2}:\d{2}/
+const OFF_RE = /\b(off|closed)\b/i
 
-function expandDays(spec: string): Set<number> {
-  const out = new Set<number>()
-  for (const tok of spec.split(',')) {
-    const t = tok.trim()
-    if (!t) continue
-    const m = t.match(/^([A-Za-z]{2})(?:-([A-Za-z]{2}))?$/)
-    if (!m) continue
-    const a = OSM_DAYS.indexOf(m[1])
-    if (a < 0) continue
-    if (!m[2]) { out.add(a); continue }
-    const b = OSM_DAYS.indexOf(m[2])
-    if (b < 0) continue
-    for (let i = a; ; i = (i + 1) % 7) { out.add(i); if (i === b) break } // soporta wrap Sa-Su, etc.
+// Separa las reglas. OSM admite `;` y también `,` entre reglas; la coma además separa días
+// ("Sa,Su") y franjas ("13:00-16:00,20:00-24:00"). Una coma abre regla nueva solo si lo
+// acumulado ya trae horario (u "off") y lo que sigue empieza por un día, no por una hora.
+function splitRules(raw: string): string[] {
+  const out: string[] = []
+  for (const semi of raw.split(';')) {
+    let cur = ''
+    for (const piece of semi.split(',')) {
+      const done = cur !== '' && (TIME_RE.test(cur) || OFF_RE.test(cur))
+      if (done && /^\s*[A-Za-z]/.test(piece)) {
+        out.push(cur.trim())
+        cur = piece
+      } else {
+        cur = cur === '' ? piece : `${cur},${piece}`
+      }
+    }
+    if (cur.trim()) out.push(cur.trim())
   }
   return out
 }
 
-function inTimeRanges(spec: string, minutes: number): boolean {
+// Días de una regla. null = hay algo que no entendemos (meses, fechas) → regla no evaluable.
+function expandDays(spec: string): Set<number> | null {
+  const out = new Set<number>()
+  for (const tok of spec.split(',')) {
+    const t = tok.trim()
+    if (!t || HOLIDAY.test(t)) continue
+    const m = t.match(/^([A-Za-z]{2})(?:-([A-Za-z]{2}))?$/)
+    if (!m) return null
+    const a = OSM_DAYS.indexOf(m[1])
+    if (a < 0) return null
+    if (!m[2]) { out.add(a); continue }
+    const b = OSM_DAYS.indexOf(m[2])
+    if (b < 0) return null
+    for (let i = a; ; i = (i + 1) % 7) { out.add(i); if (i === b) break } // soporta wrap Sa-Su, etc.
+  }
+  return out // vacío = regla solo de festivos ("PH 10:00-14:00"): no aplica a ningún día normal
+}
+
+// ¿Abierto a `minutes` según las franjas? Un rango que cruza medianoche (18:00-02:00) pertenece
+// al día en que EMPIEZA: la madrugada cuenta si la regla aplicaba ayer, no hoy.
+function inTimeRanges(spec: string, minutes: number, today: boolean, yesterday: boolean): boolean {
   for (const r of spec.split(',')) {
     const m = r.trim().match(/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/)
     if (!m) continue
@@ -31,9 +59,8 @@ function inTimeRanges(spec: string, minutes: number): boolean {
     let end = +m[3] * 60 + +m[4]
     if (end === 0) end = 24 * 60
     if (end <= start) {
-      // cruza medianoche (ej. 18:00-02:00): abierto antes de medianoche o en la madrugada
-      if (minutes >= start || minutes < end) return true
-    } else if (minutes >= start && minutes < end) {
+      if ((today && minutes >= start) || (yesterday && minutes < end)) return true
+    } else if (today && minutes >= start && minutes < end) {
       return true
     }
   }
@@ -47,20 +74,28 @@ export function isOpenNow(osmRaw: string | null | undefined, osmDay: number, min
   if (!raw) return null
   if (raw === '24/7') return true
 
+  const yesterday = (osmDay + 6) % 7
   let parsedAny = false
-  for (const rule of raw.split(';')) {
-    const r = rule.trim()
-    if (!r || /\boff\b|\bclosed\b/i.test(r)) continue
-    const timeIdx = r.search(/\d{1,2}:\d{2}/)
-    if (timeIdx < 0) continue
-    const daySpec = r.slice(0, timeIdx).trim()
-    const timeSpec = r.slice(timeIdx).trim()
+  let unknown = false
+  let open = false
+  for (const r of splitRules(raw)) {
+    const timeIdx = r.search(TIME_RE)
+    const isOff = OFF_RE.test(r)
+    if (timeIdx < 0 && !isOff) continue
+    const daySpec = (timeIdx < 0 ? r.replace(OFF_RE, '') : r.slice(0, timeIdx)).trim()
+    const days = daySpec ? expandDays(daySpec) : ALL_DAYS
+    if (!days) { unknown = true; continue }
     parsedAny = true
-    const days = daySpec ? expandDays(daySpec) : new Set([0, 1, 2, 3, 4, 5, 6])
-    if (!days.has(osmDay)) continue
-    if (inTimeRanges(timeSpec, minutes)) return true
+    if (isOff) {
+      // "Tu off" pisa lo que dijeran las reglas anteriores para ese día.
+      if (days.has(osmDay)) open = false
+      continue
+    }
+    if (inTimeRanges(r.slice(timeIdx).trim(), minutes, days.has(osmDay), days.has(yesterday))) open = true
   }
-  return parsedAny ? false : null
+  if (open) return true
+  // Con reglas que no supimos leer no afirmamos "cerrado".
+  return parsedAny && !unknown ? false : null
 }
 
 // ─── Humanizador: `opening_hours` de OSM → líneas legibles en español ───────────
@@ -68,14 +103,19 @@ const OSM_DAY_ES: Record<string, string> = {
   Mo: 'Lun', Tu: 'Mar', We: 'Mié', Th: 'Jue', Fr: 'Vie', Sa: 'Sáb', Su: 'Dom',
 }
 
-function humanizeDays(spec: string): string {
+// null = no se pudo traducir (meses, fechas) → la UI muestra la regla cruda.
+function humanizeDays(spec: string): string | null {
   const parts: string[] = []
   for (const tok of spec.split(',')) {
-    const m = tok.trim().match(/^([A-Za-z]{2})(?:-([A-Za-z]{2}))?$/)
-    if (!m) continue
+    const t = tok.trim()
+    if (!t) continue
+    if (HOLIDAY.test(t)) { parts.push('Festivos'); continue }
+    const m = t.match(/^([A-Za-z]{2})(?:-([A-Za-z]{2}))?$/)
+    if (!m) return null
     const a = OSM_DAY_ES[m[1]]
-    if (!a) continue
-    parts.push(m[2] && OSM_DAY_ES[m[2]] ? `${a} a ${OSM_DAY_ES[m[2]]}` : a)
+    if (!a) return null
+    if (m[2] && !OSM_DAY_ES[m[2]]) return null
+    parts.push(m[2] ? `${a} a ${OSM_DAY_ES[m[2]]}` : a)
   }
   return parts.join(', ')
 }
@@ -100,32 +140,33 @@ export function humanizeHours(osmRaw: string | null | undefined): string[] | nul
   if (raw === '24/7') return ['Abierto las 24 horas']
 
   const lines: string[] = []
-  for (const rule of raw.split(';')) {
-    const r = rule.trim()
-    if (!r) continue
-    const timeIdx = r.search(/\d{1,2}:\d{2}/)
-    if (/\boff\b|\bclosed\b/i.test(r)) {
-      const daySpec = (timeIdx < 0 ? r.replace(/\b(off|closed)\b/i, '') : r.slice(0, timeIdx)).trim()
-      lines.push(`${humanizeDays(daySpec) || 'Todos los días'}: Cerrado`)
-      continue
-    }
-    if (timeIdx < 0) continue
+  for (const r of splitRules(raw)) {
+    const timeIdx = r.search(TIME_RE)
+    const isOff = OFF_RE.test(r)
+    if (timeIdx < 0 && !isOff) continue
+    const daySpec = (timeIdx < 0 ? r.replace(OFF_RE, '') : r.slice(0, timeIdx)).trim()
+    const days = daySpec ? humanizeDays(daySpec) : 'Todos los días'
+    if (days === null) { lines.push(r); continue } // regla que no sabemos traducir: tal cual
+    if (isOff) { lines.push(`${days || 'Todos los días'}: Cerrado`); continue }
     const times = humanizeTimes(r.slice(timeIdx).trim())
     if (!times) continue
-    const daySpec = r.slice(0, timeIdx).trim()
-    lines.push(`${humanizeDays(daySpec) || 'Todos los días'}: ${times}`)
+    lines.push(`${days || 'Todos los días'}: ${times}`)
   }
   return lines.length ? lines : null
 }
 
-// "Ahora" en la zona de la ciudad (zona del piloto → America/Santiago).
-export function cityNowParts(tz = 'America/Santiago'): { osmDay: number; minutes: number } {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz, weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
-  }).formatToParts(new Date())
-  const wd = parts.find((p) => p.type === 'weekday')?.value ?? 'Mon'
-  const map: Record<string, number> = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 }
-  const hh = Number(parts.find((p) => p.type === 'hour')?.value ?? '0') % 24
-  const mm = Number(parts.find((p) => p.type === 'minute')?.value ?? '0')
-  return { osmDay: map[wd] ?? JS_TO_OSM[new Date().getDay()], minutes: hh * 60 + mm }
+// "Ahora" en la zona de la CIUDAD del lugar (cities.timezone). Sin zona usa la del entorno.
+export function cityNowParts(tz: string | null | undefined): { osmDay: number; minutes: number } {
+  return zoneNowParts(tz)
+}
+
+/** Atajo: ¿abierto ahora este lugar? `hours` es el jsonb de places ({ osm_raw }). */
+export function openNow(
+  hours: { osm_raw?: string | null } | null | undefined,
+  tz: string | null | undefined
+): boolean | null {
+  const raw = hours?.osm_raw
+  if (!raw) return null
+  const now = zoneNowParts(tz)
+  return isOpenNow(raw, now.osmDay, now.minutes)
 }

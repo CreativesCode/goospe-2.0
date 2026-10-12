@@ -15,7 +15,10 @@ const EMPTY: AdminPlace = {
 export default async function NuevoLugarPage() {
   await requireAdmin('/admin/places/new') // guard propio: el del layout no evita que la página consulte
   const admin = createAdminClient()
-  const { data: cats } = await admin.from('categories').select('id, name').order('name')
+  const [{ data: cats }, { data: cityRows }] = await Promise.all([
+    admin.from('categories').select('id, name').order('name'),
+    admin.from('cities').select('id, name, is_active').order('name'),
+  ])
 
   return (
     <div className="space-y-5">
@@ -23,7 +26,11 @@ export default async function NuevoLugarPage() {
         <ArrowLeft size={15} /> Volver a lugares
       </Link>
       <h1 className="text-2xl font-medium text-fg">Nuevo lugar</h1>
-      <AdminPlaceForm place={EMPTY} categories={(cats ?? []) as { id: number; name: string }[]} />
+      <AdminPlaceForm
+        place={EMPTY}
+        categories={(cats ?? []) as { id: number; name: string }[]}
+        cities={(cityRows ?? []) as { id: number; name: string; is_active: boolean | null }[]}
+      />
     </div>
   )
 }

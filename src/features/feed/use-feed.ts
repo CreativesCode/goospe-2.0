@@ -27,6 +27,9 @@ export type FeedItem = {
   category_emoji: string | null
   category_name: string | null
   boosted: boolean
+  // Desde la migración 0035 (opcionales: el feed funciona igual sin ellas).
+  hours?: { osm_raw?: string | null } | null
+  timezone?: string | null
 }
 
 export type FeedRow = { kind: 'place'; place: FeedItem } | { kind: 'event'; event: FeedEvent }
@@ -56,6 +59,10 @@ export const directionsHref = (lat: number, lng: number) =>
 // una ciudad concreta para no mostrar "otra ciudad" a quien abre desde fuera del piloto.
 const LOCATION_LABEL = 'Tu zona'
 
+// Tamaño de página del feed. Debe coincidir con el p_limit de la tanda SSR (app/feed/page.tsx).
+const FEED_PAGE = 40
+const FEED_RADIUS_M = 25000
+
 const DISMISSED_KEY = 'goospe:dismissed'
 const ZONE_LOGGED_KEY = 'goospe:zone-logged'
 
@@ -84,14 +91,16 @@ const loadDismissed = (): Set<string> => {
 }
 
 // Intercala un evento cada `gap` lugares (los eventos vienen priorizados por boost/fecha).
-function interleave(places: FeedItem[], events: FeedEvent[], gap = 5): FeedRow[] {
+// Los eventos que sobran van al final SOLO cuando ya no quedan páginas (`flushRest`): si se
+// añadieran antes, al cargar más lugares cambiarían de sitio bajo el dedo del usuario.
+function interleave(places: FeedItem[], events: FeedEvent[], flushRest: boolean, gap = 5): FeedRow[] {
   const out: FeedRow[] = []
   let ei = 0
   places.forEach((p, i) => {
     out.push({ kind: 'place', place: p })
     if ((i + 1) % gap === 0 && ei < events.length) out.push({ kind: 'event', event: events[ei++] })
   })
-  while (ei < events.length) out.push({ kind: 'event', event: events[ei++] }) // los que sobren, al final
+  if (flushRest) while (ei < events.length) out.push({ kind: 'event', event: events[ei++] })
   return out
 }
 
@@ -123,18 +132,38 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
   const supabase = useMemo(() => createClient(), [])
   const dismissed = useRef<Set<string>>(new Set())
   const itemsRef = useRef<FeedItem[]>([]) // espejo estable para leer en onDismiss (deshacer)
+  // Paginación: `hasMore` mientras la última página vino llena. El offset cuenta filas CRUDAS
+  // del servidor (no lo descartado en el cliente). `posRef` = posición con la que se pidió la
+  // primera página; mientras sea null (seed SSR aún sin refinar) no se pagina.
+  // Arranca en false: la tanda SSR es de la ubicación por defecto y no se pagina sobre ella.
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  // Nº de páginas recibidas: los layouts lo usan para re-armar el centinela de scroll infinito.
+  const [feedPage, setFeedPage] = useState(0)
+  const posRef = useRef<{ lat: number; lng: number } | null>(null)
+  const offsetRef = useRef(0)
+  const busyRef = useRef(false)
+  const reqRef = useRef(0) // invalida páginas pedidas antes de recargar el feed
 
   const fetchFeed = useCallback(async (lat: number, lng: number) => {
+    const req = ++reqRef.current
     // `as never` en los args: workaround del tipado de rpc de supabase-js para funciones
     // que retornan tabla (infiere los args como undefined). El runtime es correcto.
     const [places, evs] = await Promise.all([
-      supabase.rpc('get_feed', { p_lat: lat, p_lng: lng, p_radius_m: 25000, p_limit: 40, p_offset: 0 } as never),
-      supabase.rpc('get_feed_events', { p_lat: lat, p_lng: lng, p_radius_m: 25000, p_limit: 8 } as never),
+      supabase.rpc('get_feed', { p_lat: lat, p_lng: lng, p_radius_m: FEED_RADIUS_M, p_limit: FEED_PAGE, p_offset: 0 } as never),
+      supabase.rpc('get_feed_events', { p_lat: lat, p_lng: lng, p_radius_m: FEED_RADIUS_M, p_limit: 8 } as never),
     ])
+    if (req !== reqRef.current) return // llegó tarde: ya hay una carga más reciente
     const placeRows = (places.data ?? []) as FeedItem[]
     const eventRows = (evs.data ?? []) as FeedEvent[]
     if (places.error) setError(places.error.message)
-    else setItems(placeRows.filter((p) => !dismissed.current.has(p.id)))
+    else {
+      setItems(placeRows.filter((p) => !dismissed.current.has(p.id)))
+      posRef.current = { lat, lng }
+      offsetRef.current = placeRows.length
+      setHasMore(placeRows.length >= FEED_PAGE)
+      setFeedPage((n) => n + 1)
+    }
     setEvents(eventRows)
     // Zona activa pero sin datos: se mide sobre las filas crudas (no lo descartado) para no
     // confundir "zona vacía" con "ya viste todo".
@@ -142,7 +171,33 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
     setLoading(false)
   }, [supabase])
 
-  const feedList = useMemo(() => interleave(items, events), [items, events])
+  // Siguiente página (scroll infinito). Ignora llamadas mientras hay una en vuelo.
+  // Dedupe por id: el ranking puede moverse entre páginas (trending, boosts) y repetir un lugar.
+  const loadMore = useCallback(async () => {
+    const pos = posRef.current
+    if (!pos || busyRef.current) return
+    busyRef.current = true
+    setLoadingMore(true)
+    const req = reqRef.current
+    const { data, error: err } = await supabase.rpc('get_feed', {
+      p_lat: pos.lat, p_lng: pos.lng, p_radius_m: FEED_RADIUS_M, p_limit: FEED_PAGE, p_offset: offsetRef.current,
+    } as never)
+    busyRef.current = false
+    setLoadingMore(false)
+    if (req !== reqRef.current) return // el feed se recargó mientras tanto
+    if (err) { setHasMore(false); return } // sin bucle de reintentos; "reintentar" recarga el feed
+    const rows = (data ?? []) as FeedItem[]
+    offsetRef.current += rows.length
+    setHasMore(rows.length >= FEED_PAGE)
+    setFeedPage((n) => n + 1)
+    setItems((prev) => {
+      const seen = new Set(prev.map((p) => p.id))
+      const fresh = rows.filter((p) => !seen.has(p.id) && !dismissed.current.has(p.id))
+      return fresh.length ? [...prev, ...fresh] : prev
+    })
+  }, [supabase])
+
+  const feedList = useMemo(() => interleave(items, events, !hasMore), [items, events, hasMore])
   useEffect(() => { itemsRef.current = items }, [items])
 
   // Resuelve ubicación → carga feed. Reutilizable como "reintentar" si el usuario
@@ -232,18 +287,19 @@ export function useFeed(initial?: { items: FeedItem[]; events: FeedEvent[] } | n
 
   const onDirections = useCallback((p: FeedItem) => track('directions', { placeId: p.id }), [])
 
-  // "jue · 19:30" — momento actual, para el encabezado "Para ti".
+  // "jue · 19:30" — momento actual (hora del dispositivo, reloj de 24 h), para "Para ti".
   const whenLabel = useMemo(() => {
     try {
       const d = new Date()
       const day = d.toLocaleDateString('es-CL', { weekday: 'short' }).replace('.', '')
-      const time = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+      const time = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
       return `${day} · ${time}`
     } catch { return '' }
   }, [])
 
   return {
     items, events, feedList, loading, error,
+    hasMore, loadingMore, loadMore, feedPage,
     geoSource, retryLocation, continueWithFallback, coverage, emptyZone, coords,
     isSaved, onSave, onDismiss, onShare, onDirections,
     location: cityName ?? LOCATION_LABEL, whenLabel,

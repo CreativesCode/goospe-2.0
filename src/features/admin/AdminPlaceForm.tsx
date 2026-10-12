@@ -23,20 +23,26 @@ export type AdminPlace = {
   lat: number | null
   lng: number | null
   category_ids: number[]
+  city_id?: number | null
 }
 
 type Category = { id: number; name: string }
+type City = { id: number; name: string; is_active: boolean | null }
 
 const field = 'mt-1 w-full rounded-lg border border-line bg-card px-3 py-2 text-fg outline-none transition placeholder:text-muted focus:border-goospe-green focus:ring-2 focus:ring-goospe-green/30'
 const lbl = 'block text-sm font-medium text-fg'
 
-export function AdminPlaceForm({ place, categories }: { place: AdminPlace; categories: Category[] }) {
+export function AdminPlaceForm({ place, categories, cities = [] }: { place: AdminPlace; categories: Category[]; cities?: City[] }) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const isNew = !place.id
 
-  async function onSubmit(formData: FormData) {
+  // onSubmit (no `<form action>`): React reinicia los campos no controlados al terminar una
+  // acción y, si el guardado fallaba, se perdía todo lo editado.
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
     setSaving(true)
     setMsg(null)
     const res = await saveAdminPlace(formData)
@@ -48,7 +54,7 @@ export function AdminPlaceForm({ place, categories }: { place: AdminPlace; categ
   }
 
   return (
-    <form action={onSubmit} className="space-y-6">
+    <form onSubmit={onSubmit} className="space-y-6">
       {place.id && <input type="hidden" name="id" value={place.id} />}
 
       <section className="space-y-5 rounded-2xl border border-line bg-card p-5">
@@ -116,6 +122,15 @@ export function AdminPlaceForm({ place, categories }: { place: AdminPlace; categ
             <label className={lbl} htmlFor="tags">Etiquetas (separadas por coma)</label>
             <input id="tags" name="tags" defaultValue={(place.tags ?? []).join(', ')} placeholder="café, pet friendly, wifi" className={field} />
           </div>
+          <div className="sm:col-span-2">
+            <label className={lbl} htmlFor="city_id">Ciudad / zona</label>
+            <select id="city_id" name="city_id" defaultValue={place.city_id ?? ''} className={`${field} select-chevron`}>
+              <option value="">{isNew ? 'Automática: la más cercana a las coordenadas' : 'Sin cambios'}</option>
+              {cities.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}{c.is_active ? '' : ' · inactiva'}</option>
+              ))}
+            </select>
+          </div>
           <div>
             <label className={lbl} htmlFor="lat">Latitud</label>
             <input id="lat" name="lat" type="number" step="any" defaultValue={place.lat ?? ''} placeholder="-41.3195" className={field} />
@@ -125,7 +140,9 @@ export function AdminPlaceForm({ place, categories }: { place: AdminPlace; categ
             <input id="lng" name="lng" type="number" step="any" defaultValue={place.lng ?? ''} placeholder="-72.9854" className={field} />
           </div>
         </div>
-        <p className="text-xs text-muted">Si dejas las coordenadas vacías al crear, se usa el centro por defecto.</p>
+        <p className="text-xs text-muted">
+          Al crear: indica las coordenadas (la ciudad se detecta sola) o elige la ciudad (se usa su centro hasta que pongas las coordenadas).
+        </p>
       </section>
 
       <label className="flex items-center gap-3 rounded-2xl border border-line bg-card p-4">

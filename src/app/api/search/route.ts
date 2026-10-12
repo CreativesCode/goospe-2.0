@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
+import tzlookup from 'tz-lookup'
 import { isOpenNow, cityNowParts } from '@/lib/hours'
 
 // Parámetro numérico opcional: ausente, vacío o inválido → null (un enlace viejo o un
@@ -45,12 +46,26 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'No pudimos buscar ahora. Intenta de nuevo.' }, { status: 500 })
   }
 
-  const now = cityNowParts()
+  // "Abierto ahora" se evalúa en la zona horaria de la CIUDAD de cada lugar (search_places la
+  // devuelve desde la migración 0035). Respaldo mientras no esté aplicada, o si faltara: la
+  // zona de las coordenadas de la búsqueda (tz-lookup). Sin ninguna de las dos no se afirma nada.
+  let fallbackTz: string | null = null
+  if (p.lat != null && p.lng != null) {
+    try { fallbackTz = tzlookup(p.lat, p.lng) } catch { fallbackTz = null }
+  }
+  const nowByTz = new Map<string, ReturnType<typeof cityNowParts>>()
+  const nowIn = (tz: string) => {
+    let n = nowByTz.get(tz)
+    if (!n) { n = cityNowParts(tz); nowByTz.set(tz, n) }
+    return n
+  }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rows = ((data ?? []) as any[]).map((r) => ({
-    ...r,
-    open_now: isOpenNow((r.hours as { osm_raw?: string } | null)?.osm_raw, now.osmDay, now.minutes),
-  }))
+  const rows = ((data ?? []) as any[]).map((r) => {
+    const tz = (r.timezone as string | null | undefined) ?? fallbackTz
+    const raw = (r.hours as { osm_raw?: string } | null)?.osm_raw
+    const now = tz ? nowIn(tz) : null
+    return { ...r, open_now: now ? isOpenNow(raw, now.osmDay, now.minutes) : null }
+  })
 
   const results = sp.get('open') === '1' ? rows.filter((r) => r.open_now === true) : rows
   return NextResponse.json({ results })

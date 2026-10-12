@@ -32,6 +32,7 @@ type PlaceEdit = {
   price_level: number | null
   tags: string[] | null
   menu: unknown | null
+  cities: { name: string; timezone: string } | null
 }
 
 export default async function EditListingPage({
@@ -47,7 +48,7 @@ export default async function EditListingPage({
   const admin = createAdminClient()
   const { data } = await admin
     .from('places')
-    .select('id, slug, name, business_id, description, vibe_line, phone, whatsapp, website, instagram, price_level, tags, menu')
+    .select('id, slug, name, business_id, description, vibe_line, phone, whatsapp, website, instagram, price_level, tags, menu, cities(name, timezone)')
     .eq('id', placeId)
     .single()
   const place = data as unknown as PlaceEdit | null
@@ -232,7 +233,7 @@ export default async function EditListingPage({
 
           <WeeklyReport placeId={place.id} latest={latestReport} />
 
-          <BoostControl placeId={place.id} active={activeBoost} />
+          <BoostControl placeId={place.id} active={activeBoost} timeZone={place.cities?.timezone ?? null} />
 
           <div className="rounded-2xl border border-line bg-card p-6 shadow-sm">
             <ListingForm place={place} />
@@ -240,7 +241,13 @@ export default async function EditListingPage({
 
           <MenuUpload placeId={place.id} hasMenu={!!place.menu} />
 
-          <EventManager placeId={place.id} events={events} />
+          {/* Las horas de los eventos se escriben y se muestran en la zona de la ciudad del lugar. */}
+          <EventManager
+            placeId={place.id}
+            events={events}
+            timeZone={place.cities?.timezone ?? null}
+            cityName={place.cities?.name ?? null}
+          />
 
           <ReviewReplies placeId={place.id} reviews={reviews} />
         </div>

@@ -3,10 +3,14 @@ import { Star } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ModStatusButtons } from '@/features/admin/ModStatusButtons'
 import { requireAdmin } from '@/lib/admin-guard'
+import { fmtInZone } from '@/lib/tz'
 
 export const dynamic = 'force-dynamic'
 
 const fmt = (s: string) => new Date(s).toLocaleString('es-CL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+// Hora del evento en la zona de la ciudad de su lugar.
+const fmtEvent = (s: string, tz: string | null | undefined) =>
+  fmtInZone(s, tz, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 const badge = (status: string) => {
   const hidden = status === 'blocked' || status === 'rejected'
   return (
@@ -21,7 +25,7 @@ export default async function AdminContenidoPage() {
   const admin = createAdminClient()
   const [{ data: reviews }, { data: events }] = await Promise.all([
     admin.from('reviews').select('id, rating, body, status, created_at, places(name, slug)').order('created_at', { ascending: false }).limit(40),
-    admin.from('events').select('id, name, status, starts_at, places(name, slug)').order('created_at', { ascending: false }).limit(40),
+    admin.from('events').select('id, name, status, starts_at, places(name, slug, cities(timezone))').order('created_at', { ascending: false }).limit(40),
   ])
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rv = (reviews ?? []) as any[]
@@ -68,7 +72,7 @@ export default async function AdminContenidoPage() {
                       {badge(e.status)}
                     </div>
                     <p className="text-xs text-muted">
-                      {e.places?.name} · {fmt(e.starts_at)}
+                      {e.places?.name} · {fmtEvent(e.starts_at, e.places?.cities?.timezone)}
                     </p>
                   </div>
                   <ModStatusButtons type="event" id={e.id} status={e.status} />
