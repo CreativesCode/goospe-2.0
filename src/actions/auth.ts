@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { safeNext } from '@/lib/safe-next'
 
 export async function login(formData: FormData) {
   const supabase = await createClient()
@@ -12,7 +13,7 @@ export async function login(formData: FormData) {
   })
   if (error) return { error: error.message }
   revalidatePath('/', 'layout')
-  redirect((formData.get('next') as string) || '/feed')
+  redirect(safeNext(formData.get('next'))) // sólo rutas internas (evita open redirect)
 }
 
 export async function signup(formData: FormData) {

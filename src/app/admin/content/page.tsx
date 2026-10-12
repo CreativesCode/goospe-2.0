@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Star } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ModStatusButtons } from '@/features/admin/ModStatusButtons'
+import { requireAdmin } from '@/lib/admin-guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +17,7 @@ const badge = (status: string) => {
 }
 
 export default async function AdminContenidoPage() {
+  await requireAdmin('/admin/content') // guard propio: el del layout no evita que la página consulte
   const admin = createAdminClient()
   const [{ data: reviews }, { data: events }] = await Promise.all([
     admin.from('reviews').select('id, rating, body, status, created_at, places(name, slug)').order('created_at', { ascending: false }).limit(40),

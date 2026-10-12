@@ -4,11 +4,12 @@ import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { login } from '@/actions/auth'
+import { safeNext } from '@/lib/safe-next'
 import { fieldClass, primaryBtn } from '@/shared/lib/ui'
 import { PasswordField } from './PasswordField'
 
 export function LoginForm() {
-  const next = useSearchParams().get('next') ?? '/feed'
+  const next = safeNext(useSearchParams().get('next'))
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 

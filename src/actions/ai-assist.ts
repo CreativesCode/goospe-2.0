@@ -71,7 +71,9 @@ export async function suggestReviewReply(formData: FormData) {
   if (!ctx) return { error: 'Sin permiso' }
 
   const admin = createAdminClient()
-  const { data: review } = await admin.from('reviews').select('rating, body').eq('id', reviewId).maybeSingle()
+  // La reseña debe pertenecer al lugar cuya membresía se validó (evita leer reseñas ajenas).
+  const { data: review } = await admin.from('reviews').select('rating, body')
+    .eq('id', reviewId).eq('place_id', placeId).maybeSingle()
   const r = review as { rating: number; body: string | null } | null
   if (!r) return { error: 'Reseña no encontrada' }
 

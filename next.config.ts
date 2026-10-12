@@ -1,6 +1,21 @@
 import type { NextConfig } from 'next'
 
+// Cabeceras de seguridad para todas las rutas. La CSP sólo lleva frame-ancestors: un default-src
+// rompería los scripts inline de Next y el mapa.
+const securityHeaders = [
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+  { key: 'Permissions-Policy', value: 'geolocation=(self), camera=(self), microphone=()' },
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
+  { key: 'Content-Security-Policy', value: "frame-ancestors 'self'" },
+]
+
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  async headers() {
+    return [{ source: '/:path*', headers: securityHeaders }]
+  },
   // Activa el MCP server en /_next/mcp (Next.js 16+)
   experimental: {
     mcpServer: true,

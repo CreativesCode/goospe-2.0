@@ -5,8 +5,11 @@ import type { Database } from '@/lib/database.types'
 type CookieToSet = { name: string; value: string; options: CookieOptions }
 
 // Rutas que requieren sesión. El resto de la app (feed, places, concierge) es pública.
-const PROTECTED = ['/profile', '/saved', '/panel', '/admin']
+const PROTECTED = ['/profile', '/saved', '/panel', '/admin', '/onboarding']
 const AUTH_ROUTES = ['/login', '/signup']
+
+// Coincide con la ruta exacta o un subpath ('/panel' y '/panel/x', pero no '/panelistas').
+const matches = (path: string, base: string) => path === base || path.startsWith(`${base}/`)
 
 export async function updateSession(request: NextRequest) {
   let res = NextResponse.next({ request })
@@ -31,13 +34,13 @@ export async function updateSession(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
 
-  if (!user && PROTECTED.some((p) => path.startsWith(p))) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    url.searchParams.set('next', path)
+  if (!user && PROTECTED.some((p) => matches(path, p))) {
+    // Conserva la query original en `next` (pathname + search) y no la arrastra a /login.
+    const url = new URL('/login', request.url)
+    url.searchParams.set('next', path + request.nextUrl.search)
     return NextResponse.redirect(url)
   }
-  if (user && AUTH_ROUTES.some((p) => path.startsWith(p))) {
+  if (user && AUTH_ROUTES.some((p) => matches(path, p))) {
     return NextResponse.redirect(new URL('/feed', request.url))
   }
 

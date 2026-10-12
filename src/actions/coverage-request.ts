@@ -2,6 +2,7 @@
 
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { isAdmin } from '@/lib/ownership'
 import { countryByCode } from '@/features/loader/data/geo-catalog'
 
 // Registro PASIVO de una apertura fuera de cobertura (sin email, a diferencia de joinWaitlist).
@@ -68,6 +69,11 @@ export async function reverseGeocodeZone(input: unknown): Promise<ResolveResult>
   const parsed = resolveSchema.safeParse(input)
   if (!parsed.success) return { error: 'Coordenadas inválidas.' }
   const { lat, lng } = parsed.data
+
+  // Sólo admin: es una herramienta del backoffice (y hace de proxy hacia Nominatim).
+  const sb = await createClient()
+  const { data: { user } } = await sb.auth.getUser()
+  if (!user || !(await isAdmin(user.id))) return { error: 'No autorizado' }
 
   const url = new URL('https://nominatim.openstreetmap.org/reverse')
   url.searchParams.set('lat', String(lat))

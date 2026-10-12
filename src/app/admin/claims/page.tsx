@@ -3,6 +3,7 @@ import { BadgeCheck, Store, Clock, Mail, Phone, MessageSquare } from 'lucide-rea
 import { createAdminClient } from '@/lib/supabase/admin'
 import { UnclaimButton } from '@/features/admin/UnclaimButton'
 import { ClaimReviewButtons } from '@/features/admin/ClaimReviewButtons'
+import { requireAdmin } from '@/lib/admin-guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +15,7 @@ type Evidence = { contact_name?: string | null; phone?: string | null; email?: s
 type PendingClaim = { id: string; place_id: string; user_id: string; created_at: string; evidence: Evidence }
 
 export default async function AdminClaimsPage() {
+  await requireAdmin('/admin/claims') // guard propio: el del layout no evita que la página consulte
   const admin = createAdminClient()
 
   // Cola de moderación: solicitudes de reclamo pendientes (nadie es dueño hasta aprobarlas).

@@ -2,12 +2,14 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { isLocalhostRequest } from '@/lib/local-only'
 import { LoaderClient } from '@/features/loader/components/LoaderClient'
+import { requireAdmin } from '@/lib/admin-guard'
 
 export const metadata: Metadata = { title: 'Cargador de zonas' }
 
 // Local-only de verdad: en cualquier deploy que no sea localhost, la ruta no existe (404).
 export default async function LoaderPage() {
-  if (!(await isLocalhostRequest())) notFound()
+  if (!(await isLocalhostRequest())) notFound() // primero: fuera de localhost no se revela que existe
+  await requireAdmin('/admin/loader') // guard propio: el del layout no evita que la página consulte
 
   return (
     <div>

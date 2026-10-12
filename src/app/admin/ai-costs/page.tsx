@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Sparkles, Coins, Hash, Download } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/admin-guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +26,7 @@ const RANGES = [
 type Breakdown = [string, { usd: number; tok: number; n: number }][]
 
 export default async function GastosIaPage({ searchParams }: { searchParams: Promise<{ range?: string; page?: string }> }) {
+  await requireAdmin('/admin/ai-costs') // guard propio: el del layout no evita que la página consulte
   const sp = await searchParams
   const range = sp.range ?? '30'
   const days = RANGES.find((r) => r.key === range)?.days ?? 30

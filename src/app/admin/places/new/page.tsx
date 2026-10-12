@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminPlaceForm, type AdminPlace } from '@/features/admin/AdminPlaceForm'
+import { requireAdmin } from '@/lib/admin-guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,7 @@ const EMPTY: AdminPlace = {
 }
 
 export default async function NuevoLugarPage() {
+  await requireAdmin('/admin/places/new') // guard propio: el del layout no evita que la página consulte
   const admin = createAdminClient()
   const { data: cats } = await admin.from('categories').select('id, name').order('name')
 

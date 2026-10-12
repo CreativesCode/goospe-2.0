@@ -10,6 +10,12 @@ import { toast } from '@/shared/components/toast'
 
 type Review = { id: string; user_id: string; rating: number; body: string | null; created_at: string }
 type Stats = { rating: number; reviews_count: number }
+type PublicProfile = { id: string; display_name: string | null }
+type PublicProfilesClient = {
+  from(view: 'public_profiles'): {
+    select(cols: string): { in(col: string, values: string[]): PromiseLike<{ data: PublicProfile[] | null }> }
+  }
+}
 
 const fmtDate = (s: string) => new Date(s).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })
 
@@ -67,9 +73,12 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
 
     const ids = [...new Set(list.map((r) => r.user_id))]
     if (ids.length) {
-      const { data: profs } = await supabase.from('profiles').select('id, display_name').in('id', ids)
+      // Nombres desde la vista pública (profiles ya no es legible para terceros). La vista aún
+      // no está en database.types.ts → se tipa localmente.
+      const publicProfiles = supabase as unknown as PublicProfilesClient
+      const { data: profs } = await publicProfiles.from('public_profiles').select('id, display_name').in('id', ids)
       const map: Record<string, string> = {}
-      for (const p of (profs ?? []) as { id: string; display_name: string | null }[]) {
+      for (const p of profs ?? []) {
         map[p.id] = p.display_name || 'Usuario'
       }
       setNames(map)

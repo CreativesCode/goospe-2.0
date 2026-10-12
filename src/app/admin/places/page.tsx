@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Plus, Star, Bookmark, Image as ImageIcon, Search, BadgeCheck } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { PublishToggle } from '@/features/admin/PublishToggle'
+import { requireAdmin } from '@/lib/admin-guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +17,7 @@ type Row = {
 }
 
 export default async function AdminLugaresPage({ searchParams }: { searchParams: Promise<{ q?: string; estado?: string; cat?: string; ciudad?: string; page?: string }> }) {
+  await requireAdmin('/admin/places') // guard propio: el del layout no evita que la página consulte
   const sp = await searchParams
   const q = (sp.q ?? '').trim()
   const estado = sp.estado ?? 'all'

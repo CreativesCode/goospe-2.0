@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isUuid } from '@/lib/validation'
+import { claimSchema, listingSchema, firstIssue } from '@/features/business/listing-schema'
 
 // Las escrituras a places/businesses sólo las permite service_role (ver 0004_rls).
 // Por eso usamos el admin client, pero SIEMPRE validando en código la identidad y la
@@ -34,9 +36,18 @@ async function assertMembership(admin: ReturnType<typeof createAdminClient>, use
 // PENDIENTE con sus datos de contacto en `evidence`. Un admin lo revisa personalmente en
 // /admin/claims (aprobar/rechazar). NO se otorga la propiedad hasta la aprobación.
 export async function claimPlace(formData: FormData) {
-  const placeId = formData.get('place_id') as string
-  if (!placeId) redirect('/panel/claim?error=Falta+el+lugar')
+  const placeId = formData.get('place_id')
+  if (!isUuid(placeId)) redirect('/panel/claim?error=Falta+el+lugar')
   const user = await requireUser()
+
+  // Datos de contacto validados antes de tocar la base (el error vuelve por ?error= como el resto).
+  const contact = claimSchema.safeParse({
+    contact_name: formData.get('contact_name'),
+    phone: formData.get('phone'),
+    message: formData.get('message'),
+  })
+  if (!contact.success) redirect(`/panel/claim?error=${encodeURIComponent(firstIssue(contact.error))}`)
+
   const admin = createAdminClient()
 
   const { data: place } = await admin
@@ -60,10 +71,10 @@ export async function claimPlace(formData: FormData) {
 
   // Datos de contacto para que el admin verifique de forma personal.
   const evidence = {
-    contact_name: ((formData.get('contact_name') as string) ?? '').trim() || null,
-    phone: ((formData.get('phone') as string) ?? '').trim() || null,
+    contact_name: contact.data.contact_name,
+    phone: contact.data.phone,
     email: user.email ?? null,
-    message: ((formData.get('message') as string) ?? '').trim() || null,
+    message: contact.data.message,
   }
 
   await admin
@@ -74,35 +85,36 @@ export async function claimPlace(formData: FormData) {
   redirect('/panel/claim?sent=1')
 }
 
-const toArray = (s: string) =>
-  s.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 8)
-
 // Edita la ficha del place. Sólo campos que el dueño debería controlar.
 export async function updateListing(formData: FormData) {
-  const placeId = formData.get('place_id') as string
+  const placeId = formData.get('place_id')
   const user = await requireUser()
+  if (!isUuid(placeId)) return { error: 'Lugar inválido' }
   const admin = createAdminClient()
 
   const businessId = await assertMembership(admin, user.id, placeId)
   if (!businessId) return { error: 'No tienes permiso sobre este lugar' }
 
-  const priceRaw = formData.get('price_level') as string
-  const price = priceRaw ? Number(priceRaw) : null
+  const parsed = listingSchema.safeParse({
+    description: formData.get('description'),
+    vibe_line: formData.get('vibe_line'),
+    phone: formData.get('phone'),
+    whatsapp: formData.get('whatsapp'),
+    website: formData.get('website'),
+    instagram: formData.get('instagram'),
+    price_level: formData.get('price_level'),
+    tags: formData.get('tags'),
+  })
+  if (!parsed.success) return { error: firstIssue(parsed.error) }
 
-  const patch = {
-    description: (formData.get('description') as string)?.trim() || null,
-    vibe_line: (formData.get('vibe_line') as string)?.trim() || null,
-    phone: (formData.get('phone') as string)?.trim() || null,
-    whatsapp: (formData.get('whatsapp') as string)?.trim() || null,
-    website: (formData.get('website') as string)?.trim() || null,
-    instagram: (formData.get('instagram') as string)?.trim() || null,
-    price_level: price && price >= 1 && price <= 4 ? price : null,
-    tags: toArray((formData.get('tags') as string) ?? ''),
-    updated_at: new Date().toISOString(),
-  }
+  const patch = { ...parsed.data, updated_at: new Date().toISOString() }
 
   const { error } = await admin.from('places').update(patch as never).eq('id', placeId)
-  if (error) return { error: error.message }
+  if (error) {
+    // Nunca devolver el mensaje de Postgres al cliente.
+    console.error('[updateListing]', error.message)
+    return { error: 'No pudimos guardar. Intenta de nuevo.' }
+  }
 
   revalidatePath(`/panel/${placeId}`)
   revalidatePath('/panel')

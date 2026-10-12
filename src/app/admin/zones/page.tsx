@@ -1,10 +1,12 @@
 import { MapPin, Globe } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CoverageZonesTable, type CoverageZone } from '@/features/coverage/components/CoverageZonesTable'
+import { requireAdmin } from '@/lib/admin-guard'
 
 export const dynamic = 'force-dynamic'
 
 export default async function CoverageZonesPage() {
+  await requireAdmin('/admin/zones') // guard propio: el del layout no evita que la página consulte
   const admin = createAdminClient()
   // RPC nueva (0030) aún no está en database.types.ts → helper sin tipado estricto (igual que /admin).
   const arpc = admin.rpc.bind(admin) as unknown as (

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Eye, ScrollText, Heart, Compass, Share2, Sparkles, CalendarCheck, type LucideIcon } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/admin-guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +16,7 @@ const KINDS: { kind: string; label: string; icon: LucideIcon }[] = [
 ]
 
 export default async function AdminStatsPage() {
+  await requireAdmin('/admin/stats') // guard propio: el del layout no evita que la página consulte
   const admin = createAdminClient()
   const arpc = admin.rpc.bind(admin) as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown }>
 

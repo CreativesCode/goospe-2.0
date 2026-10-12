@@ -3,11 +3,13 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminPlaceForm, type AdminPlace } from '@/features/admin/AdminPlaceForm'
+import { requireAdmin } from '@/lib/admin-guard'
 
 export const dynamic = 'force-dynamic'
 
 export default async function EditarLugarPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  await requireAdmin(`/admin/places/${id}`) // guard propio: el del layout no evita que la página consulte
   const admin = createAdminClient()
 
   const [{ data: place }, { data: cats }, { data: coords }] = await Promise.all([

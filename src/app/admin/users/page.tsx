@@ -1,6 +1,7 @@
 import { ShieldCheck, Heart, Star, Calendar, Store, Download } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminToggle } from '@/features/admin/AdminToggle'
+import { requireAdmin } from '@/lib/admin-guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,6 +10,7 @@ const fmt = (s: string | null | undefined) => (s ? new Date(s).toLocaleDateStrin
 type Activity = { user_id: string; favorites: number; reviews: number; rsvps: number; businesses: number }
 
 export default async function AdminUsersPage() {
+  await requireAdmin('/admin/users') // guard propio: el del layout no evita que la página consulte
   const admin = createAdminClient()
   const arpc = admin.rpc.bind(admin) as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown }>
 

@@ -2,10 +2,12 @@ import Link from 'next/link'
 import { CheckCircle2 } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ModerationActions } from '@/features/photos/ModerationActions'
+import { requireAdmin } from '@/lib/admin-guard'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminFotosPage() {
+  await requireAdmin('/admin/photos') // guard propio: el del layout no evita que la página consulte
   const admin = createAdminClient()
   const { data } = await admin
     .from('place_photos')

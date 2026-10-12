@@ -4,6 +4,7 @@ import {
   Activity, ImageIcon, BadgeCheck, type LucideIcon,
 } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/admin-guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,7 @@ const fmtUsd = (n: number) => `$${n.toFixed(2)}`
 const fmtTok = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n))
 
 export default async function AdminDashboard() {
+  await requireAdmin('/admin') // guard propio: el del layout no evita que la página consulte
   const admin = createAdminClient()
   // RPCs nuevas (0023) aún no están en database.types.ts → helper sin tipado estricto.
   const arpc = admin.rpc.bind(admin) as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown }>

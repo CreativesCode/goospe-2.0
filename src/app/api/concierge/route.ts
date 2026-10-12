@@ -1,11 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { embedQuery, pickPlacesStream, type Candidate, type Usage } from '@/lib/ai/openai'
 import { fireAndForget } from '@/lib/fire'
+import { rateLimit, clientKey } from '@/lib/rate-limit'
 
 const FALLBACK = { lat: -41.3195, lng: -72.9854 } // centro por defecto del piloto
 const FREE_LIMIT = 20 // consultas/mes para usuarios autenticados en el piloto
+const USER_PER_MINUTE = 5 // ráfaga por usuario (evita saltarse la cuota con peticiones en paralelo)
+const ANON_DAILY = 15 // consultas/día por IP sin sesión (holgado: wifi compartida / CGNAT)
+const ANON_GLOBAL_DAILY = 300 // cortafuegos: tope diario de TODAS las consultas anónimas
+const GLOBAL_DAILY = 2000 // cortafuegos: tope diario de TODAS las consultas (con o sin sesión)
+// El conserje gasta dinero: si el rate limit no responde, se rechaza (falla cerrado).
+const STRICT = { failOpen: false }
+const BUSY = 'El conserje está muy solicitado hoy. Intenta de nuevo más tarde.'
+const DAY_S = 86400
+
+const bodySchema = z.object({
+  query: z.string().trim().min(2).max(300),
+  lat: z.number().min(-90).max(90).nullish(),
+  lng: z.number().min(-180).max(180).nullish(),
+})
 // gpt-4o (aprox, USD por millón de tokens) + embeddings (despreciable, estimado).
 const COST = (u: Usage) => (u.input_tokens / 1e6) * 2.5 + (u.output_tokens / 1e6) * 10 + 0.00002
 
@@ -13,16 +29,23 @@ const firstOfMonth = () => { const d = new Date(); return `${d.getFullYear()}-${
 
 // POST { query, lat?, lng? } → { picks: [{...place, reason}] }
 export async function POST(req: NextRequest) {
-  let body: { query?: string; lat?: number; lng?: number }
+  let raw: unknown
   try {
-    body = await req.json()
+    raw = await req.json()
   } catch {
     return NextResponse.json({ error: 'JSON inválido' }, { status: 400 })
   }
-  const query = (body.query ?? '').trim()
-  if (query.length < 2) return NextResponse.json({ error: 'Escribe qué buscas' }, { status: 400 })
-  const lat = body.lat ?? FALLBACK.lat
-  const lng = body.lng ?? FALLBACK.lng
+  const parsed = bodySchema.safeParse(raw)
+  if (!parsed.success) {
+    const badQuery = parsed.error.issues.some((i) => i.path[0] === 'query')
+    return NextResponse.json(
+      { error: badQuery ? 'Escribe qué buscas (entre 2 y 300 caracteres)' : 'Ubicación inválida' },
+      { status: 400 }
+    )
+  }
+  const query = parsed.data.query
+  const lat = parsed.data.lat ?? FALLBACK.lat
+  const lng = parsed.data.lng ?? FALLBACK.lng
 
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
@@ -40,6 +63,36 @@ export async function POST(req: NextRequest) {
         { status: 429 }
       )
     }
+    if (!(await rateLimit(`concierge:user:${user.id}`, 60, USER_PER_MINUTE, STRICT))) {
+      return NextResponse.json({ error: 'Vas muy rápido. Espera un momento y vuelve a preguntar.' }, { status: 429 })
+    }
+  } else {
+    // Anónimos: límite diario por cliente + tope global (el gasto de OpenAI no puede quedar abierto).
+    if (!(await rateLimit(`concierge:anon:${clientKey(req)}`, DAY_S, ANON_DAILY, STRICT))) {
+      return NextResponse.json(
+        { error: `Llegaste al límite de ${ANON_DAILY} consultas diarias sin cuenta. Crea tu cuenta gratis para seguir preguntando.` },
+        { status: 429 }
+      )
+    }
+    if (!(await rateLimit('concierge:anon:global', DAY_S, ANON_GLOBAL_DAILY, STRICT))) {
+      return NextResponse.json(
+        { error: 'El conserje está muy solicitado hoy. Crea tu cuenta gratis o inicia sesión para seguir preguntando.' },
+        { status: 429 }
+      )
+    }
+  }
+
+  if (!(await rateLimit('concierge:global', DAY_S, GLOBAL_DAILY, STRICT))) {
+    return NextResponse.json({ error: BUSY }, { status: 429 })
+  }
+  // La cuota se RESERVA antes de llamar a OpenAI (no al terminar el stream): así N peticiones
+  // en paralelo no pasan todas con used=0.
+  if (user) {
+    const { error: quotaErr } = await admin.rpc('increment_concierge_quota', { p_user: user.id, p_month: month } as never)
+    if (quotaErr) {
+      console.error('[concierge] cuota:', quotaErr.message)
+      return NextResponse.json({ error: 'No pudimos buscar ahora. Intenta de nuevo.' }, { status: 500 })
+    }
   }
 
   // 1) embedding → candidatos
@@ -53,7 +106,9 @@ export async function POST(req: NextRequest) {
     if (error) throw new Error(error.message)
     cands = (candidates ?? []) as typeof cands
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 })
+    // Nunca devolver el error crudo (Postgres / OpenAI) al cliente.
+    console.error('[concierge] candidatos:', (e as Error).message)
+    return NextResponse.json({ error: 'No pudimos buscar ahora. Intenta de nuevo.' }, { status: 500 })
   }
 
   // 2) stream SSE: primero los candidatos (para que el cliente arme las cards), luego cada pick
@@ -73,10 +128,10 @@ export async function POST(req: NextRequest) {
           input_tokens: usage.input_tokens, output_tokens: usage.output_tokens,
           cost_usd: COST(usage), user_id: user?.id ?? null,
         } as never), 'ai_usage:concierge')
-        if (user) fireAndForget(admin.rpc('increment_concierge_quota', { p_user: user.id, p_month: month } as never), 'concierge_quota')
         send({ type: 'done' })
       } catch (e) {
-        send({ type: 'error', error: (e as Error).message })
+        console.error('[concierge] stream:', (e as Error).message)
+        send({ type: 'error', error: 'No pudimos completar la respuesta. Intenta de nuevo.' })
       }
       controller.close()
     },
