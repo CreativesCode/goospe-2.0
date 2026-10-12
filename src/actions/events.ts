@@ -11,6 +11,7 @@ import { fmtInZone, zonedTimeToUtc } from '@/lib/tz'
 import { isUuid, uuidSchema } from '@/lib/validation'
 import { audit } from '@/lib/audit'
 import { notifyUsers } from '@/lib/notify'
+import { queueEventCancelledEmails, queueEventUpdatedEmails } from '@/lib/email/hooks'
 import { rateLimit } from '@/lib/rate-limit'
 import { BAD_IMAGE_FORMAT, IMAGE_MAX_BYTES, sniffImage } from '@/lib/image-sniff'
 import { cancelEventSchema } from '@/features/business/owner-schemas'
@@ -186,7 +187,12 @@ export async function updateEvent(formData: FormData) {
   }
 
   if (moved) {
-    await notifyUsers(await attendeeIds(admin, ev.id, user.id), {
+    const attendees = await attendeeIds(admin, ev.id, user.id)
+    queueEventUpdatedEmails({
+      eventId: ev.id, userIds: attendees, eventName: name, placeName: place.name, placeSlug: place.slug,
+      when: fmtWhen(patch.starts_at, place.tz), startsAt: patch.starts_at,
+    })
+    await notifyUsers(attendees, {
       kind: 'event_updated',
       title: `Cambió la fecha: ${name}`,
       body: `Ahora es el ${fmtWhen(patch.starts_at, place.tz)} h en ${place.name}`,
@@ -231,7 +237,12 @@ export async function cancelEvent(formData: FormData) {
 
   await admin.from('boosts').update({ status: 'ended', ended_at: new Date().toISOString() }).eq('event_id', ev.id).eq('status', 'active')
   const reason = parsed.data.reason
-  await notifyUsers(await attendeeIds(admin, ev.id, user.id), {
+  const attendees = await attendeeIds(admin, ev.id, user.id)
+  queueEventCancelledEmails({
+    eventId: ev.id, userIds: attendees, eventName: ev.name, placeName: place.name, placeSlug: place.slug,
+    when: fmtWhen(ev.starts_at, place.tz), reason: reason || null,
+  })
+  await notifyUsers(attendees, {
     kind: 'event_cancelled',
     title: `Evento cancelado: ${ev.name}`,
     body: `${place.name} canceló el evento del ${fmtWhen(ev.starts_at, place.tz)} h.${reason ? ` Motivo: ${reason}` : ''}`,

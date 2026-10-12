@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
-  LayoutDashboard, Store, Users, BadgeCheck, Sparkles, BarChart3, Image, MessageSquare, Globe, MapPin, PencilLine,
+  LayoutDashboard, Store, Users, BadgeCheck, Sparkles, BarChart3, Image, MessageSquare, Globe, MapPin, PencilLine, ScrollText,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -15,12 +15,13 @@ const ITEMS: Item[] = [
   { href: '/admin/places', label: 'Lugares', icon: Store },
   { href: '/admin/users', label: 'Usuarios', icon: Users },
   { href: '/admin/claims', label: 'Reclamos', icon: BadgeCheck },
-  { href: '/admin/requests', label: 'Solicitudes de cambio', icon: PencilLine },
+  { href: '/admin/requests', label: 'Solicitudes', icon: PencilLine },
   { href: '/admin/ai-costs', label: 'Gastos IA', icon: Sparkles },
   { href: '/admin/stats', label: 'Estadísticas', icon: BarChart3 },
   { href: '/admin/zones', label: 'Zonas sin cobertura', icon: MapPin },
   { href: '/admin/photos', label: 'Moderar fotos', icon: Image },
   { href: '/admin/content', label: 'Moderar contenido', icon: MessageSquare },
+  { href: '/admin/audit', label: 'Bitácora', icon: ScrollText },
 ]
 
 // El cargador de zonas es local-only. El menú solo aparece en localhost (el gate real es
@@ -32,7 +33,7 @@ const active = (pathname: string, href: string) =>
 
 /**
  * Navegación del backoffice: sidebar en `lg:`, tabs con scroll horizontal en móvil.
- * `badges` = pendientes por ruta (reclamos y solicitudes de cambio por revisar).
+ * `badges` = pendientes por ruta (reclamos, solicitudes de cambio y lugares propuestos por revisar).
  */
 export function AdminNav({ badges = {} }: { badges?: Record<string, number> }) {
   const pathname = usePathname()

@@ -39,3 +39,40 @@ export async function loadBoostStats(placeId: string): Promise<BoostStat[]> {
     ...b, impressions: Number(b.impressions), clicks: Number(b.clicks), actions: Number(b.actions),
   }))
 }
+
+export type EventBoostStat = {
+  boost_id: string
+  event_id: string
+  event_name: string
+  starts_at: string
+  ends_at: string
+  ended_at: string | null
+  status: string | null
+  impressions: number
+  opens: number
+  rsvps: number
+  prev_impressions: number
+  prev_opens: number
+  prev_rsvps: number
+  /** false = el evento no existía al empezar la ventana previa: no hay con qué comparar. */
+  comparable: boolean
+}
+
+/**
+ * Rendimiento de los boosts de EVENTOS del lugar: actividad del evento durante el destacado y
+ * en la ventana previa de igual duración. Vacío si la RPC falla (migración 0039 sin aplicar).
+ */
+export async function loadEventBoostStats(placeId: string): Promise<EventBoostStat[]> {
+  const admin = createAdminClient()
+  const { data, error } = await admin.rpc('event_boost_stats', { p_place_id: placeId })
+  if (error) {
+    console.error('[loadEventBoostStats]', error.message)
+    return []
+  }
+  return ((data ?? []) as EventBoostStat[]).map((b) => ({
+    ...b,
+    impressions: Number(b.impressions), opens: Number(b.opens), rsvps: Number(b.rsvps),
+    prev_impressions: Number(b.prev_impressions), prev_opens: Number(b.prev_opens), prev_rsvps: Number(b.prev_rsvps),
+    comparable: b.comparable === true,
+  }))
+}

@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation'
 import { Camera, Plus } from 'lucide-react'
 import { uploadMenu, clearMenu } from '@/actions/menu'
 import { toast } from '@/shared/components/toast'
+import { UploadStatusList, useImageUploads } from '@/shared/components/upload-status'
+import { RESIZE_PRESETS } from '@/lib/image-resize'
+
+const MAX_FILES = 6 // mismo tope que la acción uploadMenu
 
 export function MenuUpload({ placeId, hasMenu }: { placeId: string; hasMenu: boolean }) {
   const router = useRouter()
@@ -12,20 +16,33 @@ export function MenuUpload({ placeId, hasMenu }: { placeId: string; hasMenu: boo
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const appendRef = useRef<HTMLInputElement>(null)
   const replaceRef = useRef<HTMLInputElement>(null)
+  const uploads = useImageUploads()
 
   async function upload(files: FileList, mode: 'append' | 'replace', inputEl: HTMLInputElement | null) {
-    if (!files.length) return
+    // Copia ANTES de limpiar el input: `files` es una lista viva y se vaciaría con él.
+    const picked = Array.from(files)
+    if (inputEl) inputEl.value = ''
+    if (!picked.length) return
+    if (picked.length > MAX_FILES) { setMsg({ ok: false, text: `Máximo ${MAX_FILES} imágenes por vez` }); return }
     setBusy(true); setMsg(null)
+    // Cada página se optimiza en el navegador (las fotos de carta de un móvil juntas superan el
+    // tope de la subida); si alguna no sirve no se envía nada: la carta quedaría incompleta.
+    const ready = await uploads.prepare(picked, RESIZE_PRESETS.menu)
+    if (ready.length < picked.length) {
+      uploads.finish(ready.map((r) => r.id), 'No se envió: otra imagen del grupo no se pudo preparar.')
+      setBusy(false)
+      return
+    }
     const fd = new FormData()
     fd.set('place_id', placeId)
     fd.set('mode', mode)
-    Array.from(files).forEach((f) => fd.append('file', f))
-    const res = await uploadMenu(fd)
+    ready.forEach((r) => fd.append('file', r.file))
+    const res = await uploadMenu(fd).catch(() => ({ error: 'No pudimos subir la carta. Revisa tu conexión.' }))
     setBusy(false)
-    if (inputEl) inputEl.value = ''
-    if (res?.error) setMsg({ ok: false, text: res.error })
+    uploads.finish(ready.map((r) => r.id), res?.error ? 'No se pudo leer la carta.' : undefined)
+    if (!res || 'error' in res) setMsg({ ok: false, text: res?.error ?? 'No pudimos subir la carta. Intenta de nuevo.' })
     else {
-      const n = files.length
+      const n = picked.length
       setMsg({ ok: true, text: `${mode === 'append' ? 'Páginas añadidas' : 'Carta leída'} (${n} ${n === 1 ? 'imagen' : 'imágenes'} · ${res.count} secciones). Ya aparece en tu ficha.` })
       router.refresh()
     }
@@ -94,7 +111,8 @@ export function MenuUpload({ placeId, hasMenu }: { placeId: string; hasMenu: boo
           </>
         )}
       </div>
-      {msg && <p className={`mt-2 text-sm ${msg.ok ? 'text-goospe-green-dark' : 'text-red-600'}`}>{msg.text}</p>}
+      <UploadStatusList items={uploads.items} uploadingLabel="Subiendo y leyendo…" className="mt-3" />
+      {msg && <p role={msg.ok ? 'status' : 'alert'} className={`mt-2 text-sm ${msg.ok ? 'text-goospe-green-dark' : 'text-red-600 dark:text-red-400'}`}>{msg.text}</p>}
     </section>
   )
 }

@@ -6,13 +6,16 @@ import { usePathname } from 'next/navigation'
 import { Camera } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { uploadPlacePhoto } from '@/actions/photos'
+import { UploadStatusList, useImageUploads } from '@/shared/components/upload-status'
+import { RESIZE_PRESETS } from '@/lib/image-resize'
 
 // Subida de foto por el usuario. Queda en revisión (status='pending') hasta que un admin
 // la apruebe. Se muestra sólo a usuarios con sesión.
 export function PhotoUpload({ placeId }: { placeId: string }) {
   const pathname = usePathname()
   const [authed, setAuthed] = useState<boolean | null>(null)
-  const [busy, setBusy] = useState(false)
+  const uploads = useImageUploads()
+  const busy = uploads.busy
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -22,16 +25,17 @@ export function PhotoUpload({ placeId }: { placeId: string }) {
 
   async function onChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file) return
-    setBusy(true); setMsg(null)
-    const fd = new FormData()
-    fd.set('place_id', placeId)
-    fd.set('file', file)
-    const res = await uploadPlacePhoto(fd)
-    setBusy(false)
     if (inputRef.current) inputRef.current.value = ''
-    if (res?.error) setMsg({ ok: false, text: res.error })
-    else setMsg({ ok: true, text: '¡Gracias! Tu foto quedó en revisión y aparecerá al aprobarse.' })
+    if (!file) return
+    setMsg(null)
+    // Se optimiza en el navegador antes de subir; el error de cada archivo lo muestra la lista.
+    const ok = await uploads.uploadEach([file], RESIZE_PRESETS.photo, (f) => {
+      const fd = new FormData()
+      fd.set('place_id', placeId)
+      fd.set('file', f)
+      return uploadPlacePhoto(fd)
+    })
+    if (ok) setMsg({ ok: true, text: '¡Gracias! Tu foto quedó en revisión y aparecerá al aprobarse.' })
   }
 
   // Mientras se resuelve la sesión no mostramos nada (evita el flash botón→login).
@@ -56,8 +60,9 @@ export function PhotoUpload({ placeId }: { placeId: string }) {
           disabled={busy}
           className="hidden"
         />
-        {busy ? 'Subiendo…' : <><Camera size={16} strokeWidth={1.75} /> Aportar una foto</>}
+        <Camera size={16} strokeWidth={1.75} /> Aportar una foto
       </label>
+      <UploadStatusList items={uploads.items} className="mt-2 max-w-sm" />
       {msg && (
         <p className={`mt-2 text-sm ${msg.ok ? 'text-goospe-green-dark' : 'text-red-600'}`}>{msg.text}</p>
       )}

@@ -19,8 +19,8 @@ import {
   loadActiveBoost, loadCategories, loadLatestReport, loadOwnerPhotos, loadOwnerReviews, loadPanelEvents, loadPanelPlace,
 } from '@/features/business/panel-data'
 import { StatsDashboard } from '@/features/analytics/StatsDashboard'
-import { BoostPerformance } from '@/features/analytics/BoostPerformance'
-import { loadBoostStats, loadPlaceSeries } from '@/features/analytics/load'
+import { BoostPerformance, EventBoostPerformance } from '@/features/analytics/BoostPerformance'
+import { loadBoostStats, loadEventBoostStats, loadPlaceSeries } from '@/features/analytics/load'
 
 export const dynamic = 'force-dynamic'
 
@@ -81,13 +81,14 @@ export default async function EditListingPage({ params }: { params: Promise<{ pl
 
   const now = Date.now()
   const tz = place.cities?.timezone ?? null
-  const [events, activeBoost, reviews, latestReport, series, boostStats, categories, photos, extras] = await Promise.all([
+  const [events, activeBoost, reviews, latestReport, series, boostStats, eventBoostStats, categories, photos, extras] = await Promise.all([
     loadPanelEvents(admin, placeId),
     loadActiveBoost(admin, placeId, now),
     loadOwnerReviews(admin, placeId),
     loadLatestReport(admin, place.business_id, placeId),
     loadPlaceSeries(placeId, 30, 'day'),
     loadBoostStats(placeId),
+    loadEventBoostStats(placeId),
     loadCategories(admin),
     loadOwnerPhotos(admin, placeId),
     loadExtras(admin, placeId),
@@ -180,7 +181,9 @@ export default async function EditListingPage({ params }: { params: Promise<{ pl
             <MenuUpload placeId={place.id} hasMenu={!!place.menu} />
 
             {/* Las horas de los eventos se escriben y se muestran en la zona de la ciudad del lugar. */}
-            <EventManager placeId={place.id} events={events} timeZone={tz} cityName={place.cities?.name ?? null} now={now} />
+            <EventManager placeId={place.id} events={events} timeZone={tz} cityName={place.cities?.name ?? null} now={now}>
+              <EventBoostPerformance boosts={eventBoostStats} timeZone={tz} now={now} />
+            </EventManager>
 
             <ReviewReplies placeId={place.id} reviews={reviews} timeZone={tz} />
 

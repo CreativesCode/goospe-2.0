@@ -125,3 +125,17 @@ export function normalizeRows(data: unknown): SeriesRow[] {
       : []
   })
 }
+
+export type Delta = { text: string; trend: 'up' | 'down' | 'flat' | 'none' }
+
+/**
+ * Variación de un número frente al periodo previo de igual duración. Sin base previa (0) no
+ * hay porcentaje que dar: se dice "nuevo" en vez de inventar un +∞ %.
+ */
+export function deltaVsPrevious(current: number, previous: number): Delta {
+  if (!Number.isFinite(current) || !Number.isFinite(previous) || previous < 0 || current < 0) return { text: '—', trend: 'none' }
+  if (previous === 0) return current === 0 ? { text: 'sin cambios', trend: 'flat' } : { text: 'nuevo', trend: 'up' }
+  const pct = Math.round(((current - previous) / previous) * 100)
+  if (pct === 0) return { text: 'sin cambios', trend: 'flat' }
+  return { text: `${pct > 0 ? '+' : '−'}${Math.abs(pct)} %`, trend: pct > 0 ? 'up' : 'down' }
+}

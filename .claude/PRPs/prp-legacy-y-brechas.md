@@ -243,6 +243,12 @@ reseña crítica y tareas programadas de mantenimiento (vencimientos, poda de te
 **Validación**: Registro, confirmación y recuperación de contraseña completan la sesión con
 emails propios; un dueño de prueba recibe el informe semanal sin intervención y puede darse de
 baja; cada envío queda en el registro; las tareas programadas dejan rastro de ejecución.
+**Estado (12-oct-2026)**: construido lo que no depende del proveedor — `src/lib/email/`,
+`src/emails/`, `src/lib/cron/`, `src/app/api/cron/*`, `/unsubscribe`, `supabase/templates/` y
+la migración `0040` (sin aplicar). Falta para validar: aplicar `0040`, cuenta de Resend con
+dominio verificado (`RESEND_API_KEY`, `EMAIL_FROM`), `EMAIL_LINK_SECRET`, `CRON_SECRET`, y SMTP +
+plantillas en Supabase Auth (`supabase/templates/README.md`). Sin las llaves todo envío queda
+registrado como omitido y no se gasta IA en informes programados.
 
 ### Fase 7: Lado usuario
 **Objetivo**: §4.6: feed con scroll infinito y cambio manual de ciudad, ranking con pesos en
@@ -331,6 +337,25 @@ competitivo y clustering — que el doc 15 difiere hasta tener volumen de intera
 ### 2026-10-12 (Fase 5): "off" al final apaga la madrugada del día anterior
 - **Error**: `isOpenNow` aplica `off` sobre lo ya evaluado; `Fr 22:00-02:00; Sa off` daba cerrado el sábado a la 01:00.
 - **Fix**: el editor de horario emite primero los días cerrados (`src/lib/hours-editor.ts`, con test).
+
+### 2026-10-12 (Fase 5): exportar un helper desde un archivo `'use server'` lo publica
+- **Error**: `resolveBusiness` y `uniqueSlug` vivían en archivos de acciones; para reutilizarlos al aprobar una propuesta de lugar había que exportarlos, y todo `export async` de un archivo `'use server'` queda invocable desde el navegador.
+- **Fix**: los helpers compartidos viven en `src/lib/` con `server-only` (`resolve-business.ts`, `place-slug.ts`); las acciones solo los importan.
+- **Aplicar en**: cualquier función que necesiten dos archivos de acciones.
+
+### 2026-10-12 (Fase 5): limpiar un `<input type="file">` vacía su `FileList`
+- **Error**: `input.value = ''` antes de leer `files` deja la lista vacía (es una lista viva); con la subida ahora asíncrona (optimizar y luego enviar) el archivo se perdía.
+- **Fix**: copiar con `Array.from(files)` ANTES de limpiar el input (`MenuUpload`, `PlaceMedia`).
+
+### 2026-10-12 (Fase 6): un `void promesa` no sobrevive a la respuesta en Vercel
+- **Error**: disparar un email "fire-and-forget" tras la acción deja la promesa colgando; la función se congela al responder y el email no sale (o sale en la siguiente invocación).
+- **Fix**: `sendLater()` (`src/lib/email/dispatch.ts`) usa `after()` de `next/server`, que mantiene viva la función hasta terminar.
+- **Aplicar en**: todo trabajo que deba ocurrir después de responder (emails, webhooks salientes).
+
+### 2026-10-12 (Fase 6): "no enviar dos veces" es un índice único, no un `if`
+- **Error**: comprobar "¿ya se envió?" y luego enviar tiene una carrera (cron reintentado, doble clic, acción + cron a la vez).
+- **Fix**: la fila se inserta ANTES de la acción cara con una clave única (`email_log.dedupe_key`, `business_reports_scheduled_uidx`); quien choca con el índice no envía ni llama a la IA.
+- **Aplicar en**: cualquier efecto que cueste dinero o llegue a una persona.
 
 ---
 

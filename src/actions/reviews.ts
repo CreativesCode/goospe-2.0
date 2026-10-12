@@ -6,6 +6,7 @@ import { containsProfanity } from '@/lib/profanity'
 import { rateLimit } from '@/lib/rate-limit'
 import { isUuid } from '@/lib/validation'
 import { assertPlaceMembership } from '@/lib/ownership'
+import { queueCriticalReviewAlerts } from '@/lib/email/hooks'
 
 // Reseñas: el usuario autenticado escribe la suya (1 por lugar, unique user_id+place_id).
 // En el piloto se auto-aprueban (status='approved') para que se vean y alimenten el rating de
@@ -59,6 +60,8 @@ export async function submitReview(formData: FormData) {
       console.error('[submitReview] update:', error.message)
       return { error: SAVE_FAILED }
     }
+    // Nota editada hacia abajo: el trigger ya dejó el aviso; aquí sale su email.
+    if (rating <= 2) queueCriticalReviewAlerts(placeId)
     return { success: true }
   }
 
@@ -79,6 +82,8 @@ export async function submitReview(formData: FormData) {
     console.error('[submitReview] insert:', error.message)
     return { error: error.code === '23503' ? 'Lugar no encontrado' : SAVE_FAILED }
   }
+  // Reseña crítica: el trigger (0037) ya creó la notificación al negocio; aquí sale su email.
+  if (rating <= 2) queueCriticalReviewAlerts(placeId)
   return { success: true }
 }
 

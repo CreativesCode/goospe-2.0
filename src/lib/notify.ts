@@ -8,6 +8,7 @@ export type NotificationKind =
   | 'claim_approved' | 'claim_rejected' | 'review_reply'
   | 'event_cancelled' | 'event_updated'
   | 'claim_new' | 'change_request_new' | 'change_request_resolved'
+  | 'place_proposal_new' | 'place_proposal_resolved'
 
 export type Notice = {
   kind: NotificationKind

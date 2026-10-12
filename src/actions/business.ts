@@ -11,6 +11,7 @@ import { requireOwner } from '@/lib/owner-guard'
 import { audit } from '@/lib/audit'
 import { diffFields } from '@/lib/audit-diff'
 import { notifyAdmins } from '@/lib/notify'
+import { queueClaimSubmittedEmails } from '@/lib/email/hooks'
 import { toStoredHours } from '@/lib/hours-editor'
 import type { Json } from '@/lib/database.types'
 import { claimSchema, firstIssue } from '@/features/business/listing-schema'
@@ -84,6 +85,11 @@ export async function claimPlace(formData: FormData) {
     redirect(insErr.code === '23505' ? '/panel/claim?sent=1' : '/panel/claim?error=No+pudimos+enviar+la+solicitud')
   }
 
+  // Por email: acuse al solicitante y aviso al equipo (después de responder; nunca falla la acción).
+  queueClaimSubmittedEmails({
+    userId: user.id, userEmail: user.email ?? null, placeId, placeName: p!.name,
+    contactName: contact.data.contact_name || null, contactPhone: contact.data.phone || null, message: contact.data.message || null,
+  })
   // Aviso al equipo: hay un reclamo nuevo por revisar.
   await notifyAdmins({
     kind: 'claim_new',

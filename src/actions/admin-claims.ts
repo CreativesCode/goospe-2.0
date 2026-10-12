@@ -9,6 +9,8 @@ import { revalidatePlace } from '@/lib/revalidate-place'
 import { isUuid } from '@/lib/validation'
 import { audit } from '@/lib/audit'
 import { notifyUser } from '@/lib/notify'
+import { queueClaimApprovedEmail, queueClaimRejectedEmail } from '@/lib/email/hooks'
+import { resolveBusiness } from '@/lib/resolve-business' // compartido con la aprobación de propuestas
 import { firstIssue } from '@/features/business/listing-schema'
 import { rejectReasonSchema } from '@/features/business/owner-schemas'
 
@@ -29,32 +31,13 @@ const DEFAULT_SOURCE = 'osm'
 const OTHER_OWNER_REASON = 'Otra persona fue verificada como responsable de este lugar.'
 const APPROVE_FAILED = 'No pudimos aprobar el reclamo. Intenta de nuevo.'
 
-// Un negocio puede tener varios lugares: si el solicitante ya es owner de un negocio, el lugar
-// nuevo se suma a ese (el más antiguo). Solo se crea un negocio la primera vez.
-async function resolveBusiness(admin: AdminClient, userId: string, placeName: string) {
-  const { data: rows } = await admin.from('business_members')
-    .select('business_id, businesses(created_at)').eq('user_id', userId).eq('role', 'owner')
-  const owned = ((rows ?? []) as unknown as { business_id: string; businesses: { created_at: string | null } | null }[])
-    .sort((a, b) => (a.businesses?.created_at ?? '').localeCompare(b.businesses?.created_at ?? ''))
-  if (owned.length) return { businessId: owned[0].business_id, created: false }
-
-  const { data: biz, error: bizErr } = await admin.from('businesses').insert({ name: placeName }).select('id').single()
-  if (bizErr || !biz) return { error: bizErr?.message ?? 'sin negocio' }
-  const businessId = (biz as { id: string }).id
-  const { error: memErr } = await admin.from('business_members').insert({ business_id: businessId, user_id: userId, role: 'owner' })
-  if (memErr) {
-    await admin.from('businesses').delete().eq('id', businessId)
-    return { error: memErr.message }
-  }
-  return { businessId, created: true }
-}
-
 // Cierra las demás solicitudes pendientes del mismo lugar, con motivo y aviso a cada solicitante.
 async function rejectCompetingClaims(admin: AdminClient, place: PlaceRow, approvedId: string, adminId: string) {
   const { data } = await admin.from('claims')
     .update({ status: 'rejected', reject_reason: OTHER_OWNER_REASON, resolved_at: new Date().toISOString(), resolved_by: adminId })
-    .eq('place_id', place.id).eq('status', 'pending').neq('id', approvedId).select('user_id')
-  for (const c of (data ?? []) as { user_id: string }[]) {
+    .eq('place_id', place.id).eq('status', 'pending').neq('id', approvedId).select('id, user_id')
+  for (const c of (data ?? []) as { id: string; user_id: string }[]) {
+    queueClaimRejectedEmail({ claimId: c.id, userId: c.user_id, placeName: place.name, reason: OTHER_OWNER_REASON })
     await notifyUser(c.user_id, {
       kind: 'claim_rejected', title: `Tu reclamo de ${place.name} fue rechazado`,
       body: `Motivo: ${OTHER_OWNER_REASON}`, link: '/panel#solicitudes', placeId: place.id,
@@ -115,6 +98,7 @@ export async function approveClaim(formData: FormData) {
   if (claimErr) return fail('reclamo', claimErr.message)
 
   await rejectCompetingClaims(admin, place, claim.id, adminUser.id)
+  queueClaimApprovedEmail({ claimId: claim.id, userId: claim.user_id, placeId: place.id, placeName: place.name })
   await notifyUser(claim.user_id, {
     kind: 'claim_approved', title: `¡Ya administras ${place.name}!`,
     body: 'Tu reclamo fue aprobado. Completa tu ficha, sube fotos y publica eventos.',
@@ -153,6 +137,7 @@ export async function rejectClaim(formData: FormData) {
 
   const { data: placeRow } = await admin.from('places').select('name').eq('id', claim.place_id).maybeSingle()
   const placeName = (placeRow as { name: string } | null)?.name ?? 'tu lugar'
+  queueClaimRejectedEmail({ claimId: claim.id, userId: claim.user_id, placeName, reason })
   await notifyUser(claim.user_id, {
     kind: 'claim_rejected', title: `Tu reclamo de ${placeName} fue rechazado`,
     body: `Motivo: ${reason}`, link: '/panel#solicitudes', placeId: claim.place_id,

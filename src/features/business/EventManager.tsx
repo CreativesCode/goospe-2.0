@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sparkles, Plus, Users, ChevronDown, Calendar, Pencil } from 'lucide-react'
 import { cancelEvent, deleteEvent } from '@/actions/events'
@@ -167,11 +167,15 @@ function EventRow({ ev, placeId, timeZone, finished, onEdit }: {
   )
 }
 
-/** Eventos del lugar: crear, editar, cancelar (avisando a los inscritos), destacar y eliminar. */
-export function EventManager({ placeId, events, timeZone, cityName, now }: {
+/**
+ * Eventos del lugar: crear, editar, cancelar (avisando a los inscritos), destacar y eliminar.
+ * `children`: bloque opcional bajo la lista (rendimiento de los eventos destacados).
+ */
+export function EventManager({ placeId, events, timeZone, cityName, now, children }: {
   placeId: string; events: PanelEvent[]; timeZone: string | null; cityName?: string | null
   /** "Ahora" del servidor (ms): decide qué eventos ya terminaron sin desfase de hidratación. */
   now: number
+  children?: ReactNode
 }) {
   const router = useRouter()
   // 'new' = formulario de alta · id = edición de ese evento · null = cerrado
@@ -204,6 +208,7 @@ export function EventManager({ placeId, events, timeZone, cityName, now }: {
           ))}
         </ul>
       )}
+      {children}
     </section>
   )
 }

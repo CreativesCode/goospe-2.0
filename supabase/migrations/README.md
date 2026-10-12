@@ -21,7 +21,17 @@ un no-op funcional pendiente de aplicar.
 - **`0038`**: `search_places` y `match_places` devuelven la portada del dueño (`places.cover_url`)
   como `photo_url`. Misma firma y columnas (`create or replace`). Pendiente de aplicar; antes,
   comparar `match_places` con su `pg_get_functiondef` real (el cuerpo viene de `0030`).
-- La numeración continúa en `0039`. No reutilizar un número.
+- **`0039`** (pendientes de la fase 5): solo objetos nuevos — tabla `place_proposals`, RPC
+  `place_proposal_duplicates`, `event_boost_stats` y `admin_audit_log` (las tres solo
+  `service_role`; la última lee `auth.users.email`) e índice `interactions_event_idx`. Migración
+  primero, código después; sin ella "proponer un lugar" y `/admin/audit` muestran un error y el
+  rendimiento de eventos destacados no aparece. Pendiente de aplicar.
+- **`0040`** (fase 6, emails e informes programados): solo cambios aditivos — tablas `email_log`,
+  `email_preferences` y `job_runs` (solo `service_role`), columnas `origin` / `sent_at` /
+  `place_id` en `business_reports`, RPC `place_metrics_range` y `run_maintenance`, y el job
+  pg_cron `goospe-maintenance`. Migración primero, código después. `run_maintenance` BORRA filas
+  (plazos en el encabezado del archivo): leerlo antes de aplicar. Pendiente de aplicar.
+- La numeración continúa en `0041`. No reutilizar un número.
 
 ## Drift conocido entre el historial de la BD y el repo
 

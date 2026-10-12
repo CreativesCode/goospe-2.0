@@ -3,6 +3,7 @@ import { Clock, MapPin, MessageSquare, Type } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/admin-guard'
 import { ChangeRequestButtons } from '@/features/admin/ChangeRequestButtons'
+import { ProposalInbox } from '@/features/admin/ProposalInbox'
 import { ADMIN_TZ, fmtInZone } from '@/lib/tz'
 
 export const dynamic = 'force-dynamic'
@@ -70,17 +71,17 @@ export default async function AdminRequestsPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl font-medium text-fg">Solicitudes de cambio</h1>
-        <p className="text-sm text-fg-soft">Los dueños no cambian el nombre ni el pin de su lugar por sí mismos: lo piden aquí. Al rechazar, el motivo es obligatorio y se le muestra al dueño.</p>
+        <h1 className="text-2xl font-medium text-fg">Solicitudes</h1>
+        <p className="text-sm text-fg-soft">Los dueños no cambian el nombre ni el pin de su lugar por sí mismos, y tampoco crean lugares: lo piden aquí. Al rechazar, el motivo es obligatorio y se le muestra al solicitante.</p>
       </header>
 
       <section className="space-y-3">
         <h2 className="flex items-center gap-2 text-sm font-medium uppercase tracking-wide text-muted">
-          <Clock size={15} strokeWidth={1.75} /> Pendientes
+          <Clock size={15} strokeWidth={1.75} /> Cambios de nombre y ubicación
           {pending.length > 0 && <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">{pending.length}</span>}
         </h2>
         {pending.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-line bg-card px-5 py-8 text-center text-sm text-fg-soft">No hay solicitudes por revisar.</div>
+          <div className="rounded-2xl border border-dashed border-line bg-card px-5 py-8 text-center text-sm text-fg-soft">No hay cambios por revisar.</div>
         ) : (
           <ul className="space-y-3">
             {pending.map((r) => (
@@ -111,7 +112,7 @@ export default async function AdminRequestsPage() {
 
       {recent.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-sm font-medium uppercase tracking-wide text-muted">Resueltas recientemente</h2>
+          <h2 className="text-sm font-medium uppercase tracking-wide text-muted">Cambios resueltos recientemente</h2>
           <ul className="divide-y divide-line rounded-2xl border border-line bg-card">
             {recent.map((r) => (
               <li key={r.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3 text-sm">
@@ -125,6 +126,9 @@ export default async function AdminRequestsPage() {
           </ul>
         </section>
       )}
+
+      {/* Lugares nuevos propuestos (carga sus propios datos; el guard de arriba ya corrió). */}
+      <ProposalInbox />
     </div>
   )
 }

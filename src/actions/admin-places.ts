@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdmin } from '@/lib/ownership'
 import { revalidatePlace } from '@/lib/revalidate-place'
+import { slugify, uniqueSlug } from '@/lib/place-slug'
 import { isUuid } from '@/lib/validation'
 
 // Todas las escrituras del backoffice pasan por aquí: validan sesión + is_admin
@@ -18,28 +19,12 @@ async function requireAdmin() {
   return user
 }
 
-const slugify = (s: string) =>
-  s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '').slice(0, 60)
-
 const toArray = (s: string) =>
   s.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 12)
 
 const num = (v: FormDataEntryValue | null) => {
   const n = Number(v)
   return v != null && v !== '' && Number.isFinite(n) ? n : null
-}
-
-// Garantiza un slug único (sufijo -2, -3… si choca). Excluye el propio place al editar.
-async function uniqueSlug(admin: ReturnType<typeof createAdminClient>, base: string, selfId: string | null) {
-  let slug = base || 'lugar'
-  for (let i = 0; i < 50; i++) {
-    const { data } = await admin.from('places').select('id').eq('slug', slug).maybeSingle()
-    const hit = data as { id: string } | null
-    if (!hit || hit.id === selfId) return slug
-    slug = `${base}-${i + 2}`
-  }
-  return `${base}-${Date.now()}`
 }
 
 export async function saveAdminPlace(formData: FormData) {

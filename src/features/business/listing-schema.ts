@@ -6,13 +6,13 @@ import { z } from 'zod'
 // Campo de formulario → string recortado, o null si viene vacío / no es texto.
 const blankToNull = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null)
 
-const optText = (max: number, label: string) =>
+export const optText = (max: number, label: string) =>
   z.preprocess(blankToNull, z.string().max(max, `${label}: máximo ${max} caracteres`).nullable())
 
 // Teléfono / WhatsApp: dígitos con separadores habituales, entre 6 y 15 dígitos (E.164).
 // Acepta los formatos heredados de OSM que ya están en la base: "(65) 248 2888", "65/233343".
 const PHONE_RE = /^[+(]?[0-9(][0-9\s()./-]*$/
-const optPhone = (label: string) =>
+export const optPhone = (label: string) =>
   z.preprocess(
     blankToNull,
     z.string().max(30, `${label}: demasiado largo`)
@@ -24,7 +24,7 @@ const optPhone = (label: string) =>
   )
 
 // Sitio web: sólo http/https. Si viene sin esquema se asume https (como hacía la ficha al mostrarlo).
-const website = z.preprocess(
+export const website = z.preprocess(
   (v) => {
     const s = blankToNull(v)
     if (!s) return null

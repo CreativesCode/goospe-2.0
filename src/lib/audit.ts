@@ -1,12 +1,13 @@
 import 'server-only'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Json } from '@/lib/database.types'
+import type { AuditObjectType } from '@/lib/audit-types'
 
 export type AuditEntry = {
   userId: string
   /** Verbo en snake_case con prefijo de actor: owner.listing_update, admin.claim_reject… */
   action: string
-  objectType: 'place' | 'claim' | 'review' | 'event' | 'business' | 'change_request' | 'photo' | 'boost'
+  objectType: AuditObjectType
   objectId: string
   payload?: Record<string, unknown>
 }

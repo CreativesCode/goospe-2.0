@@ -4,7 +4,7 @@ import type { PanelEvent } from '@/features/business/EventManager'
 import type { OwnerReview } from '@/features/business/ReviewReplies'
 import type { OwnerPhoto } from '@/features/business/PlaceMedia'
 import type { CategoryOption } from '@/features/business/ListingForm'
-import type { MyClaim, MyChangeRequest } from '@/features/business/MyRequests'
+import type { MyClaim, MyChangeRequest, MyProposal } from '@/features/business/MyRequests'
 
 // Lecturas del panel del dueño con service role. SOLO llamar después de validar la sesión y,
 // para lo que es de un lugar, la membresía (la página lo hace antes de cargar nada).
@@ -119,7 +119,8 @@ export async function loadLatestReport(admin: Admin, businessId: string, placeId
   const { data } = await admin.from('business_reports').select('content, created_at')
     .eq('business_id', businessId).eq('kind', 'weekly').order('created_at', { ascending: false }).limit(10)
   const rows = (data ?? []) as { content: { place_id?: string; summary?: string } | null; created_at: string | null }[]
-  const row = rows.find((r) => r.content?.place_id === placeId)
+  // El más reciente CON resumen: los programados sin IA (solo números) no tapan al anterior.
+  const row = rows.find((r) => r.content?.place_id === placeId && r.content?.summary)
   return row?.content?.summary ? { summary: row.content.summary, created_at: row.created_at ?? '' } : null
 }
 
@@ -129,16 +130,22 @@ type RequestRow = {
   payload: { name?: string; reference?: string | null } | null; places: { name: string } | null
 }
 
-/** "Mis solicitudes": reclamos y solicitudes de cambio del usuario, pendientes o rechazados. */
-export async function loadMyRequests(admin: Admin, userId: string): Promise<{ claims: MyClaim[]; changes: MyChangeRequest[] }> {
-  const [claimsRes, changesRes] = await Promise.all([
+type ProposalRow = { id: string; name: string; address: string | null; city_name: string | null; status: string; reject_reason: string | null; created_at: string }
+
+/** "Mis solicitudes": reclamos, solicitudes de cambio y lugares propuestos del usuario, pendientes o rechazados. */
+export async function loadMyRequests(admin: Admin, userId: string): Promise<{ claims: MyClaim[]; changes: MyChangeRequest[]; proposals: MyProposal[] }> {
+  const [claimsRes, changesRes, proposalsRes] = await Promise.all([
     admin.from('claims').select('id, status, reject_reason, created_at, places(name)')
       .eq('user_id', userId).in('status', ['pending', 'rejected']).order('created_at', { ascending: false }).limit(10),
     admin.from('place_change_requests').select('id, place_id, kind, status, reject_reason, created_at, payload, places(name)')
       .eq('user_id', userId).in('status', ['pending', 'rejected']).order('created_at', { ascending: false }).limit(10),
+    admin.from('place_proposals').select('id, name, address, city_name, status, reject_reason, created_at')
+      .eq('user_id', userId).in('status', ['pending', 'rejected']).order('created_at', { ascending: false }).limit(10),
   ])
   if (claimsRes.error) console.error('[loadMyRequests] claims:', claimsRes.error.message)
   if (changesRes.error) console.error('[loadMyRequests] cambios:', changesRes.error.message)
+  // Sin la migración 0039 la tabla no existe: se registra y el resto de las solicitudes se muestra igual.
+  if (proposalsRes.error) console.error('[loadMyRequests] propuestas:', proposalsRes.error.message)
 
   const claims = ((claimsRes.data ?? []) as unknown as ClaimRow[]).map((c) => ({
     id: c.id, placeName: c.places?.name ?? 'Lugar', status: c.status ?? 'pending',
@@ -149,5 +156,9 @@ export async function loadMyRequests(admin: Admin, userId: string): Promise<{ cl
     detail: r.kind === 'name' ? r.payload?.name ?? '' : r.payload?.reference ?? '',
     rejectReason: r.reject_reason, createdAt: r.created_at,
   }))
-  return { claims, changes }
+  const proposals = ((proposalsRes.data ?? []) as ProposalRow[]).map((p) => ({
+    id: p.id, name: p.name, detail: [p.address, p.city_name].filter(Boolean).join(', '), status: p.status,
+    rejectReason: p.reject_reason, createdAt: p.created_at,
+  }))
+  return { claims, changes, proposals }
 }

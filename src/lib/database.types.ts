@@ -177,8 +177,11 @@ export type Database = {
           created_at: string | null
           id: string
           kind: string | null
+          origin: string
           period_end: string | null
           period_start: string | null
+          place_id: string | null
+          sent_at: string | null
         }
         Insert: {
           business_id: string
@@ -186,8 +189,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           kind?: string | null
+          origin?: string
           period_end?: string | null
           period_start?: string | null
+          place_id?: string | null
+          sent_at?: string | null
         }
         Update: {
           business_id?: string
@@ -195,8 +201,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           kind?: string | null
+          origin?: string
           period_end?: string | null
           period_start?: string | null
+          place_id?: string | null
+          sent_at?: string | null
         }
         Relationships: [
           {
@@ -204,6 +213,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_reports_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
             referencedColumns: ["id"]
           },
         ]
@@ -451,6 +467,87 @@ export type Database = {
         }
         Relationships: []
       }
+      email_log: {
+        Row: {
+          attempts: number
+          category: string
+          created_at: string
+          dedupe_key: string | null
+          error: string | null
+          id: number
+          meta: Json
+          provider: string | null
+          provider_id: string | null
+          sent_at: string | null
+          status: string
+          subject: string | null
+          template: string
+          to_email: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          category: string
+          created_at?: string
+          dedupe_key?: string | null
+          error?: string | null
+          id?: never
+          meta?: Json
+          provider?: string | null
+          provider_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          template: string
+          to_email: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          category?: string
+          created_at?: string
+          dedupe_key?: string | null
+          error?: string | null
+          id?: never
+          meta?: Json
+          provider?: string | null
+          provider_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          template?: string
+          to_email?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      email_preferences: {
+        Row: {
+          category: string
+          source: string | null
+          subscribed: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          source?: string | null
+          subscribed?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          source?: string | null
+          subscribed?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       event_rsvps: {
         Row: {
           created_at: string | null
@@ -633,6 +730,36 @@ export type Database = {
           },
         ]
       }
+      job_runs: {
+        Row: {
+          counts: Json
+          error: string | null
+          finished_at: string | null
+          id: number
+          job: string
+          ok: boolean | null
+          started_at: string
+        }
+        Insert: {
+          counts?: Json
+          error?: string | null
+          finished_at?: string | null
+          id?: never
+          job: string
+          ok?: boolean | null
+          started_at?: string
+        }
+        Update: {
+          counts?: Json
+          error?: string | null
+          finished_at?: string | null
+          id?: never
+          job?: string
+          ok?: boolean | null
+          started_at?: string
+        }
+        Relationships: []
+      }
       moderation_queue: {
         Row: {
           ai_reason: string | null
@@ -795,6 +922,104 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "place_change_requests_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      place_proposals: {
+        Row: {
+          address: string | null
+          business_id: string | null
+          category_id: number | null
+          city_id: number | null
+          city_name: string | null
+          created_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          location_ref: string | null
+          message: string | null
+          name: string
+          phone: string | null
+          place_id: string | null
+          reject_reason: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          business_id?: string | null
+          category_id?: number | null
+          city_id?: number | null
+          city_name?: string | null
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          location_ref?: string | null
+          message?: string | null
+          name: string
+          phone?: string | null
+          place_id?: string | null
+          reject_reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          business_id?: string | null
+          category_id?: number | null
+          city_id?: number | null
+          city_name?: string | null
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          location_ref?: string | null
+          message?: string | null
+          name?: string
+          phone?: string | null
+          place_id?: string | null
+          reject_reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_proposals_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "place_proposals_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "place_proposals_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "place_proposals_place_id_fkey"
             columns: ["place_id"]
             isOneToOne: false
             referencedRelation: "places"
@@ -1334,6 +1559,29 @@ export type Database = {
           usd: number
         }[]
       }
+      admin_audit_log: {
+        Args: {
+          p_actor?: string
+          p_limit?: number
+          p_object_type?: string
+          p_offset?: number
+          p_prefix?: string
+        }
+        Returns: {
+          action: string | null
+          actor_email: string | null
+          actor_name: string | null
+          created_at: string | null
+          id: number
+          object_id: string | null
+          object_type: string | null
+          payload: Json | null
+          place_id: string | null
+          place_name: string | null
+          total: number
+          user_id: string | null
+        }[]
+      }
       admin_coverage_zones: {
         Args: { p_days?: number; p_limit?: number }
         Returns: {
@@ -1418,6 +1666,25 @@ export type Database = {
         Returns: number
       }
       enqueue_event_reminders: { Args: never; Returns: undefined }
+      event_boost_stats: {
+        Args: { p_place_id: string }
+        Returns: {
+          boost_id: string
+          comparable: boolean
+          ended_at: string | null
+          ends_at: string
+          event_id: string
+          event_name: string
+          impressions: number
+          opens: number
+          prev_impressions: number
+          prev_opens: number
+          prev_rsvps: number
+          rsvps: number
+          starts_at: string
+          status: string | null
+        }[]
+      }
       event_gender_stats: {
         Args: { p_event_ids: string[] }
         Returns: {
@@ -1526,8 +1793,33 @@ export type Database = {
           status: string | null
         }[]
       }
+      place_proposal_duplicates: {
+        Args: {
+          p_city_id?: number
+          p_lat?: number
+          p_lng?: number
+          p_name: string
+        }
+        Returns: {
+          city_name: string | null
+          claimed: boolean
+          distance_m: number | null
+          id: string
+          is_published: boolean
+          name: string
+          similarity: number
+          slug: string
+        }[]
+      }
       place_metrics: {
         Args: { p_days?: number; p_place_id: string }
+        Returns: {
+          kind: string
+          n: number
+        }[]
+      }
+      place_metrics_range: {
+        Args: { p_from: string; p_place_id: string; p_to: string }
         Returns: {
           kind: string
           n: number
@@ -1555,6 +1847,7 @@ export type Database = {
       }
       recompute_place_stats: { Args: { p_place: string }; Returns: undefined }
       recompute_trending: { Args: never; Returns: undefined }
+      run_maintenance: { Args: never; Returns: Json }
       resolve_coverage: {
         Args: { p_lat: number; p_lng: number }
         Returns: {

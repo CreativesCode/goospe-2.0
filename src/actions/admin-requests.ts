@@ -7,6 +7,7 @@ import { getAdminUser } from '@/lib/admin-guard'
 import { revalidatePlace } from '@/lib/revalidate-place'
 import { audit } from '@/lib/audit'
 import { notifyUser } from '@/lib/notify'
+import { queueChangeRequestResolvedEmail } from '@/lib/email/hooks'
 import { isUuid } from '@/lib/validation'
 import { firstIssue } from '@/features/business/listing-schema'
 import { rejectReasonSchema } from '@/features/business/owner-schemas'
@@ -87,6 +88,7 @@ export async function approveChangeRequest(formData: FormData) {
     .update({ status: 'approved', resolved_at: new Date().toISOString(), resolved_by: actor })
     .eq('id', req.id).eq('status', 'pending')
   const what = req.kind === 'name' ? 'nombre' : 'ubicación'
+  queueChangeRequestResolvedEmail({ requestId: req.id, userId: req.user_id, placeId: req.place_id, kind: req.kind, approved: true, newName: req.payload.name })
   await notifyUser(req.user_id, {
     kind: 'change_request_resolved', title: `Aprobamos tu cambio de ${what}`,
     body: req.kind === 'name' ? `Tu lugar ahora se llama ${req.payload.name}` : 'Ya movimos el pin de tu lugar en el mapa.',
@@ -117,6 +119,7 @@ export async function rejectChangeRequest(formData: FormData) {
   if (!req) return { error: 'Esa solicitud ya fue resuelta' }
 
   const what = req.kind === 'name' ? 'nombre' : 'ubicación'
+  queueChangeRequestResolvedEmail({ requestId: req.id, userId: req.user_id, placeId: req.place_id, kind: req.kind, approved: false, reason: parsed.data.reason })
   await notifyUser(req.user_id, {
     kind: 'change_request_resolved', title: `No aprobamos tu cambio de ${what}`,
     body: `Motivo: ${parsed.data.reason}`, link: '/panel#solicitudes', placeId: req.place_id,

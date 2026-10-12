@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Clock, XCircle } from 'lucide-react'
 import { cancelChangeRequest, cancelClaim } from '@/actions/owner-requests'
+import { cancelPlaceProposal } from '@/actions/place-proposals'
 import { toast } from '@/shared/components/toast'
 import { cardClass, sectionTitle } from '@/features/business/ui'
 
@@ -13,12 +14,14 @@ export type MyChangeRequest = {
   detail: string; rejectReason: string | null; createdAt: string
 }
 
+export type MyProposal = { id: string; name: string; detail: string; status: string; rejectReason: string | null; createdAt: string }
+
 type Item = {
   key: string; title: string; detail: string | null; status: string; rejectReason: string | null
   createdAt: string; cancel: () => Promise<{ error?: string } | undefined>
 }
 
-const fmtDate = (s: string) => (s ? new Date(s).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', timeZone: 'UTC' }) : '')
+const fmtDate = (s: string) => (s ? new Date(s).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', timeZone: 'America/Santiago' }) : '')
 
 function Row({ item }: { item: Item }) {
   const router = useRouter()
@@ -63,8 +66,8 @@ function Row({ item }: { item: Item }) {
 
 const form = (key: string, id: string) => { const fd = new FormData(); fd.set(key, id); return fd }
 
-/** "Mis solicitudes": reclamos y cambios pedidos, con su estado, el motivo si se rechazaron y cancelar. */
-export function MyRequests({ claims, changes }: { claims: MyClaim[]; changes: MyChangeRequest[] }) {
+/** "Mis solicitudes": reclamos, cambios pedidos y lugares propuestos, con su estado, el motivo si se rechazaron y cancelar. */
+export function MyRequests({ claims, changes, proposals = [] }: { claims: MyClaim[]; changes: MyChangeRequest[]; proposals?: MyProposal[] }) {
   const items: Item[] = [
     ...claims.map((c) => ({
       key: `claim-${c.id}`, title: `Reclamo de ${c.placeName}`, detail: null, status: c.status,
@@ -74,6 +77,10 @@ export function MyRequests({ claims, changes }: { claims: MyClaim[]; changes: My
       key: `change-${r.id}`, title: `Cambio de ${r.kind === 'name' ? 'nombre' : 'ubicación'} · ${r.placeName}`,
       detail: r.detail || null, status: r.status, rejectReason: r.rejectReason, createdAt: r.createdAt,
       cancel: () => cancelChangeRequest(form('request_id', r.id)),
+    })),
+    ...proposals.map((p) => ({
+      key: `proposal-${p.id}`, title: `Lugar nuevo · ${p.name}`, detail: p.detail || null, status: p.status,
+      rejectReason: p.rejectReason, createdAt: p.createdAt, cancel: () => cancelPlaceProposal(form('proposal_id', p.id)),
     })),
   ].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
 

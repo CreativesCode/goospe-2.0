@@ -46,7 +46,7 @@ export function buildAddress(prev: PlaceAddress | null, street: string | null, n
   return { ...(prev ?? {}), street, number, formatted }
 }
 
-const clean = (max: number, min: number, label: string) =>
+export const clean = (max: number, min: number, label: string) =>
   z.preprocess(
     trimmed,
     z.string()

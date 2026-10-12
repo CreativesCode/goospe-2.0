@@ -5,6 +5,7 @@ import { Sparkles, ImagePlus, X } from 'lucide-react'
 import { createEvent, updateEvent } from '@/actions/events'
 import { generatePromo } from '@/actions/ai-assist'
 import { isoToLocalInZone, nowLocalInZone } from '@/lib/tz'
+import { RESIZE_PRESETS, resizeImage } from '@/lib/image-resize'
 import { ghostBtn, inputSm as inp, primaryBtn } from '@/features/business/ui'
 
 export type EditableEvent = {
@@ -29,7 +30,8 @@ export function EventForm({ placeId, timeZone, cityName, event, onDone, onCancel
   onCancel: () => void
 }) {
   const editing = !!event
-  const [saving, setSaving] = useState(false)
+  // false = en reposo · 'image' = optimizando la imagen en el navegador · 'send' = guardando
+  const [saving, setSaving] = useState<false | 'image' | 'send'>(false)
   const [msg, setMsg] = useState<string | null>(null)
   const [name, setName] = useState(event?.name ?? '')
   const [description, setDescription] = useState(event?.description ?? '')
@@ -71,7 +73,16 @@ export function EventForm({ placeId, timeZone, cityName, event, onDone, onCancel
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
-    setSaving(true); setMsg(null)
+    setMsg(null)
+    // La imagen se reduce en el navegador antes de enviarla (si falla, viaja el original y el
+    // servidor decide).
+    const image = formData.get('image')
+    if (image instanceof File && image.size > 0) {
+      setSaving('image')
+      const out = await resizeImage(image, RESIZE_PRESETS.photo)
+      formData.set('image', out.file, out.file.name)
+    }
+    setSaving('send')
     const res = editing ? await updateEvent(formData) : await createEvent(formData)
     setSaving(false)
     if (res?.error) { setMsg(res.error); return }
@@ -145,10 +156,10 @@ export function EventForm({ placeId, timeZone, cityName, event, onDone, onCancel
       </label>
 
       <div className="flex flex-wrap items-center gap-2">
-        <button type="submit" disabled={saving} className={primaryBtn}>
-          {saving ? 'Guardando…' : editing ? 'Guardar cambios' : 'Crear evento'}
+        <button type="submit" disabled={!!saving} className={primaryBtn}>
+          {saving === 'image' ? 'Optimizando imagen…' : saving ? 'Guardando…' : editing ? 'Guardar cambios' : 'Crear evento'}
         </button>
-        <button type="button" onClick={onCancel} disabled={saving} className={ghostBtn}>Cancelar</button>
+        <button type="button" onClick={onCancel} disabled={!!saving} className={ghostBtn}>Cancelar</button>
         {msg && <span role="alert" className="text-sm text-red-600 dark:text-red-400">{msg}</span>}
       </div>
     </form>

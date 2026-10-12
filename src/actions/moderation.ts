@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdmin } from '@/lib/ownership'
 import { revalidatePlace } from '@/lib/revalidate-place'
+import { queueCriticalReviewAlerts } from '@/lib/email/hooks'
 
 async function requireAdmin() {
   const sb = await createClient()
@@ -27,6 +28,8 @@ export async function setReviewStatus(formData: FormData) {
   // Recalcular el rating (el trigger sólo cuenta 'approved').
   const placeId = (r as { place_id: string } | null)?.place_id
   if (placeId) await admin.rpc('recompute_place_stats', { p_place: placeId })
+  // Al aprobar una reseña de 1-2 estrellas el trigger avisa al negocio: su email sale aquí.
+  if (placeId && status === 'approved') queueCriticalReviewAlerts(placeId)
   revalidatePath('/admin/content')
   return { success: true }
 }

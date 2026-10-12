@@ -15,11 +15,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   // Pendientes visibles en la navegación (solo el conteo; ya se validó que es admin).
   const admin = createAdminClient()
-  const [claims, requests] = await Promise.all([
+  const [claims, requests, proposals] = await Promise.all([
     admin.from('claims').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     admin.from('place_change_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    // Sin la migración 0039 la tabla no existe: count viene nulo y cuenta como 0.
+    admin.from('place_proposals').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
   ])
-  const badges = { '/admin/claims': claims.count ?? 0, '/admin/requests': requests.count ?? 0 }
+  const badges = { '/admin/claims': claims.count ?? 0, '/admin/requests': (requests.count ?? 0) + (proposals.count ?? 0) }
 
   return (
     <main className="flex min-h-screen flex-col bg-surface">

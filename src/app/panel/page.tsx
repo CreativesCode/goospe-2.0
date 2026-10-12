@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Plus, ArrowRight, Store } from 'lucide-react'
+import { Plus, ArrowRight, Store, MapPinPlus } from 'lucide-react'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
 import { createClient } from '@/lib/supabase/server'
@@ -8,6 +8,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { PhotoImg } from '@/shared/components/photo-img'
 import { MyRequests } from '@/features/business/MyRequests'
 import { loadMyRequests } from '@/features/business/panel-data'
+import { EmailPreferences } from '@/features/notifications/EmailPreferences'
+import { OWNER_CATEGORIES } from '@/lib/email/categories'
+import { loadPreferences } from '@/lib/email/preferences'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,8 +49,9 @@ export default async function PanelPage() {
       .order('name')
     places = (data ?? []) as unknown as OwnedPlace[]
   }
+  const emailPrefs = businessIds.length ? await loadPreferences(user.id, admin) : null
   // Solo las pendientes: con todo rechazado se vuelve a ofrecer "Reclamar mi negocio".
-  const hasRequests = [...requests.claims, ...requests.changes].some((r) => r.status === 'pending')
+  const hasRequests = [...requests.claims, ...requests.changes, ...requests.proposals].some((r) => r.status === 'pending')
 
   return (
     <main className="flex min-h-screen flex-col bg-surface">
@@ -56,12 +60,20 @@ export default async function PanelPage() {
       <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-5 sm:py-8">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-medium text-fg">Mis lugares</h1>
-          <Link
-            href="/panel/claim"
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-goospe-gradient px-5 py-2 text-sm font-medium text-white shadow"
-          >
-            <Plus size={16} strokeWidth={2} /> Reclamar un lugar
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/panel/propose"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line px-4 py-2 text-sm font-medium text-fg-soft transition hover:border-goospe-green/40 hover:text-fg"
+            >
+              <MapPinPlus size={16} strokeWidth={1.75} /> Proponer un lugar nuevo
+            </Link>
+            <Link
+              href="/panel/claim"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-goospe-gradient px-5 py-2 text-sm font-medium text-white shadow"
+            >
+              <Plus size={16} strokeWidth={2} /> Reclamar un lugar
+            </Link>
+          </div>
         </div>
 
         {places.length === 0 ? (
@@ -112,8 +124,15 @@ export default async function PanelPage() {
         )}
 
         <div className="mt-8">
-          <MyRequests claims={requests.claims} changes={requests.changes} />
+          <MyRequests claims={requests.claims} changes={requests.changes} proposals={requests.proposals} />
         </div>
+
+        {/* Preferencias de email: solo para quien ya administra un lugar. */}
+        {emailPrefs && (
+          <div className="mt-8">
+            <EmailPreferences categories={OWNER_CATEGORIES} initial={emailPrefs} />
+          </div>
+        )}
       </div>
 
       <AppFooter />

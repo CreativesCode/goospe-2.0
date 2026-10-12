@@ -114,6 +114,13 @@ export default async function ReclamarPage({
               </div>
             )
           })}
+          {q.length >= 2 && (
+            <p className="rounded-xl border border-dashed border-line bg-card p-4 text-sm text-fg-soft">
+              ¿Tu negocio no aparece en la lista?{' '}
+              <Link href={`/panel/propose?name=${encodeURIComponent(q)}`} className="font-medium text-goospe-green hover:underline">Proponlo como lugar nuevo</Link>
+              {' '}y lo sumamos a Goospe.
+            </p>
+          )}
         </div>
       </div>
 
