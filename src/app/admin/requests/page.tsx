@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Clock, MapPin, MessageSquare, Type } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -5,6 +6,8 @@ import { requireAdmin } from '@/lib/admin-guard'
 import { ChangeRequestButtons } from '@/features/admin/ChangeRequestButtons'
 import { ProposalInbox } from '@/features/admin/ProposalInbox'
 import { ADMIN_TZ, fmtInZone } from '@/lib/tz'
+
+export const metadata: Metadata = { title: 'Solicitudes' }
 
 export const dynamic = 'force-dynamic'
 

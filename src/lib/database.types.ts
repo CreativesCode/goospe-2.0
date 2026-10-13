@@ -660,6 +660,65 @@ export type Database = {
           },
         ]
       }
+      feedback: {
+        Row: {
+          admin_note: string | null
+          category: string
+          client_key: string | null
+          contact_email: string | null
+          created_at: string
+          id: string
+          kind: string
+          message: string | null
+          page: string | null
+          place_id: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          admin_note?: string | null
+          category: string
+          client_key?: string | null
+          contact_email?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          message?: string | null
+          page?: string | null
+          place_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          admin_note?: string | null
+          category?: string
+          client_key?: string | null
+          contact_email?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          message?: string | null
+          page?: string | null
+          place_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feed_config: {
         Row: {
           key: string
@@ -790,6 +849,24 @@ export type Database = {
           object_type?: string
           resolved_at?: string | null
           resolved_by?: string | null
+        }
+        Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          muted: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          muted?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          muted?: string[]
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1248,6 +1325,8 @@ export type Database = {
           id: string
           is_admin: boolean | null
           onboarding: Json | null
+          terms_accepted_at: string | null
+          terms_version: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1258,6 +1337,8 @@ export type Database = {
           id: string
           is_admin?: boolean | null
           onboarding?: Json | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -1268,6 +1349,8 @@ export type Database = {
           id?: string
           is_admin?: boolean | null
           onboarding?: Json | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
         }
         Relationships: [
           {
@@ -1452,6 +1535,9 @@ export type Database = {
           cat_affinity: Json | null
           embedding: string | null
           embedding_model: string | null
+          learned_at: string | null
+          learned_embedding: string | null
+          learned_signals: number | null
           summary: string | null
           updated_at: string | null
           user_id: string
@@ -1460,6 +1546,9 @@ export type Database = {
           cat_affinity?: Json | null
           embedding?: string | null
           embedding_model?: string | null
+          learned_at?: string | null
+          learned_embedding?: string | null
+          learned_signals?: number | null
           summary?: string | null
           updated_at?: string | null
           user_id: string
@@ -1468,6 +1557,9 @@ export type Database = {
           cat_affinity?: Json | null
           embedding?: string | null
           embedding_model?: string | null
+          learned_at?: string | null
+          learned_embedding?: string | null
+          learned_signals?: number | null
           summary?: string | null
           updated_at?: string | null
           user_id?: string
@@ -1665,6 +1757,7 @@ export type Database = {
         }
         Returns: number
       }
+      delete_user_account_data: { Args: { p_user_id: string }; Returns: Json }
       enqueue_event_reminders: { Args: never; Returns: undefined }
       event_boost_stats: {
         Args: { p_place_id: string }
@@ -1691,11 +1784,122 @@ export type Database = {
           event_id: string
           female: number
           going: number
+          interested: number
           male: number
         }[]
       }
+      city_category_counts: {
+        Args: never
+        Returns: {
+          category_id: number
+          city_id: number
+          places: number
+        }[]
+      }
+      city_places: {
+        Args: {
+          p_category_id?: number | null
+          p_city_id: number
+          p_limit?: number
+          p_offset?: number
+          p_sort?: string
+        }
+        Returns: {
+          category_emoji: string | null
+          category_name: string | null
+          category_slug: string | null
+          description: string | null
+          id: string
+          name: string
+          photo_url: string | null
+          price_level: number | null
+          rating: number
+          reviews_count: number
+          slug: string
+          total: number
+          vibe_line: string | null
+        }[]
+      }
+      related_places: {
+        Args: { p_limit?: number; p_place_id: string }
+        Returns: {
+          category_emoji: string | null
+          category_name: string | null
+          distance_m: number
+          id: string
+          name: string
+          photo_url: string | null
+          price_level: number | null
+          rating: number
+          slug: string
+          vibe_line: string | null
+        }[]
+      }
+      active_cities: {
+        Args: never
+        Returns: {
+          country: string
+          id: number
+          lat: number
+          lng: number
+          name: string
+          places: number
+          region: string | null
+          slug: string
+          timezone: string
+        }[]
+      }
+      admin_active_users: {
+        Args: { p_days?: number; p_tz?: string }
+        Returns: {
+          dau: number
+          day: string
+          mau: number
+          wau: number
+        }[]
+      }
+      admin_retention_cohorts: {
+        Args: { p_tz?: string; p_weeks?: number }
+        Returns: {
+          actors: number
+          cohort_week: string
+          d1: number
+          d1_eligible: number
+          d30: number
+          d30_eligible: number
+          d7: number
+          d7_eligible: number
+          signed_in: number
+        }[]
+      }
+      admin_weekly_usage: {
+        Args: { p_tz?: string; p_weeks?: number }
+        Returns: {
+          actors: number
+          anonymous: number
+          decided_visits: number
+          deciders: number
+          decisions: number
+          signed_in: number
+          visits: number
+          week: string
+        }[]
+      }
+      interaction_actors: {
+        Args: { p_since?: string }
+        Returns: {
+          actor: string
+          created_at: string
+          is_user: boolean
+          kind: string
+        }[]
+      }
+      refresh_taste_profiles: { Args: { p_max_users?: number }; Returns: number }
       get_feed: {
         Args: {
+          p_after_dist?: number
+          p_after_id?: string
+          p_after_score?: number
           p_lat: number
           p_limit?: number
           p_lng: number
@@ -1860,6 +2064,7 @@ export type Database = {
       search_places: {
         Args: {
           p_category?: number
+          p_city?: number
           p_lat?: number
           p_limit?: number
           p_lng?: number

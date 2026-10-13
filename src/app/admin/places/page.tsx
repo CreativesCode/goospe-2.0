@@ -1,9 +1,12 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Plus, Star, Bookmark, Image as ImageIcon, Search, BadgeCheck } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { PublishToggle } from '@/features/admin/PublishToggle'
 import { requireAdmin } from '@/lib/admin-guard'
+
+export const metadata: Metadata = { title: 'Lugares' }
 
 export const dynamic = 'force-dynamic'
 

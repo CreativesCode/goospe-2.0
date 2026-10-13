@@ -1,6 +1,7 @@
 'use client'
 
 import { RefreshCw } from 'lucide-react'
+import { CitySwitcher } from '@/features/city/CitySwitcher'
 
 // Pantalla "muy pronto en tu zona": el usuario SÍ está dentro de una ciudad activa, pero el feed
 // no trae lugares ni eventos todavía (zona recién activada / sin datos cargados). Evita mostrar un
@@ -26,6 +27,9 @@ export function ComingSoonScreen({ onRetry }: { onRetry?: () => void }) {
           <RefreshCw size={18} strokeWidth={2} /> Actualizar
         </button>
       )}
+
+      {/* Salida sin geolocalización: elegir una ciudad a mano (el feed se recarga solo). */}
+      <CitySwitcher variant="dark" label="Explorar otra ciudad" className="mt-6 !max-w-none !px-4 !py-2 !text-sm" />
     </main>
   )
 }

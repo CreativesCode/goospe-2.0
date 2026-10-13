@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdmin } from '@/lib/ownership'
 import { revalidatePlace } from '@/lib/revalidate-place'
 import { queueCriticalReviewAlerts } from '@/lib/email/hooks'
+import { notifyUser } from '@/lib/notify'
 
 async function requireAdmin() {
   const sb = await createClient()
@@ -22,7 +23,7 @@ export async function setReviewStatus(formData: FormData) {
   if (!['approved', 'blocked'].includes(status)) return { error: 'Estado inválido' }
 
   const admin = createAdminClient()
-  const { data: r } = await admin.from('reviews').select('place_id').eq('id', id).maybeSingle()
+  const { data: r } = await admin.from('reviews').select('place_id, user_id, status, places(name)').eq('id', id).maybeSingle()
   const { error } = await admin.from('reviews').update({ status }).eq('id', id)
   if (error) return { error: error.message }
   // Recalcular el rating (el trigger sólo cuenta 'approved').
@@ -30,6 +31,15 @@ export async function setReviewStatus(formData: FormData) {
   if (placeId) await admin.rpc('recompute_place_stats', { p_place: placeId })
   // Al aprobar una reseña de 1-2 estrellas el trigger avisa al negocio: su email sale aquí.
   if (placeId && status === 'approved') queueCriticalReviewAlerts(placeId)
+  // Al autor: su reseña dejó de verse (solo al pasar a bloqueada, no en cada clic).
+  const review = r as unknown as { user_id: string; status: string | null; places: { name: string } | null } | null
+  if (review && status === 'blocked' && review.status !== 'blocked') {
+    await notifyUser(review.user_id, {
+      kind: 'review_blocked', title: 'Ocultamos tu reseña',
+      body: `Tu reseña de ${review.places?.name ?? 'un lugar'} no cumple las normas de contenido y ya no es visible.`,
+      link: '/profile/activity', placeId: placeId ?? null,
+    })
+  }
   revalidatePath('/admin/content')
   return { success: true }
 }

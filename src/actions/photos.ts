@@ -8,6 +8,7 @@ import { isAdmin } from '@/lib/ownership'
 import { rateLimit } from '@/lib/rate-limit'
 import { isUuid } from '@/lib/validation'
 import { revalidatePlace } from '@/lib/revalidate-place'
+import { notifyUser } from '@/lib/notify'
 import { BAD_IMAGE_FORMAT as BAD_FORMAT, IMAGE_MAX_BYTES as MAX_BYTES, sniffImage } from '@/lib/image-sniff'
 
 const UPLOADS_PER_HOUR = 10
@@ -82,8 +83,9 @@ export async function moderatePhoto(formData: FormData) {
   if (!user || !(await isAdmin(user.id))) return { error: 'No autorizado' }
 
   const admin = createAdminClient()
-  const { data: row } = await admin.from('place_photos').select('place_id').eq('id', photoId).maybeSingle()
-  const placeId = (row as { place_id: string } | null)?.place_id ?? null
+  const { data: row } = await admin.from('place_photos').select('place_id, author_id, status, places(name, slug)').eq('id', photoId).maybeSingle()
+  const photo = row as unknown as { place_id: string; author_id: string | null; status: string | null; places: { name: string; slug: string } | null } | null
+  const placeId = photo?.place_id ?? null
   if (decision === 'approve') {
     const { error } = await admin.from('place_photos').update({ status: 'approved' }).eq('id', photoId)
     if (error) {
@@ -95,6 +97,14 @@ export async function moderatePhoto(formData: FormData) {
     const path = (ph as { storage_path: string | null } | null)?.storage_path
     await admin.from('place_photos').delete().eq('id', photoId)
     if (path) await admin.storage.from('places').remove([path])
+  }
+
+  // Aviso a quien aportó la foto (solo la primera decisión: una ya aprobada no vuelve a avisar).
+  if (photo?.author_id && photo.status === 'pending' && photo.author_id !== user.id) {
+    const where = photo.places?.name ?? 'el lugar'
+    await notifyUser(photo.author_id, decision === 'approve'
+      ? { kind: 'photo_approved', title: 'Tu foto ya está publicada', body: `Aprobamos la foto que aportaste a ${where}.`, link: photo.places ? `/places/${photo.places.slug}` : null, placeId }
+      : { kind: 'photo_rejected', title: 'No publicamos tu foto', body: `La foto que aportaste a ${where} no cumple las normas de contenido.`, link: '/profile/activity?tab=fotos', placeId })
   }
 
   revalidatePath('/admin/photos')

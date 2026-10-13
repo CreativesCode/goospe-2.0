@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Heart, Star, Sparkles } from 'lucide-react'
 import { categoryIcon } from '@/shared/lib/icons'
@@ -9,10 +9,12 @@ import { AppFooter } from '@/shared/components/app-footer'
 import { LocationNotice } from '@/shared/components/location-notice'
 import { useImgFallback } from '@/shared/components/photo-img'
 import { OpenNowBadge } from '@/features/places/OpenNowBadge'
-import { track } from '@/lib/track'
+import { CitySwitcher } from '@/features/city/CitySwitcher'
 import { DotList } from './dot-list'
 import { LoadMore } from './load-more'
+import { useCardImpressions } from './impressions'
 import { fmtDistDrive, type FeedController, type FeedItem } from './use-feed'
+import { useScrollRestore } from './use-scroll-restore'
 
 function Thumb({ p, className, priority, iconSize = 32 }: { p: FeedItem; className?: string; priority?: boolean; iconSize?: number }) {
   const img = useImgFallback()
@@ -47,6 +49,7 @@ const PlaceCard = memo(function PlaceCard({ p, saved, onSave }: { p: FeedItem; s
   return (
     <Link
       href={`/places/${p.slug}`}
+      data-track-id={p.id}
       className="group relative overflow-hidden rounded-2xl border border-line bg-card transition hover:shadow-md"
     >
       <Thumb p={p} className="h-32 w-full" />
@@ -75,9 +78,14 @@ const PlaceCard = memo(function PlaceCard({ p, saved, onSave }: { p: FeedItem; s
  * cards, con chips de filtro por categoría. Sigue el mock `02 · Feed — tablero`.
  */
 export function FeedDesktop({ feed }: { feed: FeedController }) {
-  const { items, isSaved, onSave, location, whenLabel, geoSource, retryLocation, hasMore, loadingMore, loadMore, feedPage } = feed
+  const { items, isSaved, onSave, location, whenLabel, geoSource, retryLocation, hasMore, loadingMore, loadMore, feedPage, settled } = feed
   const [cat, setCat] = useState<string | null>(null)
-  const seen = useRef<Set<string>>(new Set())
+  const gridRef = useRef<HTMLDivElement>(null)
+  const mainRef = useRef<HTMLElement>(null)
+
+  // Volver al mismo punto del tablero tras visitar una ficha: el navegador restauraba el scroll
+  // contra la primera tanda (40 cards) y se quedaba corto. Aquí se restaura con la lista entera.
+  useScrollRestore('desktop', settled && items.length > 0, { anchor: mainRef })
 
   // Categorías presentes en los datos → chips "Todo" + categorías.
   const categories = useMemo(() => {
@@ -95,14 +103,12 @@ export function FeedDesktop({ feed }: { feed: FeedController }) {
   const featured = filtered.find((p) => p.boosted) ?? filtered[0]
   const rest = filtered.filter((p) => p.id !== featured?.id)
 
-  useEffect(() => {
-    if (!featured || seen.current.has(featured.id)) return
-    seen.current.add(featured.id)
-    track('view_card', { placeId: featured.id })
-  }, [featured])
+  // view_card: cada card que permanece visible ≥2 s cuenta una vez (antes solo se contaba la
+  // destacada, y las demás cards del tablero nunca registraban impresión).
+  useCardImpressions(gridRef, filtered)
 
   return (
-    <main className="flex min-h-screen flex-col bg-surface">
+    <main ref={mainRef} className="flex min-h-screen flex-col bg-surface">
       <AppNav />
 
       <div className="mx-auto w-full max-w-6xl flex-1 px-8 py-8">
@@ -110,7 +116,10 @@ export function FeedDesktop({ feed }: { feed: FeedController }) {
         {/* encabezado + filtros */}
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
-            <div className="text-sm text-muted">{[whenLabel, location].filter(Boolean).join(' · ')}</div>
+            <div className="flex flex-wrap items-center gap-x-2 text-sm text-muted">
+              {whenLabel && <span>{whenLabel} ·</span>}
+              <CitySwitcher variant="inline" label={location} />
+            </div>
             <h1 className="mt-1 text-4xl font-light tracking-tight text-fg">
               Para <span className="font-medium">ti</span>
             </h1>
@@ -137,10 +146,11 @@ export function FeedDesktop({ feed }: { feed: FeedController }) {
         {!featured ? (
           <p className="py-20 text-center text-muted">No hay lugares en esta categoría.</p>
         ) : (
-          <div className="grid items-stretch gap-5 [grid-auto-rows:minmax(208px,auto)] [grid-template-columns:2fr_1fr_1fr]">
+          <div ref={gridRef} className="grid items-stretch gap-5 [grid-auto-rows:minmax(208px,auto)] [grid-template-columns:2fr_1fr_1fr]">
             {/* card grande */}
             <Link
               href={`/places/${featured.slug}`}
+              data-track-id={featured.id}
               className="group relative row-span-2 overflow-hidden rounded-3xl shadow-lg"
             >
               <Thumb key={featured.id} p={featured} priority iconSize={72} className="absolute inset-0 h-full w-full transition duration-500 group-hover:scale-[1.03]" />

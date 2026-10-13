@@ -1,7 +1,10 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Eye, ScrollText, Heart, Compass, Share2, Sparkles, CalendarCheck, type LucideIcon } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/admin-guard'
+
+export const metadata: Metadata = { title: 'Estadísticas' }
 
 export const dynamic = 'force-dynamic'
 

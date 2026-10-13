@@ -11,7 +11,8 @@ export function LegalPage({
   children,
 }: {
   title: string
-  updatedAt: string
+  /** Solo en documentos legales; las páginas institucionales (ayuda, contacto) no la llevan. */
+  updatedAt?: string
   children: React.ReactNode
 }) {
   return (
@@ -19,7 +20,7 @@ export function LegalPage({
       <AppNav />
       <article className="mx-auto w-full max-w-3xl px-5 py-10 sm:py-14">
         <h1 className="text-3xl font-medium text-fg sm:text-4xl">{title}</h1>
-        <p className="mt-2 text-sm text-muted">Última actualización: {updatedAt}</p>
+        {updatedAt && <p className="mt-2 text-sm text-muted">Última actualización: {updatedAt}</p>}
         <div className="mt-8 space-y-6 text-fg-soft [&_a]:text-goospe-green [&_a:hover]:underline [&_h2]:mb-2 [&_h2]:mt-8 [&_h2]:text-lg [&_h2]:font-medium [&_h2]:text-fg [&_li]:ml-1 [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:pl-5">
           {children}
         </div>

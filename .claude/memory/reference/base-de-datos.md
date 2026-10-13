@@ -18,3 +18,6 @@ La base es **producción real** (Supabase, proyecto `ywdjsyxsshaymkjkopho`). No 
 - Al añadir una columna a una tabla que el usuario puede escribir, revisar los grants por
   columna (aprendizaje de la fase 5).
 - Detalle y orden de archivos: `supabase/migrations/README.md`.
+- `get_feed` y `search_places` las llama el navegador: para añadir un parámetro hay que hacer drop + create en la misma transacción (un `create or replace` crea una sobrecarga y PostgREST falla) y volver a dar los permisos.
+- Toda FK nueva hacia `auth.users` sin `on delete` debe añadirse a `delete_user_account_data` o el borrado de cuenta falla.
+- Migraciones aplicadas hasta la 0043 (la 0036 es un no-op sin aplicar).

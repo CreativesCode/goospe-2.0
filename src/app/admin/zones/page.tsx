@@ -1,7 +1,10 @@
+import type { Metadata } from 'next'
 import { MapPin, Globe } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CoverageZonesTable, type CoverageZone } from '@/features/coverage/components/CoverageZonesTable'
 import { requireAdmin } from '@/lib/admin-guard'
+
+export const metadata: Metadata = { title: 'Zonas sin cobertura' }
 
 export const dynamic = 'force-dynamic'
 

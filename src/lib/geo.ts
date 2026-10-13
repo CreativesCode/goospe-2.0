@@ -1,3 +1,6 @@
+import { resolveCityChoice } from '@/features/city/city-store'
+import type { CityChoice } from '@/lib/city-choice'
+
 // Centro por defecto (coords del piloto). Fallback numérico neutro en toda la app;
 // NO es una etiqueta de ciudad que se muestre al usuario.
 export const DEFAULT_CENTER = { lat: -41.3195, lng: -72.9854 }
@@ -20,8 +23,10 @@ const FORCED = {
 // - 'fallback': no pudimos obtener la ubicación real (permiso denegado / timeout / sin soporte).
 //   Las coords devueltas son el centro por defecto SOLO como valor numérico neutro; la UI
 //   NO debe mostrar ese feed a ciegas: pide activar la ubicación (ver <LocationNeededScreen />).
-export type GeoSource = 'forced' | 'gps' | 'fallback'
-export type GeoResult = { lat: number; lng: number; source: GeoSource }
+// - 'city'    : el usuario eligió una ciudad a mano (selector de ciudad). Las coords son el centro
+//   de esa ciudad y `city` trae cuál. Gana a todo lo demás hasta que vuelva a "cerca de mí".
+export type GeoSource = 'forced' | 'gps' | 'fallback' | 'city'
+export type GeoResult = { lat: number; lng: number; source: GeoSource; city?: CityChoice }
 
 // ─── Cache de ubicación (evita re-pedir permiso al navegar atrás/adelante) ──────
 // Cada pantalla (feed, buscar, conserje, cobertura) llama a getPosition() al montar.
@@ -48,13 +53,21 @@ function writeCache(result: GeoResult) {
   try { localStorage?.setItem(GEO_CACHE_KEY, JSON.stringify(memo)) } catch { /* modo privado, etc. */ }
 }
 
-// Resuelve la ubicación del usuario: override de dev → cache → geolocalización → fallback.
-export function getPosition(): Promise<GeoResult> {
-  if (FORCE) return Promise.resolve({ ...FORCED, source: 'forced' })
+// Resuelve la ubicación del usuario: ciudad elegida a mano → override de dev → cache →
+// geolocalización → fallback. La ciudad manual va antes que el override de desarrollo: es una
+// decisión explícita del usuario y, sin eso, el selector no se podría probar con FORCE activo.
+// Al volver a "cerca de mí" todo sigue como antes (FORCE incluido).
+// La ciudad guardada se valida contra las ciudades activas (resolveCityChoice): una inactiva o
+// inventada se descarta y se sigue como "cerca de mí", con sus gates de ubicación y cobertura.
+export async function getPosition(): Promise<GeoResult> {
+  const city = await resolveCityChoice()
+  if (city) return { lat: city.lat, lng: city.lng, source: 'city', city }
+
+  if (FORCE) return { ...FORCED, source: 'forced' }
 
   // Reutiliza un fix GPS reciente sin volver a pedir permiso.
   const cached = readCache()
-  if (cached && Date.now() - cached.at < GEO_TTL_MS) return Promise.resolve(cached.result)
+  if (cached && Date.now() - cached.at < GEO_TTL_MS) return cached.result
 
   return new Promise((resolve) => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {

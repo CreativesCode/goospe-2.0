@@ -14,3 +14,7 @@ type: reference
 - `proxy.ts` debe vivir en `src/` (Next 16 con carpeta `src`).
 - En pruebas, nunca aprobar una propuesta de lugar: publica un lugar real.
 - Al sustituir texto con regex desde un heredoc de shell, las barras invertidas se pierden: usar la herramienta de edición.
+- Un `loading.tsx` en la raíz convierte los `notFound()` en respuestas 200 (404 falsos): los loaders van por sección, nunca en `src/app/`.
+- Solo 200 fichas de lugar se generan en el build; el resto on-demand. Con las ~3.700 el build pasaba de 6 minutos y daba timeouts.
+- En Zod 4, `z.unknown().transform()` dentro de `z.object` vuelve la clave obligatoria: poner `.optional()` antes.
+- En pruebas, nunca enviar el formulario de eliminar cuenta con datos válidos.

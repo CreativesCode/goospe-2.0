@@ -7,12 +7,13 @@ export const AUDIT_PAGE_SIZE = 50
 export const AUDIT_ACTOR_MAX = 100
 const MAX_PAGE = 10_000
 
-export const AUDIT_PREFIXES = ['owner.', 'admin.'] as const
+export const AUDIT_PREFIXES = ['owner.', 'admin.', 'user.'] as const
 export type AuditPrefix = (typeof AUDIT_PREFIXES)[number]
-export const PREFIX_LABEL: Record<AuditPrefix, string> = { 'owner.': 'Dueños', 'admin.': 'Equipo (admin)' }
+export const PREFIX_LABEL: Record<AuditPrefix, string> = { 'owner.': 'Dueños', 'admin.': 'Equipo (admin)', 'user.': 'Usuarios (cuenta)' }
 export const OBJECT_TYPE_LABEL: Record<AuditObjectType, string> = {
   place: 'Lugar', claim: 'Reclamo', review: 'Reseña', event: 'Evento', business: 'Negocio',
   change_request: 'Solicitud de cambio', photo: 'Foto', boost: 'Destacado', place_proposal: 'Lugar propuesto',
+  user: 'Cuenta de usuario', feedback: 'Feedback', feed_config: 'Ranking del feed',
 }
 
 export type AuditFilters = {

@@ -7,10 +7,12 @@ import { categoryIcon } from '@/shared/lib/icons'
 import { AppNav } from '@/shared/components/app-nav'
 import { useImgFallback } from '@/shared/components/photo-img'
 import { OpenNowBadge } from '@/features/places/OpenNowBadge'
-import { track } from '@/lib/track'
+import { CitySwitcher } from '@/features/city/CitySwitcher'
 import { DotList } from './dot-list'
 import { LoadMore } from './load-more'
+import { trackImpression } from './impressions'
 import { directionsHref, fmtDistDrive, type FeedController, type FeedItem } from './use-feed'
+import { readFeedScroll, useScrollRestore, writeFeedScroll } from './use-scroll-restore'
 
 /** Miniatura de foto o gradiente de marca + icono de categoría (sin foto o si falla). */
 function Thumb({ p, className, priority, iconSize = 28 }: { p: FeedItem; className?: string; priority?: boolean; iconSize?: number }) {
@@ -43,21 +45,29 @@ function Thumb({ p, className, priority, iconSize = 28 }: { p: FeedItem; classNa
  * columna "A continuación" navegable (scroll infinito). Sigue el mock `01 · Feed — maestro / detalle`.
  */
 export function FeedTablet({ feed }: { feed: FeedController }) {
-  const { items, isSaved, onSave, onDismiss, onShare, onDirections, location, whenLabel, geoSource, retryLocation, hasMore, loadingMore, loadMore, feedPage } = feed
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const seen = useRef<Set<string>>(new Set())
+  const { items, isSaved, onSave, onDismiss, onShare, onDirections, location, whenLabel, geoSource, retryLocation, hasMore, loadingMore, loadMore, feedPage, settled } = feed
+  // Lugar seleccionado: se recuerda (sessionStorage) para volver a él tras visitar su ficha.
+  // Este layout solo se monta en el navegador (feed-client espera al breakpoint), así que leer
+  // sessionStorage en el estado inicial no descuadra la hidratación. Si el lugar guardado aún
+  // no está en la lista (tanda SSR), el hero es el primero hasta que llega la lista completa.
+  const [selectedId, setSelectedId] = useState<string | null>(() => readFeedScroll('tablet-hero'))
   const listRef = useRef<HTMLDivElement>(null)
+  const select = (id: string) => {
+    setSelectedId(id)
+    writeFeedScroll('tablet-hero', id)
+  }
+  // Scroll de la columna "A continuación": se restaura con la lista definitiva, igual que el móvil.
+  useScrollRestore('tablet', settled && items.length > 0, { target: listRef })
 
   // La selección va por id (no por índice): al cargar más páginas o descartar no salta de lugar.
   const hero = items.find((p) => p.id === selectedId) ?? items[0]
   const next = hero ? items.filter((p) => p.id !== hero.id) : []
 
-  // view_card al cambiar de hero.
+  // view_card al cambiar de hero (una sola vez por lugar: ver impressions.ts).
+  const heroId = hero?.id
   useEffect(() => {
-    if (!hero || seen.current.has(hero.id)) return
-    seen.current.add(hero.id)
-    track('view_card', { placeId: hero.id })
-  }, [hero])
+    if (heroId) trackImpression('place', heroId)
+  }, [heroId])
 
   if (!hero) {
     return (
@@ -84,6 +94,8 @@ export function FeedTablet({ feed }: { feed: FeedController }) {
             {whenLabel && <span className="whitespace-nowrap text-sm text-muted">{whenLabel}</span>}
           </div>
           {geoSource === 'fallback' ? (
+            <div className="flex items-center gap-2">
+            <CitySwitcher label="Elegir ciudad" />
             <button
               onClick={retryLocation}
               className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/50 bg-amber-400/10 px-4 py-2 text-sm font-medium text-fg transition hover:bg-amber-400/20"
@@ -92,10 +104,10 @@ export function FeedTablet({ feed }: { feed: FeedController }) {
               <MapPin size={15} strokeWidth={2} className="text-amber-500" /> {location}
               <RefreshCw size={13} strokeWidth={2.5} className="text-amber-500" />
             </button>
+            </div>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-4 py-2 text-sm font-medium text-fg">
-              <MapPin size={15} strokeWidth={2} className="text-goospe-green" /> {location}
-            </span>
+            // Chip de ubicación = selector de ciudad (ciudad elegida a mano o "cerca de mí").
+            <CitySwitcher label={location} />
           )}
         </div>
 
@@ -174,7 +186,7 @@ export function FeedTablet({ feed }: { feed: FeedController }) {
               {next.map((p) => (
                 <button
                   key={p.id}
-                  onClick={() => setSelectedId(p.id)}
+                  onClick={() => select(p.id)}
                   className="flex shrink-0 items-center gap-3 rounded-2xl border border-line bg-card p-3 text-left transition hover:border-goospe-green/40 hover:shadow-sm"
                 >
                   <Thumb p={p} className="h-14 w-14 shrink-0 rounded-xl" />

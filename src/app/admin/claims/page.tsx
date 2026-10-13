@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BadgeCheck, Store, Clock, Mail, Phone, MessageSquare } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -5,6 +6,8 @@ import { UnclaimButton } from '@/features/admin/UnclaimButton'
 import { ClaimReviewButtons } from '@/features/admin/ClaimReviewButtons'
 import { requireAdmin } from '@/lib/admin-guard'
 import { ADMIN_TZ, fmtInZone } from '@/lib/tz'
+
+export const metadata: Metadata = { title: 'Reclamos' }
 
 export const dynamic = 'force-dynamic'
 

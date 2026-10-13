@@ -1,9 +1,12 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Sparkles, Coins, Hash, Download } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/admin-guard'
 import { ADMIN_TZ, fmtInZone } from '@/lib/tz'
+
+export const metadata: Metadata = { title: 'Gastos IA' }
 
 export const dynamic = 'force-dynamic'
 

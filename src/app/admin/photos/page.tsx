@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { CheckCircle2 } from 'lucide-react'
@@ -5,6 +6,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { ModerationActions } from '@/features/photos/ModerationActions'
 import { PhotoImg } from '@/shared/components/photo-img'
 import { requireAdmin } from '@/lib/admin-guard'
+
+export const metadata: Metadata = { title: 'Moderar fotos' }
 
 export const dynamic = 'force-dynamic'
 

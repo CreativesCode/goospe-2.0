@@ -31,7 +31,32 @@ un no-op funcional pendiente de aplicar.
   `place_id` en `business_reports`, RPC `place_metrics_range` y `run_maintenance`, y el job
   pg_cron `goospe-maintenance`. Migración primero, código después. `run_maintenance` BORRA filas
   (plazos en el encabezado del archivo): leerlo antes de aplicar. Pendiente de aplicar.
-- La numeración continúa en `0041`. No reutilizar un número.
+- **`0041`** (fase 7, eventos y listados SEO): `CHECK` de `event_rsvps.status` (`going` |
+  `interested`), tres índices, `event_gender_stats` con la columna nueva `interested` (drop +
+  create; sigue abierta a `anon`/`authenticated` y ahora solo responde por eventos aprobados de
+  lugares publicados), RPC nuevos `city_places`, `city_category_counts` y `related_places` (solo
+  `service_role`) y `enqueue_event_reminders` rellenando `notifications.link`. Compatible con el
+  código desplegado. Migración primero, código después: sin ella el build falla en `/places`
+  (índice de ciudades) y `/c/*` responde error. Pendiente de aplicar.
+- **`0042`** (fase 7, cuenta / notificaciones / feedback): solo objetos nuevos — columnas
+  `profiles.terms_accepted_at` / `terms_version` (no escribibles por el usuario), tablas
+  `notification_preferences` y `feedback` (solo `service_role`), índice `favorites_place_idx` y
+  la función `delete_user_account_data(uuid)` (solo `service_role`). Migración primero, código
+  después. La función BORRA y anonimiza los datos de un usuario (la llama "Eliminar mi cuenta"):
+  leer su bloque antes de aplicar y NO probarla contra una cuenta real. Su encabezado lista las FK
+  hacia `auth.users` sin `ON DELETE`; una FK nueva de ese tipo hay que sumarla a la función o el
+  borrado de cuenta fallará. Pendiente de aplicar.
+- **`0043`** (fase 7, feed / búsqueda / analítica): **cambia la firma de dos RPC abiertas**.
+  `get_feed` y `search_places` se recrean con `drop` + `create` (parámetros nuevos opcionales:
+  cursor `p_after_*` y `p_city`); mismos parámetros y columnas de antes, así que el código ya
+  desplegado sigue funcionando. Además: fila `feed_ranking` en `feed_config` (pesos del ranking,
+  con los valores que estaban fijos en el SQL), columnas `taste_profiles.learned_*`, funciones
+  `active_cities`, `refresh_taste_profiles`, `interaction_actors`, `admin_active_users`,
+  `admin_weekly_usage`, `admin_retention_cohorts` (todas solo `service_role`) y el job pg_cron
+  `goospe-taste-refresh` (escribe `taste_profiles.learned_*` cada día). Migración primero, código
+  después. Correr las consultas de verificación del final (llamada vieja, cursor = offset).
+  Pendiente de aplicar.
+- La numeración continúa en `0044`. No reutilizar un número.
 
 ## Drift conocido entre el historial de la BD y el repo
 

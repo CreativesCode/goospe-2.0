@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Sparkles, Plus, Users, ChevronDown, Calendar, Pencil } from 'lucide-react'
+import { Sparkles, Plus, Users, ChevronDown, Calendar, Pencil, ExternalLink } from 'lucide-react'
 import { cancelEvent, deleteEvent } from '@/actions/events'
 import { boostEvent, endEventBoost } from '@/actions/boosts'
 import { toast } from '@/shared/components/toast'
@@ -158,6 +159,10 @@ function EventRow({ ev, placeId, timeZone, finished, onEdit }: {
             <button type="button" onClick={() => setCancelling(true)} className="min-h-11 text-sm text-fg-soft hover:underline">Cancelar evento</button>
           </>
         )}
+        {/* Página pública y compartible del evento (también existe si está cancelado o ya pasó). */}
+        <Link href={`/events/${ev.id}`} target="_blank" className={`min-h-11 ${linkBtn}`}>
+          <ExternalLink size={13} strokeWidth={1.75} /> Ver página
+        </Link>
         <button type="button" onClick={onDelete} className="ml-auto min-h-11 text-sm text-red-600 hover:underline dark:text-red-400">Eliminar</button>
       </div>
 

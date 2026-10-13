@@ -127,9 +127,10 @@ export default async function EditListingPage({ params }: { params: Promise<{ pl
               <h1 className="text-2xl font-medium text-fg [overflow-wrap:anywhere]">{place.name}</h1>
               <p className="text-sm text-muted">Administra cómo se ve tu lugar en Goospe</p>
             </div>
-            <Link href={`/places/${place.slug}`}
+            {/* Oculto: la ficha pública responde 404; el dueño la ve en la vista previa. */}
+            <Link href={visibility === 'visible' ? `/places/${place.slug}` : `/places/${place.slug}/preview`}
               className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-goospe-green/40 px-4 py-2 text-sm font-medium text-goospe-green-dark hover:bg-goospe-green/10">
-              Ver ficha pública <ArrowRight size={14} strokeWidth={1.75} />
+              {visibility === 'visible' ? 'Ver ficha pública' : 'Vista previa'} <ArrowRight size={14} strokeWidth={1.75} />
             </Link>
           </div>
 

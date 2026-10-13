@@ -156,8 +156,8 @@ export function AdminPlaceForm({ place, categories, cities = [] }: { place: Admi
           {saving ? 'Guardando…' : isNew ? 'Crear lugar' : 'Guardar cambios'}
         </button>
         {place.slug && !isNew && (
-          <Link href={`/places/${place.slug}`} target="_blank" className="inline-flex items-center gap-1.5 text-sm text-goospe-green hover:underline">
-            Ver ficha pública <ExternalLink size={14} />
+          <Link href={place.is_published ? `/places/${place.slug}` : `/places/${place.slug}/preview`} target="_blank" className="inline-flex items-center gap-1.5 text-sm text-goospe-green hover:underline">
+            {place.is_published ? 'Ver ficha pública' : 'Vista previa'} <ExternalLink size={14} />
           </Link>
         )}
         {msg && (

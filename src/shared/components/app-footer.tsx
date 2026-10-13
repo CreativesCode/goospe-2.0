@@ -3,10 +3,15 @@ import Link from 'next/link'
 const FOOTER_LINKS = [
   { href: '/search', label: 'Buscar' },
   { href: '/events', label: 'Eventos' },
+  { href: '/places', label: 'Ciudades' },
   { href: '/concierge', label: 'Decídeme' },
   { href: '/panel', label: '¿Tienes un negocio?' },
+  { href: '/about', label: 'Quiénes somos' },
+  { href: '/help', label: 'Ayuda' },
+  { href: '/contact', label: 'Contacto' },
   { href: '/terms', label: 'Términos' },
   { href: '/privacy', label: 'Privacidad' },
+  { href: '/feedback', label: 'Enviar comentarios' },
 ]
 
 /**

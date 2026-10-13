@@ -7,6 +7,8 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { safeNext } from '@/lib/safe-next'
 import { authErrorMessage } from '@/lib/auth-errors'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { TERMS_REQUIRED, TERMS_VERSION, termsAccepted } from '@/features/profile/terms'
 
 const emailSchema = z.preprocess(
   (v) => (typeof v === 'string' ? v.trim().toLowerCase() : ''),
@@ -53,6 +55,8 @@ export async function login(formData: FormData) {
 export async function signup(formData: FormData) {
   const parsed = credentialsSchema.safeParse({ email: formData.get('email'), password: formData.get('password') })
   if (!parsed.success) return { error: firstIssue(parsed.error) }
+  // Aceptación explícita de los términos: sin la casilla marcada no se crea la cuenta.
+  if (!termsAccepted(formData.get('terms'))) return { error: TERMS_REQUIRED }
   const rawName = formData.get('display_name')
   const displayName = (typeof rawName === 'string' ? rawName.trim().slice(0, 80) : '') || null
 
@@ -65,6 +69,15 @@ export async function signup(formData: FormData) {
     },
   })
   if (error) return { error: authErrorMessage(error) }
+  // Deja constancia de la aceptación (momento y versión). Solo si la cuenta es NUEVA: para un
+  // email ya registrado Supabase devuelve un usuario ficticio sin identidades. Las columnas no
+  // son escribibles por el usuario (0042), por eso va con service role. Sin la migración
+  // aplicada el update falla y el registro sigue adelante.
+  if (data.user && (data.user.identities?.length ?? 0) > 0) {
+    const { error: termsErr } = await createAdminClient().from('profiles')
+      .update({ terms_accepted_at: new Date().toISOString(), terms_version: TERMS_VERSION }).eq('id', data.user.id)
+    if (termsErr) console.error('[signup] términos:', termsErr.message)
+  }
   revalidatePath('/', 'layout')
   // Si la confirmación de email está desactivada, ya hay sesión → al onboarding; si no, a check-email.
   if (data.session) redirect('/onboarding')

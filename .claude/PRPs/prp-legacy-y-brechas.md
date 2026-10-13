@@ -262,6 +262,25 @@ propio. Analítica de producto para medir D30 y la métrica norte.
 incluye todos los lugares publicados; `/places` deja de pesar megas; D30 y la métrica norte se
 pueden leer en un panel.
 
+**Estado parte A (12-oct-2026)**: construido, sin aplicar la migración `0041` — página de evento
+`/events/[id]` (imagen propia o generada, .ics, Google Calendar, JSON-LD, estados cancelado /
+pasado), cartelera `/events?when=hoy|semana&city=slug`, RSVP con "me interesa" y "asistiré"
+separados, listados SEO `/c/[ciudad]` y `/c/[ciudad]/[categoria]` (página en la ruta: `/2`),
+`/places` como índice de ciudades, sitemap con listados y eventos, "lugares relacionados" y
+"populares en {ciudad}", `og:image` de la ficha sin el proxy de Google, 404 real para lugares no
+publicados (el dueño y el equipo usan `/places/[slug]/preview`) y páginas `/about`, `/help`,
+`/contact`. Decisiones: los conteos públicos de asistencia cuentan SOLO "asistiré"; "me
+interesa" va aparte y no recibe recordatorio del día.
+
+**Estado parte B (12-oct-2026)**: construido, sin aplicar la migración `0042` — perfil editable
+(`/profile/edit`), cuenta (`/profile/account`: email, contraseña, avisos, eliminar cuenta), mi
+actividad (`/profile/activity`), aceptación de términos en el registro, historial
+`/notifications`, aviso a quienes guardaron un lugar, feedback (`/feedback`), "sugerir
+corrección" en la ficha y bandeja `/admin/feedback`. Decisiones: el último dueño de un negocio
+con lugares NO puede eliminar su cuenta por sí mismo (se libera antes desde `/admin/claims`); las
+reseñas, reclamos y fotos aportadas se borran, las interacciones se anonimizan. Falta para
+validar: aplicar `0042` y recorrer los flujos en navegador (no se ejecutó el borrado de cuenta).
+
 ### Fase 8: Monetización (requiere OK explícito del equipo)
 **Objetivo**: Pasarela de pago con checkout y webhook que sincroniza `businesses.plan`, gates y
 cuotas por plan verificados en servidor, ciclo de vida de la suscripción (estados, gracia,
@@ -356,6 +375,34 @@ competitivo y clustering — que el doc 15 difiere hasta tener volumen de intera
 - **Error**: comprobar "¿ya se envió?" y luego enviar tiene una carrera (cron reintentado, doble clic, acción + cron a la vez).
 - **Fix**: la fila se inserta ANTES de la acción cara con una clave única (`email_log.dedupe_key`, `business_reports_scheduled_uidx`); quien choca con el índice no envía ni llama a la IA.
 - **Aplicar en**: cualquier efecto que cueste dinero o llegue a una persona.
+
+### 2026-10-12 (Fase 7): borrar un usuario choca con las FK sin `ON DELETE`
+- **Error**: 7 FK hacia `auth.users` no tienen regla (`reviews`, `claims`, `place_photos.author_id`, `interactions`, `devices`, `concierge_quota`, `moderation_queue.resolved_by`): `auth.admin.deleteUser` falla con que el usuario tenga una sola reseña.
+- **Fix**: `delete_user_account_data` (0042) limpia esas tablas en UNA transacción antes de borrar la fila de auth; el resto cae por cascade. La decisión (sesión + contraseña + confirmación + bloqueos) es una función pura con tests (`account-deletion.ts`).
+- **Aplicar en**: toda tabla nueva con FK a `auth.users`: declarar `on delete cascade` o `set null`; si no, sumarla a la función.
+
+### 2026-10-12 (Fase 7): `signUp` devuelve un usuario ficticio si el email ya existe
+- **Error**: con confirmación de email activa, registrar un email ya usado devuelve `data.user` con un id inventado; escribir por ese id (p. ej. la aceptación de términos) no toca ninguna fila y parece haber funcionado.
+- **Fix**: solo se escribe si `data.user.identities.length > 0` (cuenta realmente nueva).
+
+### 2026-10-12 (Fase 7): un 404 "de verdad" necesita una ruta cacheable
+- **Error**: `notFound()` en una página que lee `searchParams` o cookies llega después de empezar a enviar la respuesta (hay `loading.tsx`): el navegador ve la página de error con estado 200.
+- **Fix**: los listados llevan la página en la RUTA (`/c/granada-es/comer/2`) y exportan `generateStaticParams = async () => []` + `revalidate`: se generan bajo demanda, se cachean y un slug inexistente responde 404. La vista con sesión de un lugar oculto vive en otra ruta (`/preview`), no en la ficha pública.
+- **Aplicar en**: toda página pública indexable; `?param=` solo para filtros que no deben indexarse.
+
+### 2026-10-12 (Fase 7): `opengraph-image.tsx` pisa lo que diga `generateMetadata`
+- **Error**: la metadata por archivo tiene prioridad sobre `openGraph.images`; con un `opengraph-image.tsx` en la ruta no se podría elegir "foto propia si existe, generada si no".
+- **Fix**: la imagen generada es un route handler (`/places/[slug]/og`, `/events/[id]/og`) y `generateMetadata` decide a cuál apuntar (`placeShareImage`, con test).
+
+### 2026-10-12 (Fase 7): añadir un parámetro a una RPC con `create or replace` crea una sobrecarga
+- **Error**: `create or replace function f(a, b, nuevo default null)` no reemplaza a `f(a, b)`: quedan dos funciones y PostgREST responde PGRST203 a la llamada vieja (no sabe cuál elegir).
+- **Fix**: `drop function if exists` de la firma vieja + `create` de la nueva en la misma transacción, parámetros nuevos SIEMPRE con default, y volver a dar los grants (0043: `get_feed`, `search_places`).
+- **Aplicar en**: cualquier cambio de firma de una función que el navegador llama directo.
+
+### 2026-10-12 (Fase 7): mover constantes de un SQL a una tabla sin cambiar el resultado
+- **Error**: la fila `ranking_weights` de `feed_config` (semilla de 0005) tenía otros valores que los fijos en `get_feed`; leerla habría cambiado el ranking al desplegar.
+- **Fix**: clave nueva (`feed_ranking`) sembrada con los literales vigentes, leída como `numeric` (misma aritmética que los literales) y con respaldo clave a clave. Se comprobó ejecutando el cuerpo viejo y el nuevo como SELECT sobre producción y comparando ids, orden y score bit a bit.
+- **Aplicar en**: toda "configuración sin deploy" que sustituya valores que ya están en producción.
 
 ---
 

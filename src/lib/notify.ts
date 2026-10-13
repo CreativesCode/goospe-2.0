@@ -9,6 +9,8 @@ export type NotificationKind =
   | 'event_cancelled' | 'event_updated'
   | 'claim_new' | 'change_request_new' | 'change_request_resolved'
   | 'place_proposal_new' | 'place_proposal_resolved'
+  | 'saved_place_event' | 'photo_approved' | 'photo_rejected' | 'review_blocked'
+  | 'feedback_new' | 'feedback_resolved' | 'place_correction'
 
 export type Notice = {
   kind: NotificationKind
@@ -18,6 +20,11 @@ export type Notice = {
   link?: string | null
   placeId?: string | null
   eventId?: string | null
+  /**
+   * Clave de agrupación: con ella la fila se inserta "si no existe ya" para ese usuario (índice
+   * único user_id + dedupe_key), así que repetir la acción o superar el tope no duplica el aviso.
+   */
+  dedupeKey?: string | null
 }
 
 const clip = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 1)}…` : s)
@@ -28,17 +35,20 @@ export async function notifyUsers(userIds: string[], n: Notice): Promise<void> {
   if (!ids.length) return
   try {
     const admin = createAdminClient()
-    const { error } = await admin.from('notifications').insert(
-      ids.map((user_id) => ({
-        user_id,
-        kind: n.kind,
-        title: clip(n.title, 140),
-        body: n.body ? clip(n.body, 300) : null,
-        link: n.link ?? null,
-        place_id: n.placeId ?? null,
-        event_id: n.eventId ?? null,
-      }))
-    )
+    const rows = ids.map((user_id) => ({
+      user_id,
+      kind: n.kind,
+      title: clip(n.title, 140),
+      body: n.body ? clip(n.body, 300) : null,
+      link: n.link ?? null,
+      place_id: n.placeId ?? null,
+      event_id: n.eventId ?? null,
+      ...(n.dedupeKey ? { dedupe_key: n.dedupeKey } : {}),
+    }))
+    // Con clave: quien ya tiene el aviso se salta sin tumbar el lote entero.
+    const { error } = n.dedupeKey
+      ? await admin.from('notifications').upsert(rows, { onConflict: 'user_id,dedupe_key', ignoreDuplicates: true })
+      : await admin.from('notifications').insert(rows)
     if (error) console.error(`[notify] ${n.kind}:`, error.message)
   } catch (e) {
     console.error(`[notify] ${n.kind}:`, (e as Error).message)

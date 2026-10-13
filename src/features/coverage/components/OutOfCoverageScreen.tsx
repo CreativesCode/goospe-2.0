@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getActiveCities, type ActiveCity } from '../services/coverage'
 import { WaitlistForm } from './WaitlistForm'
+import { CitySwitcher } from '@/features/city/CitySwitcher'
 
 // Pantalla "aún no llegamos a tu zona": se muestra cuando el usuario está fuera de toda
 // ciudad activa. Bloquea el feed, explica que estamos creciendo y captura waitlist.
@@ -30,6 +31,9 @@ export function OutOfCoverageScreen({ coords }: { coords?: { lat: number; lng: n
       <div className="mt-8 w-full max-w-sm">
         <WaitlistForm coords={coords} />
       </div>
+
+      {/* Salida sin geolocalización: elegir una ciudad a mano (el feed se recarga solo). */}
+      <CitySwitcher variant="dark" label="Explorar otra ciudad" className="mt-6 !max-w-none !px-4 !py-2 !text-sm" />
 
       {cities.length > 0 && (
         <div className="mt-12">

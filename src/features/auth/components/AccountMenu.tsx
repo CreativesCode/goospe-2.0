@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { User, Heart, Store, Calendar, Sparkles, LayoutDashboard, Sun, Moon, LogOut, type LucideIcon } from 'lucide-react'
+import { User, Heart, Store, Bell, Calendar, Sparkles, LayoutDashboard, Sun, Moon, LogOut, type LucideIcon } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { signout } from '@/actions/auth'
 import { createClient } from '@/lib/supabase/client'
@@ -94,6 +94,7 @@ export function AccountMenu() {
           </div>
           <Item href="/profile" icon={User}>Mi perfil</Item>
           <Item href="/saved" icon={Heart}>Mis guardados</Item>
+          <Item href="/notifications" icon={Bell}>Notificaciones</Item>
           <Item href="/panel" icon={Store}>Panel de negocio</Item>
           <Item href="/events" icon={Calendar}>Eventos</Item>
           <Item href="/onboarding" icon={Sparkles}>Mis gustos</Item>

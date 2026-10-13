@@ -2,5 +2,6 @@
 // (servidor) y el filtro de /admin/audit.
 export const AUDIT_OBJECT_TYPES = [
   'place', 'claim', 'review', 'event', 'business', 'change_request', 'photo', 'boost', 'place_proposal',
+  'user', 'feedback', 'feed_config',
 ] as const
 export type AuditObjectType = (typeof AUDIT_OBJECT_TYPES)[number]

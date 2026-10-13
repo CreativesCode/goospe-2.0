@@ -1,9 +1,12 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Star } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ModStatusButtons } from '@/features/admin/ModStatusButtons'
 import { requireAdmin } from '@/lib/admin-guard'
 import { ADMIN_TZ, fmtInZone } from '@/lib/tz'
+
+export const metadata: Metadata = { title: 'Moderar contenido' }
 
 export const dynamic = 'force-dynamic'
 

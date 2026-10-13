@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -8,6 +9,8 @@ import {
   AUDIT_ACTOR_MAX, AUDIT_PAGE_SIZE, AUDIT_PREFIXES, OBJECT_TYPE_LABEL, PREFIX_LABEL,
   auditQuery, pageCount, parseAuditFilters, payloadDiff, showValue,
 } from '@/features/admin/audit-filters'
+
+export const metadata: Metadata = { title: 'Bitácora' }
 
 export const dynamic = 'force-dynamic'
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useEffect, useRef } from 'react'
+import { memo, useRef } from 'react'
 import Link from 'next/link'
 import { Calendar, Search, Sparkles, Heart, Compass, Share2, Ban, Star, MapPin, Users, RefreshCw } from 'lucide-react'
 import { categoryIcon } from '@/shared/lib/icons'
@@ -10,12 +10,12 @@ import { EventFeedCard } from '@/features/events/EventFeedCard'
 import { Notifications } from '@/features/notifications/Notifications'
 import { useImgFallback } from '@/shared/components/photo-img'
 import { OpenNowBadge } from '@/features/places/OpenNowBadge'
-import { track } from '@/lib/track'
+import { CitySwitcher } from '@/features/city/CitySwitcher'
 import { DotList } from './dot-list'
 import { LoadMore } from './load-more'
+import { useCardImpressions } from './impressions'
 import { directionsHref, fmtDistDrive, type FeedController, type FeedItem, type FeedRow } from './use-feed'
-
-const SCROLL_KEY = 'goospe:feed-scroll'
+import { useScrollRestore } from './use-scroll-restore'
 
 /**
  * Una card del mazo móvil. Memoizada: con `saved` (boolean) y los callbacks estables
@@ -146,73 +146,17 @@ const FeedCardMobile = memo(function FeedCardMobile({
  * mock `03 · Feed — mazo de decisión` (context strip, pill de categoría, prueba social).
  */
 export function FeedMobile({ feed }: { feed: FeedController }) {
-  const { feedList, isSaved, onSave, onDismiss, onShare, onDirections, location, whenLabel, geoSource, retryLocation, hasMore, loadingMore, loadMore, feedPage } = feed
+  const { feedList, isSaved, onSave, onDismiss, onShare, onDirections, location, whenLabel, geoSource, retryLocation, hasMore, loadingMore, loadMore, feedPage, settled } = feed
   const containerRef = useRef<HTMLElement>(null)
-  const seenCards = useRef<Set<string>>(new Set())
-  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
-  const obsRef = useRef<IntersectionObserver | null>(null)
 
-  // view_card: registra una vista cuando la card permanece visible ≥2s (señal de interés).
-  // El observer se crea UNA sola vez (antes se reconstruía con cada cambio de feedList).
-  useEffect(() => {
-    const timers = timersRef.current
-    const obs = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          const el = e.target as HTMLElement
-          const id = el.dataset.trackId
-          if (!id) continue
-          if (e.isIntersecting && e.intersectionRatio >= 0.6) {
-            if (seenCards.current.has(id) || timers.has(id)) continue
-            const isEvent = el.dataset.kind === 'event'
-            timers.set(id, setTimeout(() => {
-              track('view_card', isEvent ? { eventId: id } : { placeId: id })
-              seenCards.current.add(id)
-              timers.delete(id)
-            }, 2000))
-          } else {
-            const t = timers.get(id)
-            if (t) { clearTimeout(t); timers.delete(id) }
-          }
-        }
-      },
-      { threshold: [0, 0.6, 1] }
-    )
-    obsRef.current = obs
-    return () => { timers.forEach(clearTimeout); timers.clear(); obs.disconnect(); obsRef.current = null }
-  }, [])
+  // view_card: una vista cuando la card permanece visible ≥2 s (señal de interés). Una sola vez
+  // por card aunque se vuelva de una ficha o lleguen más páginas (ver impressions.ts).
+  useCardImpressions(containerRef, feedList)
 
-  // Al cambiar la lista solo se observan los nodos nuevos (observe() es idempotente).
-  useEffect(() => {
-    const obs = obsRef.current
-    const root = containerRef.current
-    if (!obs || !root) return
-    root.querySelectorAll('section[data-track-id]').forEach((n) => obs.observe(n))
-  }, [feedList])
-
-  // Persistir la posición de scroll → volver al mismo punto tras visitar una ficha (3.25).
-  useEffect(() => {
-    const root = containerRef.current
-    if (!root) return
-    let raf = 0
-    const onScroll = () => {
-      if (raf) return
-      raf = requestAnimationFrame(() => { raf = 0; try { sessionStorage.setItem(SCROLL_KEY, String(root.scrollTop)) } catch {} })
-    }
-    root.addEventListener('scroll', onScroll, { passive: true })
-    return () => { if (raf) cancelAnimationFrame(raf); root.removeEventListener('scroll', onScroll) }
-  }, [])
-
-  // Restaurar el scroll una vez que hay contenido renderizado.
-  const restoredRef = useRef(false)
-  useEffect(() => {
-    if (restoredRef.current || !feedList.length || !containerRef.current) return
-    try {
-      const y = Number(sessionStorage.getItem(SCROLL_KEY) || 0)
-      if (y > 0) containerRef.current.scrollTop = y
-    } catch { /* sessionStorage no disponible */ }
-    restoredRef.current = true
-  }, [feedList])
+  // Volver al mismo punto tras visitar una ficha (3.25). Se restaura cuando la lista es la
+  // definitiva (`settled`), no contra la tanda SSR de 40 cards: ahí el scroll guardado de una
+  // card posterior se recortaba a la última de esa tanda.
+  useScrollRestore('mobile', settled && feedList.length > 0, { target: containerRef })
 
   // La primera card de lugar es el LCP del feed → se carga con prioridad (el resto, lazy).
   const firstPlaceId = feedList.find((r): r is Extract<FeedRow, { kind: 'place' }> => r.kind === 'place')?.place.id
@@ -245,17 +189,19 @@ export function FeedMobile({ feed }: { feed: FeedController }) {
           {geoSource === 'fallback' ? (
             // Ubicación real no disponible → las distancias son desde el centro de la ciudad.
             // Chip accionable: toca para reintentar el permiso.
-            <button
-              onClick={retryLocation}
-              className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-amber-400/20 px-3 py-1 text-xs font-medium text-white ring-1 ring-amber-300/40 backdrop-blur transition hover:bg-amber-400/30"
-            >
-              <MapPin size={13} strokeWidth={2} className="text-amber-300" /> {location}
-              <RefreshCw size={11} strokeWidth={2.5} className="text-amber-200" />
-            </button>
+            <>
+              <button
+                onClick={retryLocation}
+                className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-amber-400/20 px-3 py-1 text-xs font-medium text-white ring-1 ring-amber-300/40 backdrop-blur transition hover:bg-amber-400/30"
+              >
+                <MapPin size={13} strokeWidth={2} className="text-amber-300" /> {location}
+                <RefreshCw size={11} strokeWidth={2.5} className="text-amber-200" />
+              </button>
+              <CitySwitcher variant="dark" label="Elegir ciudad" />
+            </>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white ring-1 ring-white/15 backdrop-blur">
-              <MapPin size={13} strokeWidth={2} className="text-goospe-green-light" /> {location}
-            </span>
+            // Chip de ubicación = selector de ciudad (ciudad elegida a mano o "cerca de mí").
+            <CitySwitcher variant="dark" label={location} />
           )}
           <Link href="/events" className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur transition hover:bg-white/25">
             <Calendar size={13} strokeWidth={2} /> Eventos

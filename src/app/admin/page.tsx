@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import {
   Store, Eye, Users, Heart, Compass, Share2, Sparkles, Image, MessageSquare, Calendar,
@@ -6,6 +7,9 @@ import {
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/admin-guard'
 import { fmtInZone } from '@/lib/tz' // `day` es clave de día de la BD: se pinta en UTC
+
+// La plantilla de título del layout no se aplica a la página de su mismo segmento.
+export const metadata: Metadata = { title: 'Dashboard · Admin | Goospe' }
 
 export const dynamic = 'force-dynamic'
 

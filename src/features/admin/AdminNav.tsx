@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
-  LayoutDashboard, Store, Users, BadgeCheck, Sparkles, BarChart3, Image, MessageSquare, Globe, MapPin, PencilLine, ScrollText,
+  LayoutDashboard, Store, Users, BadgeCheck, Sparkles, BarChart3, Image, MessageSquare, Globe, MapPin, PencilLine, ScrollText, MessageCircleWarning,
+  TrendingUp, SlidersHorizontal,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -16,8 +17,11 @@ const ITEMS: Item[] = [
   { href: '/admin/users', label: 'Usuarios', icon: Users },
   { href: '/admin/claims', label: 'Reclamos', icon: BadgeCheck },
   { href: '/admin/requests', label: 'Solicitudes', icon: PencilLine },
+  { href: '/admin/feedback', label: 'Feedback', icon: MessageCircleWarning },
   { href: '/admin/ai-costs', label: 'Gastos IA', icon: Sparkles },
   { href: '/admin/stats', label: 'Estadísticas', icon: BarChart3 },
+  { href: '/admin/product', label: 'Producto', icon: TrendingUp },
+  { href: '/admin/ranking', label: 'Ranking del feed', icon: SlidersHorizontal },
   { href: '/admin/zones', label: 'Zonas sin cobertura', icon: MapPin },
   { href: '/admin/photos', label: 'Moderar fotos', icon: Image },
   { href: '/admin/content', label: 'Moderar contenido', icon: MessageSquare },

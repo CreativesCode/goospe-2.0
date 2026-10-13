@@ -1,8 +1,11 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminPlaceForm, type AdminPlace } from '@/features/admin/AdminPlaceForm'
 import { requireAdmin } from '@/lib/admin-guard'
+
+export const metadata: Metadata = { title: 'Nuevo lugar' }
 
 export const dynamic = 'force-dynamic'
 

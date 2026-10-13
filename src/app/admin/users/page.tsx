@@ -1,8 +1,11 @@
+import type { Metadata } from 'next'
 import { ShieldCheck, Heart, Star, Calendar, Store, Download } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminToggle } from '@/features/admin/AdminToggle'
 import { requireAdmin } from '@/lib/admin-guard'
 import { ADMIN_TZ, fmtInZone } from '@/lib/tz'
+
+export const metadata: Metadata = { title: 'Usuarios' }
 
 export const dynamic = 'force-dynamic'
 

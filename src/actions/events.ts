@@ -11,10 +11,12 @@ import { fmtInZone, zonedTimeToUtc } from '@/lib/tz'
 import { isUuid, uuidSchema } from '@/lib/validation'
 import { audit } from '@/lib/audit'
 import { notifyUsers } from '@/lib/notify'
+import { notifySavedPlaceEvent } from '@/lib/notify-saved'
 import { queueEventCancelledEmails, queueEventUpdatedEmails } from '@/lib/email/hooks'
 import { rateLimit } from '@/lib/rate-limit'
 import { BAD_IMAGE_FORMAT, IMAGE_MAX_BYTES, sniffImage } from '@/lib/image-sniff'
 import { cancelEventSchema } from '@/features/business/owner-schemas'
+import { RSVP_STATUSES, isEventOver, type RsvpStatus } from '@/features/events/event-time'
 
 const SAVE_FAILED = 'No pudimos guardar el evento. Intenta de nuevo.'
 
@@ -89,6 +91,7 @@ function refreshEventViews(placeId: string, slug?: string | null) {
   revalidatePath(`/panel/${placeId}`)
   revalidatePath('/events')
   revalidatePath('/feed')
+  revalidatePath('/events/[id]', 'page') // la página propia de cada evento (ISR)
   return revalidatePlace(placeId, slug) // la ficha pública lista los próximos eventos
 }
 
@@ -137,6 +140,8 @@ export async function createEvent(formData: FormData) {
     return { error: error.code === '23505' ? 'Ya hay un evento en este lugar a esa hora' : SAVE_FAILED }
   }
 
+  // Aviso in-app a quienes guardaron el lugar (máx. uno por lugar y día; respeta su preferencia).
+  await notifySavedPlaceEvent({ placeId, placeName: place.name, placeSlug: place.slug, eventName: name, startsAt: times.starts.toISOString(), tz: place.tz, exceptUserId: user.id })
   await refreshEventViews(placeId, place.slug)
   return { success: true }
 }
@@ -196,7 +201,7 @@ export async function updateEvent(formData: FormData) {
       kind: 'event_updated',
       title: `Cambió la fecha: ${name}`,
       body: `Ahora es el ${fmtWhen(patch.starts_at, place.tz)} h en ${place.name}`,
-      link: `/places/${place.slug}`,
+      link: `/events/${ev.id}`,
       placeId,
       eventId: ev.id,
     })
@@ -289,43 +294,48 @@ export async function deleteEvent(formData: FormData) {
   revalidatePath(`/panel/${placeId}`)
   revalidatePath('/events')
   revalidatePath('/feed')
+  revalidatePath('/events/[id]', 'page')
   await revalidatePlace(placeId)
   return { success: true }
 }
 
-// RSVP del usuario (RLS "own rsvps" permite escribir con el user client). Toggle.
-export async function toggleRsvp(formData: FormData) {
-  const eventId = formData.get('event_id')
-  if (!isUuid(eventId)) return { error: 'Evento inválido' }
-  const status = formData.get('status') === 'interested' ? 'interested' : 'going'
+// RSVP del usuario: "me interesa" (interested), "asistiré" (going) o quitarlo (none). Se
+// escribe con service role DESPUÉS de resolver la sesión: el user_id sale siempre de la cookie,
+// nunca del formulario. Los conteos públicos de asistencia cuentan SOLO "asistiré" (0041).
+const rsvpSchema = z.object({ event_id: uuidSchema, status: z.enum([...RSVP_STATUSES, 'none']) })
+const RSVP_FAILED = 'No pudimos guardar tu respuesta. Intenta de nuevo.'
+
+export async function setRsvp(formData: FormData): Promise<{ error: string } | { success: true; status: RsvpStatus | null }> {
+  const parsed = rsvpSchema.safeParse({ event_id: formData.get('event_id'), status: formData.get('status') })
+  if (!parsed.success) return { error: 'Evento inválido' }
+  const { event_id: eventId, status } = parsed.data
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
-  if (!user) return { error: 'Inicia sesión para confirmar asistencia' }
+  if (!user) return { error: 'Inicia sesión para responder al evento' }
+  if (!(await rateLimit(`rsvp:${user.id}`, 60, 30))) return { error: 'Vas muy rápido. Intenta de nuevo en un rato.' }
 
-  const { data: existing } = await sb
-    .from('event_rsvps')
-    .select('status')
-    .eq('user_id', user.id)
-    .eq('event_id', eventId)
-    .maybeSingle()
-
-  if (existing) {
-    const { error } = await sb.from('event_rsvps').delete().eq('user_id', user.id).eq('event_id', eventId)
+  const admin = createAdminClient()
+  if (status === 'none') {
+    const { error } = await admin.from('event_rsvps').delete().eq('user_id', user.id).eq('event_id', eventId)
     if (error) {
-      console.error('[toggleRsvp] delete:', error.message)
-      return { error: 'No pudimos actualizar tu asistencia. Intenta de nuevo.' }
+      console.error('[setRsvp] delete:', error.message)
+      return { error: RSVP_FAILED }
     }
-    revalidatePath('/events')
-    return { success: true, going: false }
+    return { success: true, status: null }
   }
 
-  const { error } = await sb
+  // Solo se responde a un evento vigente: aprobado y de un lugar publicado.
+  const { data } = await admin.from('events').select('starts_at, ends_at, status, places(is_published)').eq('id', eventId).maybeSingle()
+  const ev = data as unknown as { starts_at: string; ends_at: string | null; status: string | null; places: { is_published: boolean | null } | null } | null
+  if (!ev || ev.status !== 'approved' || ev.places?.is_published !== true) return { error: 'Ese evento ya no está disponible' }
+  if (isEventOver(ev, Date.now())) return { error: 'Ese evento ya terminó' }
+
+  const { error } = await admin
     .from('event_rsvps')
-    .insert({ user_id: user.id, event_id: eventId, status } as never)
+    .upsert({ user_id: user.id, event_id: eventId, status }, { onConflict: 'user_id,event_id' })
   if (error) {
-    console.error('[toggleRsvp] insert:', error.message)
-    return { error: error.code === '23503' ? 'Ese evento ya no existe' : 'No pudimos guardar tu asistencia. Intenta de nuevo.' }
+    console.error('[setRsvp] upsert:', error.message)
+    return { error: error.code === '23503' ? 'Ese evento ya no existe' : RSVP_FAILED }
   }
-  revalidatePath('/events')
-  return { success: true, going: true }
+  return { success: true, status }
 }

@@ -1,14 +1,15 @@
 'use client'
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Bell, Star, AlertTriangle, Ticket, BadgeCheck, XCircle, MessageSquare, CalendarX, CalendarClock, Inbox, type LucideIcon } from 'lucide-react'
+import { Bell, Star, AlertTriangle, Ticket, BadgeCheck, XCircle, MessageSquare, CalendarX, CalendarClock, Inbox, Heart, ImageIcon, ImageOff, EyeOff, MessageCircle, MapPinned, type LucideIcon } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { toast } from '@/shared/components/toast'
 import { safeInternalLink, timeAgo } from '@/features/notifications/format'
 
-type Notif = { id: string; kind: string; title: string; body: string | null; link: string | null; read: boolean; created_at: string }
+export type Notif = { id: string; kind: string; title: string; body: string | null; link: string | null; read: boolean; created_at: string }
 
 const HISTORY = 30
 const COLS = 'id, kind, title, body, link, read, created_at'
@@ -20,8 +21,11 @@ const ICON: Record<string, LucideIcon> = {
   claim_approved: BadgeCheck, claim_rejected: XCircle, review_reply: MessageSquare,
   event_cancelled: CalendarX, event_updated: CalendarClock,
   claim_new: Inbox, change_request_new: Inbox, change_request_resolved: BadgeCheck,
+  place_proposal_new: Inbox, place_proposal_resolved: BadgeCheck,
+  saved_place_event: Heart, photo_approved: ImageIcon, photo_rejected: ImageOff, review_blocked: EyeOff,
+  feedback_new: MessageCircle, feedback_resolved: BadgeCheck, place_correction: MapPinned,
 }
-const ALERT_KINDS = new Set(['review_critical', 'claim_rejected', 'event_cancelled'])
+const ALERT_KINDS = new Set(['review_critical', 'claim_rejected', 'event_cancelled', 'photo_rejected', 'review_blocked'])
 
 // ── Store-singleton de notificaciones ───────────────────────────────────────────────────────
 // El estado y el canal Realtime viven en el módulo: `ensure(userId)` es idempotente para el
@@ -69,7 +73,7 @@ function ensure(userId: string | null) {
 }
 
 // Marca como leídas en el store (optimista) y en la BD (el usuario solo puede tocar `read`).
-async function markRead(ids: string[]) {
+export async function markRead(ids: string[]) {
   if (!ids.length) return
   const set = new Set(ids)
   setItems(items.map((n) => (set.has(n.id) ? { ...n, read: true } : n)))
@@ -77,11 +81,18 @@ async function markRead(ids: string[]) {
   await createClient().from('notifications').update({ read: true } as never).in('id', ids)
 }
 
+/** Marca como leídas TODAS las del usuario (también las que no están cargadas en la campana). */
+export async function markAllRead() {
+  setItems(items.map((n) => (n.read ? n : { ...n, read: true })))
+  // La RLS limita el UPDATE a las filas propias; el filtro evita reescribir las ya leídas.
+  await createClient().from('notifications').update({ read: true } as never).eq('read', false)
+}
+
 const subscribe = (cb: () => void) => { listeners.add(cb); return () => { listeners.delete(cb) } }
 const getSnapshot = () => items
 const EMPTY: Notif[] = []
 
-function Row({ n, onOpen }: { n: Notif; onOpen: (n: Notif) => void }) {
+export function NotificationRow({ n, onOpen }: { n: Notif; onOpen: (n: Notif) => void }) {
   const Icon = ICON[n.kind] ?? Bell
   const alert = ALERT_KINDS.has(n.kind)
   return (
@@ -164,9 +175,12 @@ export function Notifications() {
             <p className="px-4 py-6 text-center text-sm text-muted">Nada por ahora.</p>
           ) : (
             <ul className="max-h-[min(24rem,60vh)] overflow-y-auto">
-              {list.map((n) => <Row key={n.id} n={n} onOpen={openItem} />)}
+              {list.map((n) => <NotificationRow key={n.id} n={n} onOpen={openItem} />)}
             </ul>
           )}
+          <Link href="/notifications" onClick={() => setOpen(false)} className="block border-t border-line px-4 py-2.5 text-center text-xs font-medium text-goospe-green hover:underline">
+            Ver todas
+          </Link>
         </div>
       )}
     </div>

@@ -1,15 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Calendar, Sparkles, Check, Ticket, Compass, MapPin } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
-import { toggleRsvp } from '@/actions/events'
+import { Calendar, Sparkles, Check, Star, Compass, MapPin } from 'lucide-react'
 import { track } from '@/lib/track'
-import { toast } from '@/shared/components/toast'
 import { useImgFallback } from '@/shared/components/photo-img'
 import { fmtInZone } from '@/lib/tz'
 import { EventAttendanceLive } from './EventAttendanceLive'
+import { useRsvp } from './use-rsvp'
 
 export type FeedEvent = {
   id: string
@@ -35,34 +32,13 @@ const fmtWhen = (s: string, tz: string | null | undefined) =>
   fmtInZone(s, tz, { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
 
 export function EventFeedCard({ ev }: { ev: FeedEvent }) {
-  const [going, setGoing] = useState(false)
-  const [authed, setAuthed] = useState<boolean | null>(null)
-  const [busy, setBusy] = useState(false)
+  const { status, busy, ready, choose } = useRsvp(ev.id)
   const img = useImgFallback()
+  const eventHref = `/events/${ev.id}`
 
-  useEffect(() => {
-    const sb = createClient()
-    sb.auth.getUser().then(async ({ data: { user } }) => {
-      setAuthed(!!user)
-      if (!user) return
-      const { data } = await sb.from('event_rsvps').select('event_id').eq('user_id', user.id).eq('event_id', ev.id).maybeSingle()
-      setGoing(!!data)
-    })
-  }, [ev.id])
-
-  async function onRsvp() {
-    if (authed === false) { window.location.href = '/login?next=/feed'; return }
-    setBusy(true)
-    const fd = new FormData(); fd.set('event_id', ev.id); fd.set('status', 'going')
-    const res = await toggleRsvp(fd)
-    setBusy(false)
-    if (res?.error) { toast.error(res.error); return }
-    if (res.going) { track('rsvp', { eventId: ev.id }); toast.success('¡Listo! Te esperamos') }
-    setGoing(!!res.going)
-  }
-
-  // "Apertura" del evento: desde su card se abre la ficha del lugar. Va solo con event_id (sin
-  // place_id) para no contarse dos veces en las vistas de la ficha, que registra DetailTracker.
+  // "Apertura" del evento: desde su card se abre la página del evento (o la ficha del lugar).
+  // Va solo con event_id (sin place_id) para no contarse dos veces en las vistas de la ficha,
+  // que registra DetailTracker.
   // Lo lee event_boost_stats (0039) para medir el rendimiento de un evento destacado.
   const onOpen = () => track('view_detail', { eventId: ev.id })
 
@@ -97,17 +73,30 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
       {/* acciones laterales (z por encima del bloque de info, que va después en el DOM) */}
       <div className="text-shadow-photo absolute bottom-40 right-4 z-[11] flex flex-col gap-5 text-white">
         <button
-          onClick={onRsvp}
-          disabled={busy || authed === null}
-          aria-pressed={going}
+          type="button"
+          onClick={() => choose('interested')}
+          disabled={busy || !ready}
+          aria-pressed={status === 'interested'}
           aria-busy={busy}
-          aria-label={going ? 'Cancelar asistencia' : 'Me interesa este evento'}
           className="flex flex-col items-center gap-1 disabled:opacity-60"
         >
-          <span className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur transition ${going ? 'bg-goospe-green' : 'bg-white/20'}`}>
-            {going ? <Check size={22} strokeWidth={2} /> : <Ticket size={22} strokeWidth={1.75} />}
+          <span className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur transition ${status === 'interested' ? 'bg-goospe-green' : 'bg-white/20'}`}>
+            <Star size={22} strokeWidth={1.75} fill={status === 'interested' ? 'currentColor' : 'none'} />
           </span>
-          <span className="text-xs">{going ? 'Asistiré' : 'Me interesa'}</span>
+          <span className="text-xs">Me interesa</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => choose('going')}
+          disabled={busy || !ready}
+          aria-pressed={status === 'going'}
+          aria-busy={busy}
+          className="flex flex-col items-center gap-1 disabled:opacity-60"
+        >
+          <span className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur transition ${status === 'going' ? 'bg-goospe-green' : 'bg-white/20'}`}>
+            <Check size={22} strokeWidth={2} />
+          </span>
+          <span className="text-xs">Asistiré</span>
         </button>
         <a
           href={`https://www.google.com/maps/dir/?api=1&destination=${ev.lat},${ev.lng}`}
@@ -127,12 +116,17 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
       {/* info — pr-20 deja espacio a las acciones laterales; pb-28 a la barra Decídeme */}
       <div className="text-shadow-photo absolute inset-x-0 bottom-0 z-10 space-y-2 p-5 pb-28 pr-20 text-white">
         <p className="text-sm font-medium text-goospe-green-light drop-shadow first-letter:uppercase">{fmtWhen(ev.starts_at, ev.timezone)}</p>
-        <h2 className="text-3xl font-medium leading-tight drop-shadow">{ev.name}</h2>
+        <h2 className="text-3xl font-medium leading-tight drop-shadow">
+          <Link href={eventHref} onClick={onOpen}>{ev.name}</Link>
+        </h2>
         <Link href={`/places/${ev.place_slug}`} onClick={onOpen} className="block text-white/80">
           en {ev.place_name} · {fmtDist(ev.distance_m)}
         </Link>
         <EventAttendanceLive eventId={ev.id} className="text-white/90" />
         {ev.description && <p className="line-clamp-2 max-w-md text-sm text-white/80">{ev.description}</p>}
+        <Link href={eventHref} onClick={onOpen} className="inline-flex items-center gap-1 text-sm font-medium text-white underline underline-offset-4">
+          Ver evento
+        </Link>
       </div>
     </section>
   )

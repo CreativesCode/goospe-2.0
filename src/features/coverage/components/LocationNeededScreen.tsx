@@ -1,6 +1,7 @@
 'use client'
 
 import { MapPin } from 'lucide-react'
+import { CitySwitcher } from '@/features/city/CitySwitcher'
 
 // Pantalla "activa tu ubicación": se muestra cuando NO pudimos obtener la ubicación real del
 // usuario (permiso denegado / timeout / navegador sin geolocalización). En vez de mostrar
@@ -39,6 +40,9 @@ export function LocationNeededScreen({
       >
         Explorar de todos modos
       </button>
+
+      {/* Salida sin geolocalización: elegir una ciudad a mano (el feed se recarga solo). */}
+      <CitySwitcher variant="dark" label="Elegir una ciudad" className="mt-6 !max-w-none !px-4 !py-2 !text-sm" />
 
       <p className="mt-10 max-w-xs text-xs text-white/60">
         Si ya la bloqueaste, actívala desde el candado 🔒 de la barra de direcciones y vuelve a

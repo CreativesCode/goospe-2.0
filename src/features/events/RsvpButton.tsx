@@ -1,57 +1,40 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Check } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
-import { toggleRsvp } from '@/actions/events'
-import { track } from '@/lib/track'
-import { toast } from '@/shared/components/toast'
+import { Check, Star } from 'lucide-react'
+import { useRsvp } from './use-rsvp'
 
-export function RsvpButton({ eventId }: { eventId: string }) {
-  const [going, setGoing] = useState(false)
-  const [authed, setAuthed] = useState<boolean | null>(null)
-  const [busy, setBusy] = useState(false)
+const base = 'inline-flex items-center justify-center gap-1.5 rounded-full font-medium transition disabled:opacity-60'
+const idle = 'border border-goospe-green/40 text-goospe-green-dark hover:bg-goospe-green/10'
+const active = 'border border-goospe-green bg-goospe-green text-white'
 
-  useEffect(() => {
-    const sb = createClient()
-    sb.auth.getUser().then(async ({ data: { user } }) => {
-      setAuthed(!!user)
-      if (!user) return
-      const { data } = await sb
-        .from('event_rsvps')
-        .select('event_id')
-        .eq('user_id', user.id)
-        .eq('event_id', eventId)
-        .maybeSingle()
-      setGoing(!!data)
-    })
-  }, [eventId])
-
-  async function onClick() {
-    if (authed === false) { window.location.href = '/login?next=/events'; return }
-    setBusy(true)
-    const fd = new FormData()
-    fd.set('event_id', eventId)
-    fd.set('status', 'going')
-    const res = await toggleRsvp(fd)
-    setBusy(false)
-    if (res?.error) { toast.error(res.error); return }
-    if (res.going) { track('rsvp', { eventId }); toast.success('¡Listo! Te esperamos') }
-    setGoing(!!res.going)
-  }
-
+/**
+ * Respuesta a un evento con dos opciones separadas: "Me interesa" y "Asistiré". Solo
+ * "Asistiré" suma al conteo público de asistentes. `size="lg"` es el de la página del evento.
+ */
+export function RsvpButton({ eventId, size = 'sm' }: { eventId: string; size?: 'sm' | 'lg' }) {
+  const { status, busy, ready, choose } = useRsvp(eventId)
+  const pad = size === 'lg' ? 'min-h-11 px-5 py-2.5 text-sm' : 'px-3 py-1.5 text-xs sm:text-sm'
+  const icon = size === 'lg' ? 17 : 14
   return (
-    <button
-      onClick={onClick}
-      disabled={busy || authed === null}
-      aria-pressed={going}
-      className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition disabled:opacity-60 ${
-        going
-          ? 'bg-goospe-green text-white'
-          : 'border border-goospe-green/40 text-goospe-green-dark hover:bg-goospe-green/10'
-      }`}
-    >
-      {busy ? 'Guardando…' : going ? <><Check size={15} strokeWidth={2} /> Asistiré</> : 'Me interesa'}
-    </button>
+    <div role="group" aria-label="Tu respuesta al evento" aria-busy={busy} className="flex shrink-0 flex-wrap gap-2">
+      <button
+        type="button"
+        onClick={() => choose('interested')}
+        disabled={busy || !ready}
+        aria-pressed={status === 'interested'}
+        className={`${base} ${pad} ${status === 'interested' ? active : idle}`}
+      >
+        <Star size={icon} strokeWidth={1.75} fill={status === 'interested' ? 'currentColor' : 'none'} /> Me interesa
+      </button>
+      <button
+        type="button"
+        onClick={() => choose('going')}
+        disabled={busy || !ready}
+        aria-pressed={status === 'going'}
+        className={`${base} ${pad} ${status === 'going' ? active : idle}`}
+      >
+        <Check size={icon} strokeWidth={2} /> Asistiré
+      </button>
+    </div>
   )
 }

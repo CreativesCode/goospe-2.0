@@ -1,10 +1,13 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Heart, Star, Ticket, Store, Calendar, Sparkles, ShieldCheck, ChevronRight, type LucideIcon } from 'lucide-react'
+import { Heart, Star, Ticket, Store, Calendar, Sparkles, ShieldCheck, ChevronRight, Pencil, History, Bell, KeyRound, MessageSquareText, type LucideIcon } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { taste } from '@/shared/lib/icons'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
+
+export const metadata: Metadata = { title: 'Mi perfil | Goospe', robots: { index: false } }
 
 export const dynamic = 'force-dynamic'
 
@@ -33,14 +36,19 @@ export default async function PerfilPage() {
 
   const STATS: { label: string; value: number; icon: LucideIcon; href: string }[] = [
     { label: 'Guardados', value: favs.count ?? 0, icon: Heart, href: '/saved' },
-    { label: 'Reseñas', value: revs.count ?? 0, icon: Star, href: '/feed' },
-    { label: 'Eventos', value: rsvps.count ?? 0, icon: Ticket, href: '/events' },
+    { label: 'Reseñas', value: revs.count ?? 0, icon: Star, href: '/profile/activity' },
+    { label: 'Eventos', value: rsvps.count ?? 0, icon: Ticket, href: '/profile/activity?tab=eventos' },
   ]
 
   const LINKS: { label: string; href: string; icon: LucideIcon }[] = [
+    { label: 'Editar perfil', href: '/profile/edit', icon: Pencil },
+    { label: 'Mi actividad', href: '/profile/activity', icon: History },
     { label: 'Mis guardados', href: '/saved', icon: Heart },
+    { label: 'Notificaciones', href: '/notifications', icon: Bell },
     { label: 'Eventos', href: '/events', icon: Calendar },
     { label: 'Mis gustos', href: '/onboarding', icon: Sparkles },
+    { label: 'Cuenta y seguridad', href: '/profile/account', icon: KeyRound },
+    { label: 'Enviar comentarios', href: '/feedback', icon: MessageSquareText },
     ...(isAdmin ? [{ label: 'Moderar contenido', href: '/admin/content', icon: ShieldCheck as LucideIcon }] : []),
   ]
 
@@ -59,10 +67,13 @@ export default async function PerfilPage() {
               {initial}
             </span>
           )}
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="truncate text-2xl font-medium text-fg">{name}</h1>
             <p className="truncate text-sm text-fg-soft">{user.email}</p>
           </div>
+          <Link href="/profile/edit" className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-line px-4 text-sm font-medium text-fg-soft transition hover:border-goospe-green/40 hover:text-fg">
+            <Pencil size={15} strokeWidth={1.75} /> Editar
+          </Link>
         </section>
 
         {/* stats */}
