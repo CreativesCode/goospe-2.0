@@ -30,7 +30,10 @@ usarlos en toda pantalla nueva.
 Backoffice `/admin/*` pasado al rediseño el 2026-10-19 (sin revisar en navegador: hace falta sesión
 de admin): lateral agrupado (Operación, Bandejas, Moderación, Métricas, Ajustes) como el panel del
 dueño, chips en móvil, `adminTitle` y `adminChip` en `src/features/admin/ui.ts`, botones verdes
-planos. Sigue con estilo antiguo solo la tarjeta de `/unsubscribe`.
+planos. El usuario lo revisó con la cuenta admin (2026-10-19). `/unsubscribe` vive ahora en el grupo `(auth)`
+(misma URL) y usa la pantalla partida. En `/admin/content` cada evento se despliega (`AdminEventRow`)
+con imagen, descripción, horario y lugar para decidir si ocultarlo. Ya no queda ninguna pantalla
+con el estilo antiguo.
 
 Sin revisar en navegador:
 - Panel de un lugar (`/panel/[placeId]`, secciones por `?tab=`): solo el dueño real tiene acceso.

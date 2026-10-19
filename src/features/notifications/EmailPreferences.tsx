@@ -77,24 +77,26 @@ export function UnsubscribeCard({ token, category, subscribed: initial }: {
 
   const Icon = subscribed ? Mail : MailX
   return (
-    <div className="space-y-4 text-center">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-tint text-ink">
-        <Icon size={30} strokeWidth={1.75} />
-      </div>
-      <h1 className="text-2xl font-medium text-fg">
+    <div>
+      <span className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-tint text-ink">
+        <Icon size={26} strokeWidth={1.75} />
+      </span>
+      <h1 className="mt-5 text-[30px] font-light leading-tight tracking-[-0.02em] text-fg">
         {subscribed ? (changed ? '¡Listo, sigues suscrito!' : `¿Dejar de recibir “${title}”?`) : 'Listo, te dimos de baja'}
       </h1>
-      <p role="status" className="text-fg-soft">
+      <p role="status" className="mt-1.5 text-fg-soft">
         {subscribed
           ? `Seguirás recibiendo “${title}” en tu correo.`
           : `Ya no te enviaremos “${title}”. Si fue un error, puedes volver a suscribirte aquí mismo.`}
       </p>
-      {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-      {subscribed ? (
-        !changed && <button type="button" disabled={busy} onClick={() => apply(false)} className={primaryBtn}>{busy ? 'Guardando…' : 'Sí, darme de baja'}</button>
-      ) : (
-        <button type="button" disabled={busy} onClick={() => apply(true)} className={ghostBtn}>{busy ? 'Guardando…' : 'Volver a suscribirme'}</button>
-      )}
+      {error && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      <div className="mt-6">
+        {subscribed ? (
+          !changed && <button type="button" disabled={busy} onClick={() => apply(false)} className={`${primaryBtn} h-[52px] w-full`}>{busy ? 'Guardando…' : 'Sí, darme de baja'}</button>
+        ) : (
+          <button type="button" disabled={busy} onClick={() => apply(true)} className={`${ghostBtn} h-[52px] w-full`}>{busy ? 'Guardando…' : 'Volver a suscribirme'}</button>
+        )}
+      </div>
     </div>
   )
 }
