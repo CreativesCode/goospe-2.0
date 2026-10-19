@@ -21,15 +21,15 @@ export function PlaceIdentity({ placeId, name, addressLine, mapUrl, pendingKinds
       <p className={`mb-4 ${hintClass}`}>Estos dos datos los valida nuestro equipo antes de cambiarlos.</p>
       <div className="space-y-4">
         <div>
-          <p className="flex items-center gap-2 text-sm text-fg"><Store size={16} strokeWidth={1.75} className="shrink-0 text-goospe-green" /> <span className="min-w-0 [overflow-wrap:anywhere]">{name}</span></p>
+          <p className="flex items-center gap-2 text-sm text-fg"><Store size={16} strokeWidth={1.75} className="shrink-0 text-ink" /> <span className="min-w-0 [overflow-wrap:anywhere]">{name}</span></p>
           <ChangeRequestBox placeId={placeId} kind="name" pending={pendingKinds.includes('name')} />
         </div>
         <div className="border-t border-line pt-4">
           <p className="flex items-center gap-2 text-sm text-fg">
-            <MapPin size={16} strokeWidth={1.75} className="shrink-0 text-goospe-green" />
+            <MapPin size={16} strokeWidth={1.75} className="shrink-0 text-ink" />
             <span className="min-w-0 [overflow-wrap:anywhere]">{addressLine ?? 'Sin dirección'}</span>
           </p>
-          {mapUrl && <a href={mapUrl} target="_blank" rel="noreferrer" className="ml-6 text-xs text-goospe-green hover:underline">Ver el pin actual en el mapa</a>}
+          {mapUrl && <a href={mapUrl} target="_blank" rel="noreferrer" className="ml-6 text-xs text-ink hover:underline">Ver el pin actual en el mapa</a>}
           <div><ChangeRequestBox placeId={placeId} kind="location" pending={pendingKinds.includes('location')} /></div>
         </div>
       </div>

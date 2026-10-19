@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Send } from 'lucide-react'
 import { proposePlace } from '@/actions/place-proposals'
 import { toast } from '@/shared/components/toast'
-import { hintClass, inputSm, labelClass, primaryBtn } from '@/features/business/ui'
+import { fieldClass, hintClass, labelClass, primaryBtn } from '@/features/business/ui'
 import {
   PROPOSAL_ADDRESS_MAX, PROPOSAL_CITY_MAX, PROPOSAL_NAME_MAX, PROPOSAL_REFERENCE_MAX,
 } from '@/features/business/place-proposal-schema'
@@ -47,12 +47,12 @@ export function PlaceProposalForm({ categories, cities, defaultName = '' }: {
     <form onSubmit={onSubmit} className="space-y-4">
       <label className={labelClass}>
         Nombre del lugar
-        <input name="name" required minLength={2} maxLength={PROPOSAL_NAME_MAX} defaultValue={defaultName} className={`mt-1 ${inputSm}`} />
+        <input name="name" required minLength={2} maxLength={PROPOSAL_NAME_MAX} defaultValue={defaultName} className={fieldClass} />
       </label>
 
       <label className={labelClass}>
         Categoría
-        <select name="category_id" required defaultValue="" className={`select-chevron mt-1 ${inputSm}`}>
+        <select name="category_id" required defaultValue="" className={`select-chevron ${fieldClass}`}>
           <option value="" disabled>Elige una categoría</option>
           {categories.map((c) => <option key={c.id} value={c.id}>{c.emoji ? `${c.emoji} ` : ''}{c.name}</option>)}
         </select>
@@ -61,11 +61,11 @@ export function PlaceProposalForm({ categories, cities, defaultName = '' }: {
       <div className="grid gap-4 sm:grid-cols-2">
         <label className={labelClass}>
           Dirección
-          <input name="address" required minLength={3} maxLength={PROPOSAL_ADDRESS_MAX} placeholder="Calle y número" className={`mt-1 ${inputSm}`} />
+          <input name="address" required minLength={3} maxLength={PROPOSAL_ADDRESS_MAX} placeholder="Calle y número" className={fieldClass} />
         </label>
         <label className={labelClass}>
           Ciudad
-          <select name="city_id" required value={city} onChange={(e) => setCity(e.target.value)} className={`select-chevron mt-1 ${inputSm}`}>
+          <select name="city_id" required value={city} onChange={(e) => setCity(e.target.value)} className={`select-chevron ${fieldClass}`}>
             <option value="" disabled>Elige la ciudad</option>
             {cities.map((c) => <option key={c.id} value={c.id}>{c.name} · {c.country}</option>)}
             <option value={OTHER_CITY}>Otra (no aparece en la lista)</option>
@@ -75,14 +75,14 @@ export function PlaceProposalForm({ categories, cities, defaultName = '' }: {
       {city === OTHER_CITY && (
         <label className={labelClass}>
           ¿En qué ciudad está?
-          <input name="city_name" required maxLength={PROPOSAL_CITY_MAX} placeholder="Ciudad y país" className={`mt-1 ${inputSm}`} />
+          <input name="city_name" required maxLength={PROPOSAL_CITY_MAX} placeholder="Ciudad y país" className={fieldClass} />
         </label>
       )}
 
       <label className={labelClass}>
         Ubicación en el mapa
         <input name="reference" required minLength={5} maxLength={PROPOSAL_REFERENCE_MAX}
-          placeholder="https://maps.app.goo.gl/… o -41.3195, -72.9854" className={`mt-1 ${inputSm}`} />
+          placeholder="https://maps.app.goo.gl/… o -41.3195, -72.9854" className={fieldClass} />
         <span className={`mt-1 block font-normal ${hintClass}`}>
           Pega el enlace de Google Maps del local o sus coordenadas (lat, lng). Si no los tienes, describe dónde está y nuestro equipo ubica el pin.
         </span>
@@ -91,17 +91,17 @@ export function PlaceProposalForm({ categories, cities, defaultName = '' }: {
       <div className="grid gap-4 sm:grid-cols-2">
         <label className={labelClass}>
           Teléfono <span className="font-normal text-muted">(opcional)</span>
-          <input name="phone" type="tel" maxLength={30} className={`mt-1 ${inputSm}`} />
+          <input name="phone" type="tel" maxLength={30} className={fieldClass} />
         </label>
         <label className={labelClass}>
           Sitio web <span className="font-normal text-muted">(opcional)</span>
-          <input name="website" inputMode="url" maxLength={300} placeholder="tunegocio.cl" className={`mt-1 ${inputSm}`} />
+          <input name="website" inputMode="url" maxLength={300} placeholder="tunegocio.cl" className={fieldClass} />
         </label>
       </div>
 
       <label className={labelClass}>
         Nota para el equipo <span className="font-normal text-muted">(opcional)</span>
-        <textarea name="message" rows={3} maxLength={1000} placeholder="Cuéntanos tu relación con el lugar o cómo confirmamos que existe." className={`mt-1 ${inputSm}`} />
+        <textarea name="message" rows={3} maxLength={1000} placeholder="Cuéntanos tu relación con el lugar o cómo confirmamos que existe." className={fieldClass} />
       </label>
 
       {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}

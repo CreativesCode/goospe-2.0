@@ -24,14 +24,14 @@ export function LocationNotice({
       role="status"
       className={`flex items-center gap-2.5 rounded-xl border border-line bg-card px-3.5 py-2.5 text-sm text-fg-soft ${className}`}
     >
-      <MapPin size={16} strokeWidth={1.75} className="shrink-0 text-goospe-green" />
+      <MapPin size={16} strokeWidth={1.75} className="shrink-0 text-ink" />
       <span className="min-w-0 flex-1">
         Mostrando una <b className="font-medium text-fg">ubicación aproximada</b> — activa tu ubicación para distancias reales.
       </span>
       {onRetry && (
         <button
           onClick={onRetry}
-          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-goospe-green/10 px-3 py-1 text-xs font-medium text-goospe-green-dark transition hover:bg-goospe-green/20"
+          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-tint px-3 py-1 text-xs font-medium text-ink transition hover:bg-tint2"
         >
           <RefreshCw size={13} strokeWidth={2} /> Reintentar
         </button>

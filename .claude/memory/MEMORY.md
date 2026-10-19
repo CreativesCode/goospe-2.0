@@ -9,6 +9,7 @@
 ## project/ — Proyectos y decisiones activas
 - [Estado del plan](project/estado-del-plan.md) — fase actual del PRP-002 y qué espera al usuario
 - [Decisiones](project/decisiones.md) — decisiones de producto y datos ya tomadas
+- [Rediseño audaz](project/rediseno-audaz.md) — convenciones del rediseño visual y qué falta revisar
 
 ## feedback/ — Correcciones y preferencias
 - [Forma de trabajo](feedback/forma-de-trabajo.md) — push continuo, memoria al día, borrados con confirmación

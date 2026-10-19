@@ -14,7 +14,7 @@ export default function NotFound() {
     <main className="flex min-h-[100dvh] flex-col items-center justify-center gap-5 bg-surface px-6 text-center">
       <img src="/brand/isotipo-color.svg" alt="Goospe" className="h-14 w-14" />
       <div>
-        <p className="text-sm font-medium uppercase tracking-[0.08em] text-goospe-green">Error 404</p>
+        <p className="text-sm font-medium uppercase tracking-[0.08em] text-ink">Error 404</p>
         <h1 className="mt-1 text-3xl font-light tracking-tight text-fg">
           Aquí no hay <span className="font-medium">nada</span>
         </h1>
@@ -25,7 +25,7 @@ export default function NotFound() {
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Link
           href="/feed"
-          className="inline-flex items-center gap-2 rounded-full bg-goospe-gradient px-6 py-2.5 text-sm font-medium text-white shadow"
+          className="inline-flex items-center gap-2 rounded-full bg-goospe-gradient px-6 py-2.5 text-sm font-medium text-on-brand shadow"
         >
           <Compass size={16} strokeWidth={1.75} /> Explorar lugares
         </Link>

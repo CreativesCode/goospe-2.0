@@ -1,197 +1,280 @@
 'use client'
 
-import { memo, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Heart, Star, Sparkles } from 'lucide-react'
+import { Heart, Sparkles, Ban, Share2, Compass, ChevronUp, ChevronDown, Mouse, LayoutGrid } from 'lucide-react'
 import { categoryIcon } from '@/shared/lib/icons'
+import { appContainer, eyebrow, pageTitle, pill } from '@/shared/lib/ui'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
 import { LocationNotice } from '@/shared/components/location-notice'
-import { useImgFallback } from '@/shared/components/photo-img'
+import { PhotoImg } from '@/shared/components/photo-img'
 import { OpenNowBadge } from '@/features/places/OpenNowBadge'
+import { PlaceCard } from '@/features/places/PlaceCard'
 import { CitySwitcher } from '@/features/city/CitySwitcher'
 import { DotList } from './dot-list'
 import { LoadMore } from './load-more'
+import { buildWhy } from './feed-why'
 import { useCardImpressions } from './impressions'
-import { fmtDistDrive, type FeedController, type FeedItem } from './use-feed'
+import { useDeck } from './use-deck'
+import { directionsHref, fmtDistDrive, type FeedController, type FeedItem } from './use-feed'
 import { useScrollRestore } from './use-scroll-restore'
 
-function Thumb({ p, className, priority, iconSize = 32 }: { p: FeedItem; className?: string; priority?: boolean; iconSize?: number }) {
-  const img = useImgFallback()
-  if (p.photo_url && !img.failed) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        ref={img.ref}
-        src={p.photo_url}
-        alt={p.name}
-        loading={priority ? 'eager' : 'lazy'}
-        fetchPriority={priority ? 'high' : 'auto'}
-        decoding="async"
-        onError={img.onError}
-        className={`object-cover ${className ?? ''}`}
-      />
-    )
-  }
+const GLASS_BTN = 'inline-flex h-[52px] items-center gap-2 rounded-full bg-white/[0.14] px-[22px] font-medium text-white backdrop-blur-[8px] transition hover:bg-white/20'
+const ARROW_BTN = 'flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.16] text-white backdrop-blur-[8px] transition hover:bg-white/25 disabled:opacity-40'
+const CHIP_DARK = 'inline-flex items-center gap-1.5 rounded-full bg-[rgba(10,10,9,0.45)] px-3 py-1.5 leading-none text-white'
+
+/**
+ * Una tarjeta del mazo web. Memoizada: con `saved` (boolean) y los callbacks estables del
+ * feed solo se re-renderiza la tarjeta afectada al guardar o descartar.
+ */
+const DeckCard = memo(function DeckCard({
+  p,
+  position,
+  saved,
+  priority,
+  onSave,
+  onShare,
+  onDismiss,
+  onDirections,
+}: {
+  p: FeedItem
+  /** "3 de 40" */
+  position: string
+  saved: boolean
+  priority?: boolean
+  onSave: (p: FeedItem) => void
+  onShare: (p: FeedItem) => void
+  onDismiss: (id: string) => void
+  onDirections: (p: FeedItem) => void
+}) {
   const Cat = categoryIcon(p.category_emoji)
   return (
-    <div className={`flex items-center justify-center bg-goospe-gradient text-white ${className ?? ''}`}>
-      <Cat size={iconSize} strokeWidth={1.5} />
+    <article data-track-id={p.id} data-kind="place" className="relative h-full snap-start snap-always overflow-hidden">
+      <PhotoImg
+        src={p.photo_url}
+        alt={p.name}
+        priority={priority}
+        tone="deep"
+        className="absolute inset-0 h-full w-full object-cover pb-40 [&:is(img)]:pb-0"
+        fallback={<Cat size={110} strokeWidth={1.1} />}
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(10,10,9,0.9),rgba(10,10,9,0)_58%,rgba(10,10,9,0.3))]" />
+
+      <div className="absolute left-6 top-[22px] flex flex-wrap gap-2 text-xs font-medium">
+        {p.category_name && <span className={CHIP_DARK}><Cat size={13} strokeWidth={2} /> {p.category_name}</span>}
+        <OpenNowBadge hours={p.hours} timezone={p.timezone} className="!px-3 !py-1.5" />
+        {p.boosted && (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-goospe-gradient px-3 py-1.5 leading-none text-on-brand">
+            <Sparkles size={13} strokeWidth={2} /> Destacado
+          </span>
+        )}
+      </div>
+      <div className={`${CHIP_DARK} absolute right-[22px] top-[22px] text-xs`}>{position}</div>
+
+      <div className="text-shadow-photo absolute bottom-[30px] left-8 right-24 text-white">
+        <DotList className="flex flex-wrap items-center gap-2 text-[15px] text-white/[0.82]">
+          <span>{fmtDistDrive(p.distance_m)}</span>
+          {p.rating > 0 ? <span>★ {Number(p.rating).toFixed(1)}</span> : null}
+          {p.price_level ? <span>{'$'.repeat(p.price_level)}</span> : null}
+        </DotList>
+        <Link href={`/places/${p.slug}`} className="mt-2 block">
+          <h2 className="text-[clamp(36px,4vw,56px)] font-medium leading-none tracking-[-0.03em]">{p.name}</h2>
+        </Link>
+        {p.vibe_line && <p className="mt-2 text-xl text-goospe-green-light">{p.vibe_line}</p>}
+        {p.description && <p className="mt-2.5 line-clamp-2 max-w-[520px] text-[15px] leading-normal text-white/85">{p.description}</p>}
+        <div className="mt-[22px] flex flex-wrap gap-2.5 text-[15px] [text-shadow:none]">
+          <button onClick={() => onDismiss(p.id)} aria-label="Paso: descartar este lugar" className={GLASS_BTN}>
+            <Ban size={17} strokeWidth={1.75} /> Paso
+          </button>
+          <button onClick={() => onShare(p)} className={GLASS_BTN}>
+            <Share2 size={17} strokeWidth={1.75} /> Compartir
+          </button>
+          <a
+            href={directionsHref(p.lat, p.lng)}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => onDirections(p)}
+            className="inline-flex h-[52px] items-center gap-2 rounded-full bg-white px-[22px] font-medium text-[#1C1C1A] transition hover:bg-white/90"
+          >
+            <Compass size={17} strokeWidth={1.75} /> Cómo llego
+          </a>
+          <button
+            onClick={() => onSave(p)}
+            aria-pressed={saved}
+            className={`inline-flex h-[52px] items-center gap-2 rounded-full px-6 font-medium transition ${
+              saved ? 'bg-white/[0.14] text-goospe-green-light backdrop-blur-[8px]' : 'bg-goospe-green text-on-brand hover:brightness-105'
+            }`}
+          >
+            <Heart size={17} strokeWidth={1.75} fill={saved ? 'currentColor' : 'none'} /> {saved ? 'Guardado' : 'Guardar'}
+          </button>
+        </div>
+      </div>
+    </article>
+  )
+})
+
+/** Tarjeta oscura del panel lateral al llegar al final del mazo. */
+function DeckDone({ onRestart }: { onRestart: () => void }) {
+  return (
+    <div className="rounded-[20px] bg-deep p-5 text-deep-soft">
+      <div className="text-[17px] font-medium text-[#F3EFE8]">Viste todo cerca de ti</div>
+      <p className="mb-3.5 mt-1 text-sm">¿Aún no te decides? Te damos 3 opciones.</p>
+      <div className="flex flex-wrap gap-2">
+        <Link href="/concierge" className="inline-flex h-[42px] items-center gap-[7px] rounded-full bg-goospe-green px-[18px] text-sm font-medium text-on-brand">
+          <Sparkles size={15} strokeWidth={1.75} /> Decídeme
+        </Link>
+        <button onClick={onRestart} className="h-[42px] rounded-full bg-white/10 px-4 text-sm text-white transition hover:bg-white/20">Volver al inicio</button>
+      </div>
     </div>
   )
 }
 
 /**
- * Card pequeña del bento (lugar no destacado). Memoizada: con `onSave` estable (del feed)
- * y `p` referencialmente estable, solo se re-renderiza la card afectada al guardar.
- */
-const PlaceCard = memo(function PlaceCard({ p, saved, onSave }: { p: FeedItem; saved: boolean; onSave: (p: FeedItem) => void }) {
-  return (
-    <Link
-      href={`/places/${p.slug}`}
-      data-track-id={p.id}
-      className="group relative overflow-hidden rounded-2xl border border-line bg-card transition hover:shadow-md"
-    >
-      <Thumb p={p} className="h-32 w-full" />
-      <OpenNowBadge hours={p.hours} timezone={p.timezone} onlyOpen className="absolute left-3 top-3 shadow" />
-      <button
-        onClick={(e) => { e.preventDefault(); onSave(p) }}
-        aria-pressed={saved}
-        aria-label={saved ? 'Quitar de guardados' : 'Guardar'}
-        className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full backdrop-blur transition ${saved ? 'bg-goospe-green text-white' : 'bg-black/30 text-white opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100'}`}
-      >
-        <Heart size={16} strokeWidth={1.9} fill={saved ? 'currentColor' : 'none'} />
-      </button>
-      <div className="space-y-0.5 p-4">
-        <div className="truncate font-medium text-fg">{p.name}</div>
-        {p.vibe_line && <div className="line-clamp-2 text-sm text-goospe-green">{p.vibe_line}</div>}
-        <div className="pt-1 text-xs text-muted">
-          {p.price_level ? `${'$'.repeat(p.price_level)} · ` : ''}{fmtDistDrive(p.distance_m)}
-        </div>
-      </div>
-    </Link>
-  )
-})
-
-/**
- * Feed web — tablero de descubrimiento (claro, bento). Destacado grande + grid de
- * cards, con chips de filtro por categoría. Sigue el mock `02 · Feed — tablero`.
+ * Feed web y tablet — mazo de decisión (640 px; 560 en tablet) con scroll vertical y snap, y
+ * un panel lateral con el porqué del lugar activo, el progreso y "lo que sigue". En tablet el
+ * panel se apila debajo del mazo. Rueda, botones ↑/↓ y flechas del teclado avanzan el mazo.
  */
 export function FeedDesktop({ feed }: { feed: FeedController }) {
-  const { items, isSaved, onSave, location, whenLabel, geoSource, retryLocation, hasMore, loadingMore, loadMore, feedPage, settled } = feed
+  const { items, isSaved, onSave, onDismiss, onShare, onDirections, location, whenLabel, geoSource, retryLocation, hasMore, loadingMore, loadMore, feedPage, settled } = feed
   const [cat, setCat] = useState<string | null>(null)
-  const gridRef = useRef<HTMLDivElement>(null)
-  const mainRef = useRef<HTMLElement>(null)
+  const deck = useDeck()
+  const { ref: deckRef, jumpTo, step } = deck
 
-  // Volver al mismo punto del tablero tras visitar una ficha: el navegador restauraba el scroll
-  // contra la primera tanda (40 cards) y se quedaba corto. Aquí se restaura con la lista entera.
-  useScrollRestore('desktop', settled && items.length > 0, { anchor: mainRef })
-
-  // Categorías presentes en los datos → chips "Todo" + categorías.
+  // Categorías presentes en los datos → chips "Todo" + categorías (con su icono).
   const categories = useMemo(() => {
-    const set = new Set<string>()
-    items.forEach((p) => { if (p.category_name) set.add(p.category_name) })
-    return [...set].slice(0, 5)
+    const seen = new Map<string, string | null>()
+    items.forEach((p) => { if (p.category_name && !seen.has(p.category_name)) seen.set(p.category_name, p.category_emoji) })
+    return [...seen].slice(0, 5).map(([name, emoji]) => ({ name, icon: categoryIcon(emoji) }))
   }, [items])
 
-  const filtered = useMemo(
-    () => (cat ? items.filter((p) => p.category_name === cat) : items),
-    [items, cat]
-  )
+  const filtered = useMemo(() => (cat ? items.filter((p) => p.category_name === cat) : items), [items, cat])
+  const total = filtered.length
+  const active = Math.min(deck.active, Math.max(0, total - 1))
+  const current = filtered[active]
 
-  // Card grande: el primer lugar con boost activo, o el primero de la lista filtrada.
-  const featured = filtered.find((p) => p.boosted) ?? filtered[0]
-  const rest = filtered.filter((p) => p.id !== featured?.id)
+  // Otra categoría = otro mazo: vuelve a la primera tarjeta.
+  useEffect(() => { jumpTo(0, true) }, [cat, jumpTo])
 
-  // view_card: cada card que permanece visible ≥2 s cuenta una vez (antes solo se contaba la
-  // destacada, y las demás cards del tablero nunca registraban impresión).
-  useCardImpressions(gridRef, filtered)
+  // view_card: cada tarjeta que permanece visible ≥2 s cuenta una vez (ver impressions.ts).
+  useCardImpressions(deckRef, filtered)
+
+  // Volver a la misma tarjeta tras visitar una ficha; se restaura con la lista definitiva.
+  useScrollRestore('desktop', settled && items.length > 0, { target: deckRef })
+
+  const countLabel = `${total}${hasMore ? '+' : ''}`
 
   return (
-    <main ref={mainRef} className="flex min-h-screen flex-col bg-surface">
+    <main className="flex min-h-screen flex-col bg-surface">
       <AppNav />
 
-      <div className="mx-auto w-full max-w-6xl flex-1 px-8 py-8">
+      <div className={`${appContainer} flex-1 pb-12 pt-7`}>
         <LocationNotice source={geoSource} onRetry={retryLocation} className="mb-5" />
+
         {/* encabezado + filtros */}
-        <div className="mb-6 flex items-end justify-between gap-4">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <div className="flex flex-wrap items-center gap-x-2 text-sm text-muted">
-              {whenLabel && <span>{whenLabel} ·</span>}
+            <div className="flex flex-wrap items-center gap-x-1.5 text-sm text-fg-soft">
               <CitySwitcher variant="inline" label={location} />
+              {whenLabel && <span className="text-muted">· {whenLabel}</span>}
             </div>
-            <h1 className="mt-1 text-4xl font-light tracking-tight text-fg">
-              Para <span className="font-medium">ti</span>
-            </h1>
+            <h1 className={`${pageTitle} mt-1.5`}>Para <span className="font-medium">ti</span></h1>
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <button
-              onClick={() => setCat(null)}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${cat === null ? 'bg-goospe-green text-white' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}
-            >
-              Todo
+          <div className="no-scrollbar flex max-w-full gap-2 overflow-x-auto pb-0.5">
+            <button onClick={() => setCat(null)} aria-pressed={cat === null} className={pill(cat === null)}>
+              <LayoutGrid size={15} strokeWidth={1.75} /> Todo
             </button>
-            {categories.map((c) => (
-              <button
-                key={c}
-                onClick={() => setCat(cat === c ? null : c)}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition ${cat === c ? 'bg-goospe-green text-white' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}
-              >
-                {c}
+            {categories.map(({ name, icon: Icon }) => (
+              <button key={name} onClick={() => setCat(cat === name ? null : name)} aria-pressed={cat === name} className={pill(cat === name)}>
+                <Icon size={15} strokeWidth={1.75} /> {name}
               </button>
             ))}
           </div>
         </div>
 
-        {!featured ? (
-          <p className="py-20 text-center text-muted">No hay lugares en esta categoría.</p>
-        ) : (
-          <div ref={gridRef} className="grid items-stretch gap-5 [grid-auto-rows:minmax(208px,auto)] [grid-template-columns:2fr_1fr_1fr]">
-            {/* card grande */}
-            <Link
-              href={`/places/${featured.slug}`}
-              data-track-id={featured.id}
-              className="group relative row-span-2 overflow-hidden rounded-3xl shadow-lg"
+        <div className="mt-6 grid items-start gap-7 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+          {/* mazo */}
+          <div className="relative h-[560px] overflow-hidden rounded-[32px] bg-[#121311] lg:h-[640px]">
+            <div
+              // key: al cambiar la tanda SSR por la lista real el contenedor se monta de nuevo. Sin esto
+              // el navegador re-ajusta el snap siguiendo a la tarjeta que estaba en pantalla, que en la
+              // lista real puede haber quedado en la posición 30.
+              key={settled ? 'live' : 'seed'}
+              ref={deckRef}
+              onScroll={deck.onScroll}
+              tabIndex={0}
+              aria-label="Lugares sugeridos"
+              className="no-scrollbar absolute inset-0 snap-y snap-mandatory overflow-y-auto overscroll-contain outline-none [overflow-anchor:none]"
             >
-              <Thumb key={featured.id} p={featured} priority iconSize={72} className="absolute inset-0 h-full w-full transition duration-500 group-hover:scale-[1.03]" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/20" />
-              <div className="absolute left-5 top-5 flex flex-wrap items-center gap-2">
-                {/* "Destacado" solo si el lugar tiene un boost activo (antes salía siempre). */}
-                {featured.boosted && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-goospe-gradient px-3.5 py-1.5 text-xs font-semibold text-white ring-1 ring-white/40">
-                    <Sparkles size={13} strokeWidth={2} /> Destacado
-                  </span>
-                )}
-                <OpenNowBadge hours={featured.hours} timezone={featured.timezone} onlyOpen className="px-3.5 py-1.5" />
+              {filtered.map((p, i) => (
+                <DeckCard
+                  key={p.id}
+                  p={p}
+                  position={`${i + 1} de ${countLabel}`}
+                  saved={isSaved(p.id)}
+                  priority={i === 0}
+                  onSave={onSave}
+                  onShare={onShare}
+                  onDismiss={onDismiss}
+                  onDirections={onDirections}
+                />
+              ))}
+              {total === 0 && (
+                <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center text-[#C7C1B7]">
+                  <p>No hay lugares en esta categoría.</p>
+                  {cat && <button onClick={() => setCat(null)} className="h-[42px] rounded-full bg-white/10 px-4 text-sm text-white">Ver todo</button>}
+                </div>
+              )}
+              {/* Con un filtro activo el "cargar más" es manual: en automático recorrería toda
+                  la ciudad buscando esa categoría. */}
+              <LoadMore
+                hasMore={hasMore}
+                loading={loadingMore}
+                onLoadMore={loadMore}
+                watch={feedPage}
+                root={deckRef}
+                rootMargin="150% 0px"
+                auto={cat === null}
+                className="h-24 !text-white/60"
+              />
+            </div>
+            {total > 1 && (
+              <div className="absolute right-5 top-1/2 flex -translate-y-1/2 flex-col gap-2">
+                <button onClick={() => step(-1)} disabled={active === 0} aria-label="Anterior" className={ARROW_BTN}><ChevronUp size={20} strokeWidth={1.75} /></button>
+                <button onClick={() => step(1)} disabled={active >= total - 1} aria-label="Siguiente" className={ARROW_BTN}><ChevronDown size={20} strokeWidth={1.75} /></button>
               </div>
-              <div className="text-shadow-photo absolute inset-x-6 bottom-6 text-white">
-                <h2 className="text-3xl font-medium leading-tight tracking-tight drop-shadow">{featured.name}</h2>
-                {featured.vibe_line && <p className="mt-1.5 text-lg text-goospe-green-light drop-shadow">{featured.vibe_line}</p>}
-                <DotList className="mt-2.5 flex items-center gap-2 text-sm text-white/85">
-                  {featured.rating > 0 ? <span className="inline-flex items-center gap-1"><Star size={14} strokeWidth={1.75} fill="currentColor" /> {Number(featured.rating).toFixed(1)}</span> : null}
-                  {featured.price_level ? <span>{'$'.repeat(featured.price_level)}</span> : null}
-                  <span>{fmtDistDrive(featured.distance_m)}</span>
-                </DotList>
-              </div>
-            </Link>
-
-            {/* resto */}
-            {rest.map((p) => (
-              <PlaceCard key={p.id} p={p} saved={isSaved(p.id)} onSave={onSave} />
-            ))}
+            )}
           </div>
-        )}
 
-        {/* Con un filtro activo el "cargar más" es manual: en automático recorrería toda la
-            ciudad buscando esa categoría. */}
-        <LoadMore
-          hasMore={hasMore}
-          loading={loadingMore}
-          onLoadMore={loadMore}
-          watch={feedPage}
-          auto={cat === null}
-          className="mt-6"
-        />
+          {/* panel lateral */}
+          {current && (
+            <aside className="flex min-w-0 flex-col gap-3">
+              <div className="rounded-[20px] bg-tint px-5 py-[18px]">
+                <div className="flex items-center gap-[7px] text-[13px] font-medium text-ink">
+                  <Sparkles size={14} strokeWidth={1.75} className="shrink-0" /> Por qué te sugerimos {current.name}
+                </div>
+                <p className="mt-1.5 text-sm leading-normal text-fg-soft">{buildWhy(current)}</p>
+              </div>
+
+              <div className="flex items-center gap-3 text-[13px] text-muted">
+                <span className="shrink-0">{active + 1} de {countLabel}</span>
+                <div className="h-1 flex-1 overflow-hidden rounded-full bg-line">
+                  <div className="h-full bg-goospe-green transition-[width] duration-300" style={{ width: `${Math.round(((active + 1) / total) * 100)}%` }} />
+                </div>
+                <span className="flex shrink-0 items-center gap-1"><Mouse size={14} strokeWidth={1.75} /> rueda o ↑ ↓</span>
+              </div>
+
+              {active < total - 1 && <div className={`${eyebrow} mt-1.5`}>Lo que sigue</div>}
+              {filtered.slice(active + 1, active + 6).map((p, k) => (
+                <div key={p.id} className="h-24">
+                  <PlaceCard place={p} layout="row" onOpen={() => jumpTo(active + 1 + k)} />
+                </div>
+              ))}
+
+              {active >= total - 1 && !hasMore && <DeckDone onRestart={() => jumpTo(0)} />}
+            </aside>
+          )}
+        </div>
       </div>
 
       <AppFooter />

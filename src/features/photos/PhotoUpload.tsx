@@ -44,14 +44,14 @@ export function PhotoUpload({ placeId }: { placeId: string }) {
   if (authed === false) {
     return (
       <p className="mt-3 text-sm text-fg-soft">
-        <Link href={`/login?next=${encodeURIComponent(pathname)}`} className="font-medium text-goospe-green hover:underline">Inicia sesión</Link> para aportar fotos de este lugar.
+        <Link href={`/login?next=${encodeURIComponent(pathname)}`} className="font-medium text-ink hover:underline">Inicia sesión</Link> para aportar fotos de este lugar.
       </p>
     )
   }
 
   return (
     <div className="mt-3">
-      <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-goospe-green/40 px-4 py-2 text-sm font-medium text-goospe-green-dark transition hover:bg-goospe-green/10">
+      <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-goospe-green/40 px-4 py-2 text-sm font-medium text-ink transition hover:bg-tint">
         <input
           ref={inputRef}
           type="file"
@@ -64,7 +64,7 @@ export function PhotoUpload({ placeId }: { placeId: string }) {
       </label>
       <UploadStatusList items={uploads.items} className="mt-2 max-w-sm" />
       {msg && (
-        <p className={`mt-2 text-sm ${msg.ok ? 'text-goospe-green-dark' : 'text-red-600'}`}>{msg.text}</p>
+        <p className={`mt-2 text-sm ${msg.ok ? 'text-ink' : 'text-red-600'}`}>{msg.text}</p>
       )}
     </div>
   )

@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Bell, Settings } from 'lucide-react'
+import { Settings } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
+import { PageHeader } from '@/shared/components/page-header'
+import { pageShell } from '@/shared/lib/ui'
 import { NotificationHistory } from '@/features/notifications/NotificationHistory'
 import type { Notif } from '@/features/notifications/Notifications'
 import { pageRange, totalPages } from '@/features/notifications/kinds'
@@ -47,15 +49,16 @@ export default async function NotificationsPage({ searchParams }: { searchParams
   return (
     <main className="flex min-h-screen flex-col bg-surface">
       <AppNav />
-      <div className="mx-auto w-full max-w-2xl px-5 py-8">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h1 className="inline-flex items-center gap-2 text-2xl font-medium text-fg">
-            <Bell size={22} strokeWidth={1.75} className="text-goospe-green" /> Notificaciones
-          </h1>
-          <Link href="/profile/account#avisos" className="inline-flex min-h-11 items-center gap-1.5 text-sm text-fg-soft hover:text-fg">
-            <Settings size={16} strokeWidth={1.75} /> Preferencias
-          </Link>
-        </div>
+      <div className={pageShell}>
+        <div className="max-w-3xl">
+        <PageHeader
+          title={<span className="font-medium">Notificaciones</span>}
+          actions={
+            <Link href="/profile/account#avisos" className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line bg-card px-4 text-sm font-medium text-fg-soft transition hover:border-goospe-green/40 hover:text-fg">
+              <Settings size={16} strokeWidth={1.75} /> Preferencias
+            </Link>
+          }
+        />
 
         {rows.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-line bg-card px-5 py-12 text-center">
@@ -74,6 +77,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
             {page < pages ? <Link href={href(page + 1)} rel="next" className={pagerOn}>Anteriores</Link> : <span className={pagerOff}>Anteriores</span>}
           </nav>
         )}
+        </div>
       </div>
       <AppFooter />
     </main>

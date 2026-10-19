@@ -40,7 +40,7 @@ export function FeedbackForm({ signedIn, initialCategory, from }: {
   if (sent) {
     return (
       <div role="status" className={`text-center ${cardClass}`}>
-        <CheckCircle2 size={36} strokeWidth={1.5} className="mx-auto text-goospe-green" />
+        <CheckCircle2 size={36} strokeWidth={1.5} className="mx-auto text-ink" />
         <p className="mt-3 text-lg font-medium text-fg">¡Gracias! Recibimos tu mensaje</p>
         <p className="mt-1 text-sm text-fg-soft">Lo lee una persona del equipo.{signedIn ? ' Si lo resolvemos, te avisamos en tus notificaciones.' : ''}</p>
         <div className="mt-5 flex flex-wrap justify-center gap-2">

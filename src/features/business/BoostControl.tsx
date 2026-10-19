@@ -49,16 +49,16 @@ export function BoostControl({ placeId, active: initial, timeZone = null, childr
   }
 
   return (
-    <section className="rounded-2xl border border-goospe-green/20 bg-goospe-green/[0.04] p-4 sm:p-6">
+    <section className="rounded-[22px] border border-goospe-green/20 bg-goospe-green/[0.04] p-4 sm:p-6">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="inline-flex items-center gap-2 font-medium text-fg"><Sparkles size={18} strokeWidth={1.75} className="text-goospe-green" /> Destacar en el feed</h2>
-        <span className="rounded-full bg-goospe-green/15 px-2 py-0.5 text-[10px] font-medium text-goospe-green-dark">Gratis en el piloto</span>
+        <h2 className="inline-flex items-center gap-2 font-medium text-fg"><Sparkles size={18} strokeWidth={1.75} className="text-ink" /> Destacar en el feed</h2>
+        <span className="rounded-full bg-tint2 px-2 py-0.5 text-[10px] font-medium text-ink">Gratis en el piloto</span>
       </div>
 
       {active ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
           <p className="text-sm text-fg">
-            Tu lugar está <strong className="text-goospe-green-dark">destacado</strong> hasta el {fmt(active.ends_at, timeZone)}.
+            Tu lugar está <strong className="text-ink">destacado</strong> hasta el {fmt(active.ends_at, timeZone)}.
           </p>
           <button onClick={onEnd} disabled={busy} className="shrink-0 text-sm text-red-600 hover:underline disabled:opacity-60">
             Terminar
@@ -76,7 +76,7 @@ export function BoostControl({ placeId, active: initial, timeZone = null, childr
             <option value={30}>30 días</option>
           </select>
           <button onClick={onCreate} disabled={busy}
-            className="rounded-full bg-goospe-gradient px-5 py-2 text-sm font-medium text-white shadow disabled:opacity-60">
+            className="min-h-11 rounded-full bg-goospe-green px-5 py-2 text-sm font-medium text-on-brand transition hover:brightness-105 disabled:opacity-60">
             {busy ? 'Activando…' : 'Destacar ahora'}
           </button>
           {msg && <span className="text-sm text-red-600">{msg}</span>}

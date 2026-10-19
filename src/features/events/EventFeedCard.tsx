@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { Calendar, Sparkles, Check, Star, Compass, MapPin } from 'lucide-react'
 import { track } from '@/lib/track'
-import { useImgFallback } from '@/shared/components/photo-img'
+import { PhotoImg } from '@/shared/components/photo-img'
 import { fmtInZone } from '@/lib/tz'
 import { EventAttendanceLive } from './EventAttendanceLive'
 import { useRsvp } from './use-rsvp'
@@ -33,7 +33,6 @@ const fmtWhen = (s: string, tz: string | null | undefined) =>
 
 export function EventFeedCard({ ev }: { ev: FeedEvent }) {
   const { status, busy, ready, choose } = useRsvp(ev.id)
-  const img = useImgFallback()
   const eventHref = `/events/${ev.id}`
 
   // "Apertura" del evento: desde su card se abre la página del evento (o la ficha del lugar).
@@ -42,48 +41,33 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
   // Lo lee event_boost_stats (0039) para medir el rendimiento de un evento destacado.
   const onOpen = () => track('view_detail', { eventId: ev.id })
 
-  return (
-    <section data-track-id={ev.id} data-kind="event" className="relative h-[100dvh] w-full snap-start snap-always">
-      {ev.photo_url && !img.failed ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          ref={img.ref}
-          src={ev.photo_url}
-          alt={ev.name}
-          loading="lazy"
-          decoding="async"
-          onError={img.onError}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-goospe-gradient text-white/90">
-          <Calendar size={96} strokeWidth={1.1} />
-        </div>
-      )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/40" />
+  const action = 'flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-[6px] transition'
 
-      {/* etiquetas. top incluye var(--sat) para quedar bajo el header flotante del feed. */}
-      <div className="absolute left-4 top-[calc(8rem+var(--sat))] z-10 flex flex-col gap-2">
-        <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white backdrop-blur"><Calendar size={13} strokeWidth={2} /> Evento</span>
-        {ev.boosted && (
-          <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-goospe-gradient px-3 py-1 text-xs font-semibold text-white shadow-lg ring-1 ring-white/40"><Sparkles size={13} strokeWidth={2} /> Destacado</span>
-        )}
-      </div>
+  return (
+    <article data-track-id={ev.id} data-kind="event" className="relative h-full w-full snap-start snap-always overflow-hidden">
+      <PhotoImg
+        src={ev.photo_url}
+        alt={ev.name}
+        tone="deep"
+        className="absolute inset-0 h-full w-full object-cover pb-[200px] [&:is(img)]:pb-0"
+        fallback={<Calendar size={92} strokeWidth={1.1} />}
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(10,10,9,0.92),rgba(10,10,9,0.1)_52%,rgba(10,10,9,0.5))]" />
 
       {/* acciones laterales (z por encima del bloque de info, que va después en el DOM) */}
-      <div className="text-shadow-photo absolute bottom-40 right-4 z-[11] flex flex-col gap-5 text-white">
+      <div className="absolute bottom-7 right-3.5 z-[11] flex flex-col gap-3.5 text-center text-[11px] text-white">
         <button
           type="button"
           onClick={() => choose('interested')}
           disabled={busy || !ready}
           aria-pressed={status === 'interested'}
           aria-busy={busy}
-          className="flex flex-col items-center gap-1 disabled:opacity-60"
+          className="disabled:opacity-60"
         >
-          <span className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur transition ${status === 'interested' ? 'bg-goospe-green' : 'bg-white/20'}`}>
-            <Star size={22} strokeWidth={1.75} fill={status === 'interested' ? 'currentColor' : 'none'} />
+          <span className={`${action} ${status === 'interested' ? 'bg-goospe-green text-on-brand' : 'bg-white/[0.18]'}`}>
+            <Star size={21} strokeWidth={1.75} fill={status === 'interested' ? 'currentColor' : 'none'} />
           </span>
-          <span className="text-xs">Me interesa</span>
+          <span className="mt-1 block">Me interesa</span>
         </button>
         <button
           type="button"
@@ -91,43 +75,48 @@ export function EventFeedCard({ ev }: { ev: FeedEvent }) {
           disabled={busy || !ready}
           aria-pressed={status === 'going'}
           aria-busy={busy}
-          className="flex flex-col items-center gap-1 disabled:opacity-60"
+          className="disabled:opacity-60"
         >
-          <span className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur transition ${status === 'going' ? 'bg-goospe-green' : 'bg-white/20'}`}>
-            <Check size={22} strokeWidth={2} />
+          <span className={`${action} ${status === 'going' ? 'bg-goospe-green text-on-brand' : 'bg-white/[0.18]'}`}>
+            <Check size={21} strokeWidth={2} />
           </span>
-          <span className="text-xs">Asistiré</span>
+          <span className="mt-1 block">Asistiré</span>
         </button>
         <a
           href={`https://www.google.com/maps/dir/?api=1&destination=${ev.lat},${ev.lng}`}
           target="_blank" rel="noreferrer"
           onClick={() => track('directions', { placeId: ev.place_id, eventId: ev.id })}
-          className="flex flex-col items-center gap-1"
         >
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur"><Compass size={22} strokeWidth={1.75} /></span>
-          <span className="text-xs">Cómo llego</span>
+          <span className={`${action} bg-white/[0.18]`}><Compass size={21} strokeWidth={1.75} /></span>
+          <span className="mt-1 block">Cómo llego</span>
         </a>
-        <Link href={`/places/${ev.place_slug}`} onClick={onOpen} className="flex flex-col items-center gap-1">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur"><MapPin size={22} strokeWidth={1.75} /></span>
-          <span className="text-xs">El lugar</span>
+        <Link href={`/places/${ev.place_slug}`} onClick={onOpen}>
+          <span className={`${action} bg-white/[0.18]`}><MapPin size={21} strokeWidth={1.75} /></span>
+          <span className="mt-1 block">El lugar</span>
         </Link>
       </div>
 
-      {/* info — pr-20 deja espacio a las acciones laterales; pb-28 a la barra Decídeme */}
-      <div className="text-shadow-photo absolute inset-x-0 bottom-0 z-10 space-y-2 p-5 pb-28 pr-20 text-white">
-        <p className="text-sm font-medium text-goospe-green-light drop-shadow first-letter:uppercase">{fmtWhen(ev.starts_at, ev.timezone)}</p>
-        <h2 className="text-3xl font-medium leading-tight drop-shadow">
+      {/* info */}
+      <div className="text-shadow-photo absolute bottom-7 left-[18px] right-[84px] z-10 text-white">
+        <div className="mb-2.5 flex flex-wrap gap-1.5 [text-shadow:none]">
+          <span className="inline-flex items-center gap-[5px] rounded-full bg-white/[0.16] px-2.5 py-1 text-[11px] leading-none"><Calendar size={12} strokeWidth={2} /> Evento</span>
+          {ev.boosted && (
+            <span className="inline-flex items-center gap-[5px] rounded-full bg-goospe-gradient px-2.5 py-1 text-[11px] font-medium leading-none text-on-brand"><Sparkles size={12} strokeWidth={2} /> Destacado</span>
+          )}
+        </div>
+        <p className="text-[13px] text-white/[0.82] first-letter:uppercase">{fmtWhen(ev.starts_at, ev.timezone)} h</p>
+        <h2 className="mt-1 text-[30px] font-medium leading-[1.1]">
           <Link href={eventHref} onClick={onOpen}>{ev.name}</Link>
         </h2>
-        <Link href={`/places/${ev.place_slug}`} onClick={onOpen} className="block text-white/80">
+        <Link href={`/places/${ev.place_slug}`} onClick={onOpen} className="mt-1 block text-[17px] font-medium text-goospe-green-light">
           en {ev.place_name} · {fmtDist(ev.distance_m)}
         </Link>
-        <EventAttendanceLive eventId={ev.id} className="text-white/90" />
-        {ev.description && <p className="line-clamp-2 max-w-md text-sm text-white/80">{ev.description}</p>}
-        <Link href={eventHref} onClick={onOpen} className="inline-flex items-center gap-1 text-sm font-medium text-white underline underline-offset-4">
+        <EventAttendanceLive eventId={ev.id} className="mt-2 text-white/90" />
+        {ev.description && <p className="mt-2 line-clamp-2 text-sm leading-[1.45] text-white/[0.82]">{ev.description}</p>}
+        <Link href={eventHref} onClick={onOpen} className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-white underline underline-offset-4">
           Ver evento
         </Link>
       </div>
-    </section>
+    </article>
   )
 }

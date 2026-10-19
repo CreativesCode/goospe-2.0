@@ -18,3 +18,7 @@ type: reference
 - Solo 200 fichas de lugar se generan en el build; el resto on-demand. Con las ~3.700 el build pasaba de 6 minutos y daba timeouts.
 - En Zod 4, `z.unknown().transform()` dentro de `z.object` vuelve la clave obligatoria: poner `.optional()` antes.
 - En pruebas, nunca enviar el formulario de eliminar cuenta con datos válidos.
+- El puerto 3000 no siempre es Goospe: el 2026-10-13 lo ocupaba Docker de otro proyecto (todo redirigía a `/api/login?redirectUrl=`). Comprobar con `curl` antes de dar algo por roto.
+- `tsc` y `eslint` no detectan pasar un componente (p. ej. un icono de Lucide) desde un server component a uno con `'use client'`: falla al renderizar ("Functions cannot be passed directly to Client Components"). Las filas o tarjetas que reciben `icon` van en módulos de servidor, o el cliente importa su propia tabla de iconos. Toda pantalla nueva se abre una vez en el navegador.
+- Contenedor con scroll-snap cuya lista se reemplaza (tanda SSR → lista real): el navegador re-ajusta el snap siguiendo a la tarjeta que estaba en pantalla y el mazo aparece en otra posición. Se evita remontando el contenedor (`key`) al cambiar de lista; `overflow-anchor: none` no basta.
+- Playwright MCP solo guarda capturas dentro del repo: usar `.playwright-mcp/` (ignorado por git).

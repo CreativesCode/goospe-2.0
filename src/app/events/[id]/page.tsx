@@ -113,7 +113,7 @@ export default async function EventPage({ params }: Props) {
           <div className="space-y-4 p-5 sm:p-6">
             <div>
               {phase === 'live' && (
-                <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-goospe-green px-2.5 py-0.5 text-xs font-medium text-white">
+                <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-goospe-green px-2.5 py-0.5 text-xs font-medium text-on-brand">
                   <span className="h-1.5 w-1.5 rounded-full bg-current" /> En curso
                 </span>
               )}
@@ -122,7 +122,7 @@ export default async function EventPage({ params }: Props) {
 
             <dl className="space-y-2 text-sm">
               <div className="flex items-start gap-2.5">
-                <dt className="mt-0.5 text-goospe-green"><Clock size={17} strokeWidth={1.75} /><span className="sr-only">Cuándo</span></dt>
+                <dt className="mt-0.5 text-ink"><Clock size={17} strokeWidth={1.75} /><span className="sr-only">Cuándo</span></dt>
                 <dd className="text-fg">
                   <time dateTime={ev.starts_at} className="block font-medium first-letter:uppercase">{fmtDay(ev.starts_at, tz)}</time>
                   <span className="text-fg-soft">
@@ -133,9 +133,9 @@ export default async function EventPage({ params }: Props) {
                 </dd>
               </div>
               <div className="flex items-start gap-2.5">
-                <dt className="mt-0.5 text-goospe-green"><MapPin size={17} strokeWidth={1.75} /><span className="sr-only">Dónde</span></dt>
+                <dt className="mt-0.5 text-ink"><MapPin size={17} strokeWidth={1.75} /><span className="sr-only">Dónde</span></dt>
                 <dd className="min-w-0 text-fg">
-                  <Link href={placePath(place.slug)} className="inline-flex items-center gap-1 font-medium hover:text-goospe-green">
+                  <Link href={placePath(place.slug)} className="inline-flex items-center gap-1 font-medium hover:text-ink">
                     {place.name} <ArrowRight size={14} strokeWidth={1.75} />
                   </Link>
                   <span className="block text-fg-soft [overflow-wrap:anywhere]">{address}</span>
@@ -182,10 +182,10 @@ export default async function EventPage({ params }: Props) {
         )}
 
         <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-          <Link href="/events" className="inline-flex items-center gap-1 text-goospe-green hover:underline">
+          <Link href="/events" className="inline-flex items-center gap-1 text-ink hover:underline">
             Ver la cartelera <ArrowRight size={14} strokeWidth={1.75} />
           </Link>
-          <Link href={placePath(place.slug)} className="inline-flex items-center gap-1 text-goospe-green hover:underline">
+          <Link href={placePath(place.slug)} className="inline-flex items-center gap-1 text-ink hover:underline">
             Más sobre {place.name} <ArrowRight size={14} strokeWidth={1.75} />
           </Link>
         </div>

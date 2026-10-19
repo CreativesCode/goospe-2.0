@@ -96,15 +96,15 @@ export function EventForm({ placeId, timeZone, cityName, event, onDone, onCancel
       {event && <input type="hidden" name="event_id" value={event.id} />}
 
       {/* Asistente Decídeme: redacta el evento a partir de una idea corta. */}
-      <div className="space-y-1.5 rounded-lg bg-goospe-green/5 p-2">
-        <p className="flex items-center gap-1 px-1 text-xs font-medium text-goospe-green-dark">
+      <div className="space-y-1.5 rounded-lg bg-tint p-2">
+        <p className="flex items-center gap-1 px-1 text-xs font-medium text-ink">
           <Sparkles size={12} strokeWidth={2} /> Asistente Decídeme · te redacta el evento
         </p>
         <div className="flex gap-2">
           <input value={brief} onChange={(e) => setBrief(e.target.value)} aria-label="Idea del evento"
             placeholder="Cuéntale la idea (ej: noche de jazz el viernes)" className={inp} />
           <button type="button" onClick={onGenerate} disabled={genning}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-goospe-gradient px-3 py-2 text-sm font-medium text-white disabled:opacity-60">
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-goospe-gradient px-3 py-2 text-sm font-medium text-on-brand disabled:opacity-60">
             {genning ? '…' : <><Sparkles size={15} strokeWidth={1.75} /> Generar</>}
           </button>
         </div>
@@ -130,7 +130,7 @@ export function EventForm({ placeId, timeZone, cityName, event, onDone, onCancel
               )}
             </div>
           )}
-          <label className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-line px-4 py-3 text-sm font-normal text-fg-soft transition hover:border-goospe-green hover:text-goospe-green ${preview ? 'hidden' : ''}`}>
+          <label className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-line px-4 py-3 text-sm font-normal text-fg-soft transition hover:border-goospe-green hover:text-ink ${preview ? 'hidden' : ''}`}>
             <ImagePlus size={16} strokeWidth={1.75} /> {event?.image_url ? 'Cambiar imagen' : 'Subir imagen'}
             <input ref={fileRef} type="file" name="image" accept="image/jpeg,image/png,image/webp" onChange={onPickImage} className="hidden" />
           </label>

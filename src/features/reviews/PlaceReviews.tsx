@@ -33,7 +33,7 @@ function Stars({ value, size = 16 }: { value: number; size?: number }) {
             key={n}
             size={size}
             strokeWidth={1.75}
-            className={on ? 'text-goospe-green' : 'text-muted/40'}
+            className={on ? 'text-goospe-green' : 'text-line'}
             fill={on ? 'currentColor' : 'none'}
           />
         )
@@ -127,9 +127,9 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
   }
 
   return (
-    <section id="resenas" className="mt-10 scroll-mt-24 border-t border-line pt-8">
+    <section id="resenas" className="scroll-mt-24">
       <div className="mb-5 flex items-center gap-3">
-        <h2 className="text-xs font-medium uppercase tracking-[0.08em] text-muted">Reseñas</h2>
+        <h2 className="text-xs font-medium uppercase tracking-[0.12em] text-muted">Reseñas</h2>
         {stats.reviews_count > 0 && (
           <span className="flex items-center gap-1.5 text-sm text-fg">
             <Stars value={stats.rating} />
@@ -141,16 +141,16 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
 
       {/* formulario / login */}
       {userId === null && !loading ? (
-        <div className="mb-6 rounded-xl bg-goospe-green/5 p-4 text-sm text-fg">
-          <Link href={`/login?next=${encodeURIComponent(pathname)}`} className="font-medium text-goospe-green hover:underline">Inicia sesión</Link> para dejar tu reseña.
+        <div className="mb-6 rounded-[14px] bg-tint p-4 text-sm text-fg">
+          <Link href={`/login?next=${encodeURIComponent(pathname)}`} className="font-medium text-ink hover:underline">Inicia sesión</Link> para dejar tu reseña.
         </div>
       ) : userId && isManager ? (
-        <div className="mb-6 rounded-xl bg-goospe-green/5 p-4 text-sm text-fg-soft">
+        <div className="mb-6 rounded-[14px] bg-tint p-4 text-sm text-fg-soft">
           Administras este lugar, así que no puedes reseñarlo. Responde a tus clientes desde tu panel.
           {own && <button type="button" onClick={onDelete} className="ml-2 text-red-600 hover:underline">Eliminar mi reseña</button>}
         </div>
       ) : userId ? (
-        <form onSubmit={onSubmit} className="mb-8 rounded-xl border border-line bg-card p-4 shadow-sm">
+        <form onSubmit={onSubmit} className="mb-8 rounded-[18px] border border-line bg-card p-[18px]">
           <p className="mb-2 text-sm font-medium text-fg">{own ? 'Tu reseña' : 'Deja tu reseña'}</p>
           <div className="mb-3 flex items-center gap-1" onMouseLeave={() => setHover(0)}>
             {[1, 2, 3, 4, 5].map((n) => {
@@ -161,7 +161,7 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
                   type="button"
                   onMouseEnter={() => setHover(n)}
                   onClick={() => setRating(n)}
-                  className={`transition ${on ? 'text-goospe-green' : 'text-muted/40'}`}
+                  className={`transition ${on ? 'text-goospe-green' : 'text-line'}`}
                   aria-label={`${n} ${n === 1 ? 'estrella' : 'estrellas'}`}
                   aria-pressed={n === rating}
                 >
@@ -180,7 +180,7 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
           />
           <div className="mt-3 flex items-center gap-3">
             <button type="submit" disabled={saving}
-              className="rounded-full bg-goospe-gradient px-5 py-2 text-sm font-medium text-white shadow disabled:opacity-60">
+              className="h-10 rounded-full bg-goospe-green px-5 text-sm font-medium text-on-brand transition hover:brightness-105 disabled:opacity-60">
               {saving ? 'Enviando…' : own ? 'Actualizar' : 'Publicar reseña'}
             </button>
             {own && (
@@ -196,20 +196,20 @@ export function PlaceReviews({ placeId }: { placeId: string }) {
       ) : reviews.length === 0 ? (
         <p className="text-sm text-muted">Aún no hay reseñas. ¡Sé el primero!</p>
       ) : (
-        <ul className="space-y-4">
+        <ul className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))]">
           {reviews.map((r) => (
-            <li key={r.id} className="rounded-xl border border-line bg-card p-4">
+            <li key={r.id} className="rounded-[18px] border border-line bg-card p-[18px]">
               <div className="mb-1 flex items-center justify-between gap-2">
                 <span className="text-sm font-medium text-fg">
-                  {names[r.user_id] ?? 'Usuario'}{r.user_id === userId && <span className="ml-1 text-xs text-goospe-green">(tú)</span>}
+                  {names[r.user_id] ?? 'Usuario'}{r.user_id === userId && <span className="ml-1 text-xs text-ink">(tú)</span>}
                 </span>
                 <span className="text-xs text-muted">{fmtDate(r.created_at)}</span>
               </div>
               <Stars value={r.rating} size={14} />
               {r.body && <p className="mt-2 text-sm text-fg-soft [overflow-wrap:anywhere]">{r.body}</p>}
               {r.owner_reply && (
-                <div className="mt-3 rounded-lg border-l-2 border-goospe-green bg-goospe-green/5 px-3 py-2">
-                  <p className="flex flex-wrap items-center gap-x-2 text-xs font-medium text-goospe-green-dark">
+                <div className="mt-3 rounded-xl bg-tint px-3 py-2.5">
+                  <p className="flex flex-wrap items-center gap-x-2 text-xs font-medium text-ink">
                     <span className="inline-flex items-center gap-1"><BadgeCheck size={13} strokeWidth={2} /> Respuesta del negocio</span>
                     {r.owner_replied_at && <span className="font-normal text-muted">{fmtDate(r.owner_replied_at)}</span>}
                   </p>

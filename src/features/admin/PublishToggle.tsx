@@ -23,7 +23,7 @@ export function PublishToggle({ id, published }: { id: string; published: boolea
       title={published ? 'Ocultar' : 'Publicar'}
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition disabled:opacity-50 ${
         published
-          ? 'border-goospe-green/30 bg-goospe-green/10 text-goospe-green-dark'
+          ? 'border-goospe-green/30 bg-tint text-ink'
           : 'border-line bg-surface text-muted hover:text-fg'
       }`}
     >

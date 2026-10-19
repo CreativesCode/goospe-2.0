@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
+import { ChevronRight, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
+import { PageHeader } from '@/shared/components/page-header'
+import { pageShell } from '@/shared/lib/ui'
 import { ProfileForm, type CityOption } from '@/features/profile/ProfileForm'
 
 export const dynamic = 'force-dynamic'
@@ -27,9 +29,9 @@ export default async function EditProfilePage() {
   return (
     <main className="flex min-h-screen flex-col bg-surface">
       <AppNav />
-      <div className="mx-auto w-full max-w-2xl px-5 py-8">
-        <Link href="/profile" className="inline-flex min-h-11 items-center gap-1 text-sm text-fg-soft hover:text-fg"><ChevronLeft size={16} /> Mi perfil</Link>
-        <h1 className="mb-5 mt-1 text-2xl font-medium text-fg">Editar perfil</h1>
+      <div className={pageShell}>
+        <div className="max-w-3xl">
+        <PageHeader back={{ href: '/profile', label: 'Mi perfil' }} title={<>Editar <span className="font-medium">perfil</span></>} />
 
         <ProfileForm
           cities={cities}
@@ -43,7 +45,7 @@ export default async function EditProfilePage() {
 
         {/* Rehacer el onboarding de gustos: misma pantalla y misma acción que al registrarse. */}
         <Link href="/onboarding" className="mt-5 flex items-center gap-3 rounded-2xl border border-line bg-card p-4 transition hover:border-goospe-green/40 sm:p-6">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-goospe-green/10 text-goospe-green"><Sparkles size={20} strokeWidth={1.75} /></span>
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-tint text-ink"><Sparkles size={20} strokeWidth={1.75} /></span>
           <span className="min-w-0 flex-1">
             <span className="block font-medium text-fg">Mis gustos</span>
             <span className="block text-sm text-fg-soft">Vuelve a elegir qué te gusta y tu presupuesto: tu feed se ajusta al guardar.</span>
@@ -52,8 +54,9 @@ export default async function EditProfilePage() {
         </Link>
 
         <p className="mt-5 text-sm text-fg-soft">
-          ¿Buscas cambiar tu email o tu contraseña? Está en <Link href="/profile/account" className="font-medium text-goospe-green hover:underline">Cuenta y seguridad</Link>.
+          ¿Buscas cambiar tu email o tu contraseña? Está en <Link href="/profile/account" className="font-medium text-ink hover:underline">Cuenta y seguridad</Link>.
         </p>
+        </div>
       </div>
       <AppFooter />
     </main>

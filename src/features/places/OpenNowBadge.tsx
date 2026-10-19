@@ -14,6 +14,7 @@ export function OpenNowBadge({
   timezone,
   onlyOpen = false,
   tone = 'photo',
+  short = false,
   className = '',
 }: {
   hours: { osm_raw?: string | null } | null | undefined
@@ -22,6 +23,8 @@ export function OpenNowBadge({
   onlyOpen?: boolean
   /** 'photo' = sobre una imagen; 'surface' = sobre el fondo de la página (ficha). */
   tone?: 'photo' | 'surface'
+  /** Texto corto ("Abierto" / "Cerrado") para tarjetas pequeñas. */
+  short?: boolean
   className?: string
 }) {
   const raw = hours?.osm_raw ?? null
@@ -39,12 +42,11 @@ export function OpenNowBadge({
   if (open === null || (onlyOpen && !open)) return null
   const color =
     tone === 'surface'
-      ? open ? 'bg-goospe-green/10 text-goospe-green-dark' : 'bg-line text-fg-soft'
-      : open ? 'bg-goospe-green text-white' : 'bg-black/40 text-white ring-1 ring-white/20'
+      ? open ? 'bg-tint text-ink' : 'bg-line text-fg-soft'
+      : open ? 'bg-goospe-green text-on-brand' : 'bg-[rgba(10,10,9,0.55)] text-white'
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${color} ${className}`}>
-      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
-      {open ? 'Abierto ahora' : 'Cerrado ahora'}
+    <span className={`inline-flex items-center rounded-full px-[11px] py-[5px] text-xs font-medium leading-none ${color} ${className}`}>
+      {open ? (short ? 'Abierto' : 'Abierto ahora') : short ? 'Cerrado' : 'Cerrado ahora'}
     </span>
   )
 }

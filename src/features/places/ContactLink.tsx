@@ -40,7 +40,7 @@ export function ContactLink({
       href={href}
       {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
       onClick={() => track('call', { placeId, context: { channel } })}
-      className="text-goospe-green hover:underline"
+      className="text-ink hover:underline"
     >
       {children ?? value}
     </a>

@@ -92,7 +92,7 @@ export function UploadStatusList({ items, uploadingLabel = 'Subiendo…', classN
           <li key={it.id} className={`rounded-lg border px-3 py-2 text-xs ${failed ? 'border-red-500/40 bg-red-500/5' : 'border-line bg-surface'}`}>
             <div className="flex items-center justify-between gap-3">
               <span className="min-w-0 truncate text-fg">{it.name}</span>
-              <span className={`inline-flex shrink-0 items-center gap-1 font-medium ${failed ? 'text-red-600 dark:text-red-400' : it.phase === 'done' ? 'text-goospe-green-dark' : 'text-fg-soft'}`}>
+              <span className={`inline-flex shrink-0 items-center gap-1 font-medium ${failed ? 'text-red-600 dark:text-red-400' : it.phase === 'done' ? 'text-ink' : 'text-fg-soft'}`}>
                 {working && <Loader2 size={13} strokeWidth={2} className="animate-spin" />}
                 {it.phase === 'done' && <CheckCircle2 size={13} strokeWidth={2} />}
                 {failed && <AlertTriangle size={13} strokeWidth={2} />}

@@ -24,7 +24,7 @@ export function AdminToggle({ userId, isAdmin }: { userId: string; isAdmin: bool
   if (confirming) {
     return (
       <span className="inline-flex items-center gap-2 text-xs">
-        <button onClick={run} disabled={pending} className="rounded-full bg-goospe-green px-2.5 py-1 font-medium text-white disabled:opacity-50">
+        <button onClick={run} disabled={pending} className="rounded-full bg-goospe-green px-2.5 py-1 font-medium text-on-brand disabled:opacity-50">
           {pending ? '…' : isAdmin ? 'Quitar admin' : 'Hacer admin'}
         </button>
         <button onClick={() => setConfirming(false)} disabled={pending} className="rounded-full border border-line px-2.5 py-1 text-fg-soft">Cancelar</button>
@@ -36,7 +36,7 @@ export function AdminToggle({ userId, isAdmin }: { userId: string; isAdmin: bool
     <span className="inline-flex items-center gap-2">
       <button onClick={() => { setErr(null); setConfirming(true) }}
         className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition ${
-          isAdmin ? 'border-line bg-surface text-fg-soft hover:text-red-600' : 'border-line bg-surface text-fg-soft hover:text-goospe-green-dark'
+          isAdmin ? 'border-line bg-surface text-fg-soft hover:text-red-600' : 'border-line bg-surface text-fg-soft hover:text-ink'
         }`}>
         {isAdmin ? <ShieldOff size={13} /> : <ShieldCheck size={13} />}
         {isAdmin ? 'Quitar admin' : 'Hacer admin'}

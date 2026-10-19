@@ -87,7 +87,7 @@ export default async function AdminFotosPage({ searchParams }: { searchParams: P
           <Link
             key={s.key}
             href={href({ fuente: s.key })}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition ${fuente === s.key ? 'bg-goospe-green/10 text-goospe-green-dark' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}
+            className={`rounded-full px-3 py-1 text-xs font-medium transition ${fuente === s.key ? 'bg-tint text-ink' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}
           >
             {s.label} · {counts[s.key].toLocaleString('es-CL')}
           </Link>
@@ -96,7 +96,7 @@ export default async function AdminFotosPage({ searchParams }: { searchParams: P
 
       {pending.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line bg-card py-20 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-goospe-green/10 text-goospe-green">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-tint text-ink">
             <CheckCircle2 size={28} strokeWidth={1.5} />
           </span>
           <p className="text-fg-soft">
@@ -111,11 +111,11 @@ export default async function AdminFotosPage({ searchParams }: { searchParams: P
               <div className="space-y-3 p-4">
                 <div className="flex items-center justify-between gap-2 text-sm">
                   {ph.places ? (
-                    <Link href={`/places/${ph.places.slug}`} className="min-w-0 truncate font-medium text-fg hover:text-goospe-green">
+                    <Link href={`/places/${ph.places.slug}`} className="min-w-0 truncate font-medium text-fg hover:text-ink">
                       {ph.places.name}
                     </Link>
                   ) : <span className="text-muted">—</span>}
-                  <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] ${ph.source === 'user' ? 'bg-goospe-green/10 font-medium text-goospe-green-dark' : 'bg-surface text-muted'}`}>
+                  <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] ${ph.source === 'user' ? 'bg-tint font-medium text-ink' : 'bg-surface text-muted'}`}>
                     {ph.source === 'user' ? 'usuario' : ph.source ?? '?'}
                   </span>
                 </div>

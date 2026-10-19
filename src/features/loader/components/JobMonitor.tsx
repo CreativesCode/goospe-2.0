@@ -50,7 +50,7 @@ export function JobMonitor({ jobId }: { jobId: string }) {
         <span
           className={`rounded-full px-3 py-1 text-xs font-medium ${
             isError ? 'bg-red-500/15 text-red-600'
-            : isDone ? 'bg-goospe-green/15 text-goospe-green-dark'
+            : isDone ? 'bg-tint2 text-ink'
             : 'bg-amber-400/20 text-amber-700'
           }`}
         >

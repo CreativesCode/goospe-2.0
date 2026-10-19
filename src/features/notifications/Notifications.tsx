@@ -98,8 +98,8 @@ export function NotificationRow({ n, onOpen }: { n: Notif; onOpen: (n: Notif) =>
   return (
     <li className="border-b border-line last:border-0">
       <button type="button" role="menuitem" onClick={() => onOpen(n)}
-        className={`flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-surface ${n.read ? '' : 'bg-goospe-green/5'}`}>
-        <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${alert ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400' : 'bg-goospe-green/10 text-goospe-green'}`}>
+        className={`flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-surface ${n.read ? '' : 'bg-tint'}`}>
+        <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${alert ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400' : 'bg-tint text-ink'}`}>
           <Icon size={16} strokeWidth={1.75} />
         </span>
         <span className="min-w-0 flex-1">
@@ -114,7 +114,7 @@ export function NotificationRow({ n, onOpen }: { n: Notif; onOpen: (n: Notif) =>
 }
 
 // Campana de notificaciones en vivo con historial. Lee del store compartido.
-export function Notifications() {
+export function Notifications({ className = '' }: { className?: string } = {}) {
   const { user } = useAuth()
   const router = useRouter()
   const list = useSyncExternalStore(subscribe, getSnapshot, () => EMPTY)
@@ -150,10 +150,10 @@ export function Notifications() {
     <div ref={ref} className="relative">
       <button onClick={() => setOpen((v) => !v)} aria-haspopup="menu" aria-expanded={open}
         aria-label={unread.length ? `Notificaciones: ${unread.length} sin leer` : 'Notificaciones'}
-        className="relative flex h-11 w-11 items-center justify-center rounded-full border border-line bg-card text-fg-soft transition hover:text-fg">
-        <Bell size={18} strokeWidth={1.75} />
+        className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-line bg-card text-fg-soft transition hover:text-fg md:h-[38px] md:w-[38px] ${className}`}>
+        <Bell size={17} strokeWidth={1.75} />
         {unread.length > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-goospe-green px-1 text-[10px] font-bold text-white">
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-goospe-green px-1 text-[10px] font-medium text-on-brand">
             {unread.length > 9 ? '9+' : unread.length}
           </span>
         )}
@@ -166,7 +166,7 @@ export function Notifications() {
           <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
             <span className="text-sm font-medium text-fg">Notificaciones</span>
             {unread.length > 0 && (
-              <button type="button" onClick={() => markRead(unread.map((n) => n.id))} className="text-xs font-medium text-goospe-green hover:underline">
+              <button type="button" onClick={() => markRead(unread.map((n) => n.id))} className="text-xs font-medium text-ink hover:underline">
                 Marcar todas como leídas
               </button>
             )}
@@ -178,7 +178,7 @@ export function Notifications() {
               {list.map((n) => <NotificationRow key={n.id} n={n} onOpen={openItem} />)}
             </ul>
           )}
-          <Link href="/notifications" onClick={() => setOpen(false)} className="block border-t border-line px-4 py-2.5 text-center text-xs font-medium text-goospe-green hover:underline">
+          <Link href="/notifications" onClick={() => setOpen(false)} className="block border-t border-line px-4 py-2.5 text-center text-xs font-medium text-ink hover:underline">
             Ver todas
           </Link>
         </div>

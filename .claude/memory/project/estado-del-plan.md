@@ -19,7 +19,11 @@ Plan vigente: `.claude/PRPs/prp-legacy-y-brechas.md` (9 fases). Análisis de ori
 | 8 Monetización | Pendiente, al final |
 | 9 Validación final | Pendiente |
 
-Esperando al usuario: cuenta de Resend + dominio de envío; reactivar facturación de Google
+Fuera del plan de 9 fases: **rediseño visual (variante audaz)** aplicado en local el 2026-10-13,
+sin commit ni push; detalle y pendientes en [[rediseno-audaz]] y lista de revisión en
+`docs/16-revision-local.md` (sección 0).
+
+Esperando al usuario: revisar el rediseño en local y decidir cuándo se sube; cuenta de Resend + dominio de envío; reactivar facturación de Google
 Cloud (fotos, horarios); revisar ~14 pares de posibles lugares duplicados; decidir si se
 versiona `package-lock.json`; rotar secretos del repo legacy.
 

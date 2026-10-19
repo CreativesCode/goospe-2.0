@@ -56,7 +56,7 @@ export function CoverageZonesTable({ zones }: { zones: CoverageZone[] }) {
                     href={mapsHref(z.lat, z.lng)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ml-2 inline-flex items-center gap-0.5 text-xs text-goospe-green hover:underline"
+                    className="ml-2 inline-flex items-center gap-0.5 text-xs text-ink hover:underline"
                   >
                     mapa <ExternalLink size={11} strokeWidth={2} />
                   </a>
@@ -65,7 +65,7 @@ export function CoverageZonesTable({ zones }: { zones: CoverageZone[] }) {
                   {z.tz ?? '—'}
                   {z.locale && <span className="text-muted"> · {z.locale}</span>}
                 </td>
-                <td className="px-4 py-3 text-right font-semibold text-goospe-green">{z.hits}</td>
+                <td className="px-4 py-3 text-right font-semibold text-ink">{z.hits}</td>
                 <td className="px-4 py-3 text-fg-soft">{fmtDate(z.last_seen)}</td>
                 <td className="px-4 py-3">
                   {state.status === 'idle' && (
@@ -119,7 +119,7 @@ function Field({ label, value, hint, icon }: { label: string; value: string | nu
     <div className="flex items-baseline gap-1.5">
       <span className="w-12 shrink-0 text-muted">{label}</span>
       <span className="font-medium text-fg">
-        {icon && value && <MapPin size={11} strokeWidth={2} className="mr-0.5 inline text-goospe-green" />}
+        {icon && value && <MapPin size={11} strokeWidth={2} className="mr-0.5 inline text-ink" />}
         {value ?? '—'}
       </span>
       {hint && <span className="text-muted">{hint}</span>}

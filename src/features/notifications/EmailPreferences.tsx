@@ -78,7 +78,7 @@ export function UnsubscribeCard({ token, category, subscribed: initial }: {
   const Icon = subscribed ? Mail : MailX
   return (
     <div className="space-y-4 text-center">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-goospe-green/10 text-goospe-green">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-tint text-ink">
         <Icon size={30} strokeWidth={1.75} />
       </div>
       <h1 className="text-2xl font-medium text-fg">

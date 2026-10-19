@@ -54,7 +54,7 @@ function AvatarEditor({ initialUrl, initial }: { initialUrl: string | null; init
           // eslint-disable-next-line @next/next/no-img-element
           <img src={url} alt="Tu foto de perfil" className="h-20 w-20 rounded-full object-cover ring-2 ring-line" />
         ) : (
-          <span className="flex h-20 w-20 items-center justify-center rounded-full bg-goospe-gradient text-3xl font-medium text-white">{initial}</span>
+          <span className="flex h-20 w-20 items-center justify-center rounded-full bg-goospe-gradient text-3xl font-medium text-on-brand">{initial}</span>
         )}
         <div className="flex flex-wrap gap-2">
           <label className={`${ghostBtn} cursor-pointer ${uploads.busy ? 'pointer-events-none opacity-60' : ''}`}>

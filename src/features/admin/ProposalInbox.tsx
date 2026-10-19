@@ -25,7 +25,7 @@ function Duplicates({ checked, rows }: { checked: boolean; rows: RankedDuplicate
       <ul className="mt-1 space-y-1 text-sm">
         {rows.map((d) => (
           <li key={d.id} className="flex flex-wrap items-center gap-x-2">
-            <Link href={`/admin/places/${d.id}`} className="font-medium text-fg hover:text-goospe-green">{d.name}</Link>
+            <Link href={`/admin/places/${d.id}`} className="font-medium text-fg hover:text-ink">{d.name}</Link>
             <span className="text-xs text-fg-soft">
               {formatDistance(d.distance_m)} · nombre {Math.round(d.similarity * 100)} % parecido
               {d.city_name ? ` · ${d.city_name}` : ''}{d.claimed ? ' · con dueño' : ''}{d.is_published ? '' : ' · oculto'}
@@ -98,14 +98,14 @@ export async function ProposalInbox() {
                       <p className="text-sm text-fg-soft [overflow-wrap:anywhere]">{[p.address, p.city_name].filter(Boolean).join(', ') || 'Sin dirección'}</p>
                       <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
                         {p.lat !== null && p.lng !== null ? (
-                          <a href={osm(p.lat, p.lng)} target="_blank" rel="noreferrer" className="text-goospe-green hover:underline">Pin propuesto: {p.lat.toFixed(5)}, {p.lng.toFixed(5)}</a>
+                          <a href={osm(p.lat, p.lng)} target="_blank" rel="noreferrer" className="text-ink hover:underline">Pin propuesto: {p.lat.toFixed(5)}, {p.lng.toFixed(5)}</a>
                         ) : <span className="text-muted">Sin coordenadas: ubica el pin con la referencia</span>}
                         {p.phone && <span className="inline-flex items-center gap-1 text-fg-soft"><Phone size={12} /> {p.phone}</span>}
-                        {p.website && <a href={p.website} target="_blank" rel="noreferrer nofollow" className="inline-flex items-center gap-1 text-fg-soft hover:text-goospe-green"><Globe size={12} /> Sitio web</a>}
+                        {p.website && <a href={p.website} target="_blank" rel="noreferrer nofollow" className="inline-flex items-center gap-1 text-fg-soft hover:text-ink"><Globe size={12} /> Sitio web</a>}
                       </p>
                       {ref && (
                         <p className="text-sm text-fg-soft [overflow-wrap:anywhere]">
-                          Referencia: {isUrl(ref) ? <a href={ref} target="_blank" rel="noreferrer nofollow" className="text-goospe-green hover:underline">{ref}</a> : ref}
+                          Referencia: {isUrl(ref) ? <a href={ref} target="_blank" rel="noreferrer nofollow" className="text-ink hover:underline">{ref}</a> : ref}
                         </p>
                       )}
                       {p.message && (
@@ -131,7 +131,7 @@ export async function ProposalInbox() {
             {recent.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3 text-sm">
                 <span className="min-w-0 text-fg [overflow-wrap:anywhere]">
-                  {p.place_id ? <Link href={`/admin/places/${p.place_id}`} className="hover:text-goospe-green">{p.name}</Link> : p.name}
+                  {p.place_id ? <Link href={`/admin/places/${p.place_id}`} className="hover:text-ink">{p.name}</Link> : p.name}
                   {p.city_name && <span className="text-muted"> · {p.city_name}</span>}
                   {p.reject_reason && <span className="block text-xs text-fg-soft">Motivo: {p.reject_reason}</span>}
                 </span>

@@ -26,14 +26,14 @@ export function WeeklyReport({
   }
 
   return (
-    <section className="rounded-2xl border border-goospe-green/20 bg-goospe-green/[0.04] p-6">
+    <section id="informe" className="scroll-mt-32 rounded-[22px] border border-goospe-green/20 bg-goospe-green/[0.04] p-4 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h2 className="inline-flex items-center gap-2 font-medium text-fg"><BarChart3 size={18} strokeWidth={1.75} className="text-goospe-green" /> Tu semana en 5 líneas</h2>
-          <span className="rounded-full bg-goospe-green/15 px-2 py-0.5 text-[10px] font-medium text-goospe-green-dark">IA</span>
+          <h2 className="inline-flex items-center gap-2 font-medium text-fg"><BarChart3 size={18} strokeWidth={1.75} className="text-ink" /> Tu semana en 5 líneas</h2>
+          <span className="rounded-full bg-tint2 px-2 py-0.5 text-[10px] font-medium text-ink">IA</span>
         </div>
         <button onClick={generate} disabled={busy}
-          className="shrink-0 rounded-full bg-goospe-gradient px-4 py-1.5 text-sm font-medium text-white shadow disabled:opacity-60">
+          className="min-h-11 shrink-0 rounded-full bg-goospe-green px-4 py-1.5 text-sm font-medium text-on-brand transition hover:brightness-105 disabled:opacity-60">
           {busy ? 'Generando…' : summary ? 'Actualizar' : 'Generar informe'}
         </button>
       </div>

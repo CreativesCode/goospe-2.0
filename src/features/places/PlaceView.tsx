@@ -18,13 +18,14 @@ import { BackButton } from '@/shared/components/back-button'
 import { Breadcrumbs, type Crumb } from '@/shared/components/breadcrumbs'
 import { PhotoImg } from '@/shared/components/photo-img'
 import { categoryIcon } from '@/shared/lib/icons'
+import { appContainer, eyebrow } from '@/shared/lib/ui'
 import { fetchEventStats } from '@/features/events/queries'
 import { getRelatedPlaces } from '@/features/places/listings'
 import { PlaceCard } from '@/features/places/PlaceCard'
 import { placeCategories, placeCity, placePhotos, type PlaceRecord } from '@/features/places/place-data'
 import { cityCategoryPath, cityPath, eventPath } from '@/features/places/seo-routes'
 import Link from 'next/link'
-import { BadgeCheck, ArrowRight, EyeOff } from 'lucide-react'
+import { BadgeCheck, ArrowRight, EyeOff, Sparkles, MapPin, Clock, Phone, MessageCircle, Globe, AtSign, Mail, type LucideIcon } from 'lucide-react'
 
 // Hora del evento en la zona de la CIUDAD del lugar (no la del servidor ni la del visitante).
 const fmtEventDate = (s: string, tz: string | null) =>
@@ -38,21 +39,26 @@ function webUrl(w: string) {
   return w.startsWith('http') ? w : `https://${w}`
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  if (children == null || children === '') return null
+/** Fila de la tarjeta de datos: icono + valor. No pinta nada si el dato falta. */
+function Fact({ icon: Icon, label, children }: { icon: LucideIcon; label: string; children: React.ReactNode }) {
+  if (children == null || children === '' || children === false) return null
   return (
-    <div className="flex gap-3 py-2 text-sm">
-      <dt className="w-32 shrink-0 text-muted">{label}</dt>
-      {/* min-w-0 + anywhere: una URL larga sin espacios ya no desborda la ficha en móvil */}
+    <div className="flex gap-3 border-b border-line py-2.5 last:border-0">
+      <dt className="mt-0.5 shrink-0 text-muted"><Icon size={15} strokeWidth={1.75} aria-hidden /><span className="sr-only">{label}</span></dt>
+      {/* min-w-0 + anywhere: una URL larga sin espacios no desborda la tarjeta */}
       <dd className="min-w-0 flex-1 text-fg [overflow-wrap:anywhere]">{children}</dd>
     </div>
   )
 }
 
+const extLink = 'text-ink hover:underline'
+
 /**
  * Cuerpo de la ficha de un lugar. Lo usan la ficha pública (/places/[slug], ISR) y la vista
  * previa del dueño o del equipo (/places/[slug]/preview) cuando el lugar no está publicado.
  * En vista previa no se registra la visita (no debe contar en las estadísticas del negocio).
+ * Layout: portada a sangre con el nombre y las acciones, y debajo el contenido en dos columnas
+ * (lectura a la izquierda, tarjeta de datos sticky a la derecha desde 1100 px).
  */
 export async function PlaceView({ place, preview = false }: { place: PlaceRecord; preview?: boolean }) {
   const sb = createAdminClient()
@@ -91,12 +97,14 @@ export async function PlaceView({ place, preview = false }: { place: PlaceRecord
   const addr = place.address as { street?: string; number?: string; city?: string; formatted?: string } | null
   const hours = place.hours as { osm_raw?: string } | null
   const menu = place.menu as { sections?: { name: string; items: { name: string; price: string | null; description: string | null }[] }[] } | null
+  const address = addr?.formatted ?? ([addr?.street, addr?.number].filter(Boolean).join(' ') || null)
+  const hourLines = humanizeHours(hours?.osm_raw)
 
   const PlaceCat = categoryIcon(cats[0]?.emoji)
   const noPhotos = (
-    <div className="flex aspect-[16/6] flex-col items-center justify-center gap-2 rounded-2xl bg-goospe-gradient text-center text-white">
-      <PlaceCat size={44} strokeWidth={1.4} />
-      <p className="text-sm text-white/90">Sé el primero en aportar una foto de este lugar</p>
+    <div className="flex aspect-[16/6] flex-col items-center justify-center gap-2 rounded-[20px] bg-tint text-center text-goospe-green">
+      <PlaceCat size={40} strokeWidth={1.4} />
+      <p className="text-sm text-fg-soft">Sé el primero en aportar una foto de este lugar</p>
     </div>
   )
 
@@ -105,224 +113,235 @@ export async function PlaceView({ place, preview = false }: { place: PlaceRecord
       {!preview && <DetailTracker placeId={place.id} />}
       <AppNav />
 
-      <div className="mx-auto max-w-5xl px-5 py-8">
-        <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2">
-          <BackButton />
-          <Breadcrumbs items={crumbs} className="min-w-0" />
+      {/* portada a sangre */}
+      <div className="relative h-[440px] bg-[#121311] md:h-[560px]">
+        <PhotoImg
+          src={gallery[0]?.url}
+          alt={place.name}
+          priority
+          tone="deep"
+          className="absolute inset-0 h-full w-full object-cover pb-[90px] [&:is(img)]:pb-0"
+          fallback={<PlaceCat size={96} strokeWidth={1.1} />}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(10,10,9,0.85),rgba(10,10,9,0)_60%)]" />
+        <div className="absolute inset-x-0 bottom-0">
+          <div className={`${appContainer} flex flex-wrap items-end justify-between gap-5 pb-7 text-white md:pb-9`}>
+            <div className="min-w-0">
+              <div className="flex flex-wrap gap-2 text-xs font-medium">
+                <OpenNowBadge hours={hours} timezone={tz} />
+                {cats.map((c) => {
+                  const Cat = categoryIcon(c.emoji)
+                  return (
+                    <span key={c.slug} className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.16] px-[11px] py-[5px] leading-none">
+                      <Cat size={13} strokeWidth={2} /> {c.name}
+                    </span>
+                  )
+                })}
+              </div>
+              <div className="text-shadow-photo mt-3.5 flex items-end gap-3.5">
+                {place.logo_url && (
+                  <PhotoImg src={place.logo_url} alt={`Logo de ${place.name}`} className="h-14 w-14 shrink-0 rounded-full border border-white/30 object-cover" isoClassName="h-6 w-6" />
+                )}
+                <div className="min-w-0">
+                  <h1 className="text-[clamp(40px,6vw,80px)] font-medium leading-[0.95] tracking-[-0.035em] [overflow-wrap:anywhere]">{place.name}</h1>
+                  {place.vibe_line && <p className="mt-2.5 text-[clamp(17px,1.6vw,22px)] text-goospe-green-light">{place.vibe_line}</p>}
+                </div>
+              </div>
+            </div>
+            <PlaceActions
+              placeId={place.id}
+              slug={place.slug}
+              name={place.name}
+              vibeLine={place.vibe_line}
+              lat={ll?.lat ?? null}
+              lng={ll?.lng ?? null}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* pb extra en móvil: la barra de acciones fija no tapa el final del contenido */}
+      <div className={`${appContainer} pb-[88px] pt-[18px] md:pb-16 md:pt-7`}>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+          <BackButton className="!text-[13px]" />
+          <span className="text-[13px] text-muted">·</span>
+          <Breadcrumbs items={crumbs} className="min-w-0 !text-[13px]" />
         </div>
 
         {/* Vista previa de un lugar oculto: solo la ven su dueño y el equipo; el público recibe un 404. */}
         {preview && (
-          <p role="status" className="mb-5 flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-fg">
+          <p role="status" className="mt-5 flex items-start gap-2 rounded-[14px] border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-fg">
             <EyeOff size={16} strokeWidth={1.75} className="mt-0.5 shrink-0" />
             <span>Vista previa: este lugar no está publicado. Solo tú y el equipo de Goospe pueden verlo; para el resto no existe.</span>
           </p>
         )}
 
-        {/* título */}
-        <div className="mb-4">
-          <div className="mb-1 flex items-center gap-3 text-sm text-fg-soft">
-            {cats.map((c) => {
-              const Cat = categoryIcon(c.emoji)
-              return <span key={c.slug} className="inline-flex items-center gap-1"><Cat size={14} strokeWidth={1.75} /> {c.name}</span>
-            })}
-          </div>
-          <div className="flex items-center gap-3">
-            {place.logo_url && (
-              <PhotoImg src={place.logo_url} alt={`Logo de ${place.name}`} className="h-14 w-14 shrink-0 rounded-full border border-line object-cover" isoClassName="h-6 w-6" />
-            )}
-            <div className="min-w-0">
-              <h1 className="text-3xl font-medium text-fg [overflow-wrap:anywhere]">{place.name}</h1>
-              {place.vibe_line && <p className="mt-1 text-lg font-medium text-goospe-green">{place.vibe_line}</p>}
-            </div>
-          </div>
-          <OpenNowBadge hours={hours} timezone={tz} tone="surface" className="mt-2" />
-        </div>
-
-        {/* precio + acciones: guardar / cómo llegar / compartir (registran interacciones) */}
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-          {place.price_level && (
-            <span className="text-lg font-medium">
-              <span className="text-fg">{'$'.repeat(place.price_level)}</span>
-              <span className="text-muted/50">{'$'.repeat(4 - place.price_level)}</span>
-            </span>
-          )}
-          <PlaceActions
-            placeId={place.id}
-            slug={place.slug}
-            name={place.name}
-            vibeLine={place.vibe_line}
-            lat={ll?.lat ?? null}
-            lng={ll?.lng ?? null}
-          />
-        </div>
-
-        {/* CTA de reclamo: solo si el lugar aún no tiene dueño */}
-        {!place.claimed && !place.business_id && (
-          <Link
-            href={`/panel/claim?q=${encodeURIComponent(place.name)}`}
-            className="mb-8 flex items-center justify-between gap-4 rounded-2xl border border-goospe-green/30 bg-goospe-green/5 px-5 py-4 transition hover:border-goospe-green/60 hover:bg-goospe-green/10"
-          >
-            <span className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-goospe-green/15 text-goospe-green">
-                <BadgeCheck size={20} strokeWidth={1.75} />
-              </span>
-              <span className="min-w-0">
-                <span className="block font-medium text-fg">¿Este es tu negocio?</span>
-                <span className="block text-sm text-fg-soft">Reclámalo para editar tu ficha, publicar eventos y ver tus estadísticas.</span>
-              </span>
-            </span>
-            <span className="hidden shrink-0 items-center gap-1 text-sm font-medium text-goospe-green-dark sm:inline-flex">
-              Reclamar <ArrowRight size={15} strokeWidth={1.75} />
-            </span>
-          </Link>
-        )}
-
-        {/* fotos */}
-        <section className="mb-8">
-          {/* `empty` cubre también el caso "hay fotos pero ninguna cargó" (Google caído). */}
-          <PhotoGallery photos={gallery} alt={place.name} empty={noPhotos} />
-          <PhotoUpload placeId={place.id} />
-        </section>
-
-        <div className="grid gap-8 md:grid-cols-2">
-          {/* descripción + tags */}
-          <section>
-            <h2 className="mb-2 text-xs font-medium uppercase tracking-[0.08em] text-muted">Resumen (IA)</h2>
-            <p className="text-fg-soft">{place.description ?? '—'}</p>
-            {place.tags && place.tags.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {place.tags.map((t) => (
-                  <span key={t} className="rounded-full bg-goospe-green/10 px-2.5 py-1 text-xs text-goospe-green-dark">
-                    {t}
-                  </span>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* datos */}
-          <section>
-            <h2 className="mb-2 text-xs font-medium uppercase tracking-[0.08em] text-muted">Datos</h2>
-            <dl className="divide-y divide-line">
-              <Field label="Dirección">{addr?.formatted ?? ([addr?.street, addr?.number].filter(Boolean).join(' ') || null)}</Field>
-              <Field label="Ciudad">{addr?.city}</Field>
-              <Field label="Teléfono">
-                {place.phone && <ContactLink placeId={place.id} channel="phone" value={place.phone} />}
-              </Field>
-              <Field label="WhatsApp">
-                {place.whatsapp && <ContactLink placeId={place.id} channel="whatsapp" value={place.whatsapp} />}
-              </Field>
-              <Field label="Web">
-                {place.website && <a href={webUrl(place.website)} target="_blank" rel="noreferrer" className="text-goospe-green hover:underline">{place.website}</a>}
-              </Field>
-              <Field label="Instagram">
-                {place.instagram && (
-                  <a href={igUrl(place.instagram).url} target="_blank" rel="noreferrer" className="text-goospe-green hover:underline">
-                    {igUrl(place.instagram).label}
-                  </a>
-                )}
-              </Field>
-              <Field label="Email">
-                {place.email && <ContactLink placeId={place.id} channel="email" value={place.email} />}
-              </Field>
-              <Field label="Horario">
-                {(() => {
-                  const lines = humanizeHours(hours?.osm_raw)
-                  if (lines) return <span className="space-y-0.5">{lines.map((l, i) => <span key={i} className="block">{l}</span>)}</span>
-                  return hours?.osm_raw ?? null
-                })()}
-              </Field>
-            </dl>
-          </section>
-        </div>
-
-        {/* menú */}
-        {menu?.sections && menu.sections.length > 0 && (
-          <section className="mt-8">
-            <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-muted">Carta</h2>
-            <div className="space-y-5">
-              {menu.sections.map((sec, i) => (
-                <div key={i}>
-                  <h3 className="mb-2 font-medium text-goospe-green-dark">{sec.name}</h3>
-                  <ul className="divide-y divide-line">
-                    {sec.items.map((it, j) => (
-                      <li key={j} className="flex items-baseline justify-between gap-4 py-1.5">
-                        <div className="min-w-0">
-                          <span className="text-sm text-fg">{it.name}</span>
-                          {it.description && <span className="ml-2 text-xs text-muted">{it.description}</span>}
-                        </div>
-                        {it.price && <span className="shrink-0 text-sm font-medium text-fg">{it.price}</span>}
-                      </li>
-                    ))}
-                  </ul>
+        <div className="mt-8 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="flex min-w-0 flex-col gap-9">
+            {/* resumen + etiquetas */}
+            <section>
+              <h2 className={`${eyebrow} flex items-center gap-1.5`}><Sparkles size={13} strokeWidth={1.75} className="text-goospe-green" /> Resumen</h2>
+              <p className="mt-2.5 text-pretty text-[17px] leading-[1.6] text-fg">{place.description ?? '—'}</p>
+              {place.tags && place.tags.length > 0 && (
+                <div className="mt-3.5 flex flex-wrap gap-1.5">
+                  {place.tags.map((t) => (
+                    <span key={t} className="rounded-full bg-tint px-[11px] py-[5px] text-[13px] text-ink">{t}</span>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
+              )}
+            </section>
 
-        {/* mapa */}
-        {ll && (
-          <section className="mt-8">
-            <h2 className="mb-2 text-xs font-medium uppercase tracking-[0.08em] text-muted">Ubicación</h2>
-            <div className="overflow-hidden rounded-2xl border border-line">
-              <iframe
-                title="Mapa"
-                className="h-64 w-full"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                src={`https://www.openstreetmap.org/export/embed.html?bbox=${ll.lng - 0.004}%2C${ll.lat - 0.0025}%2C${ll.lng + 0.004}%2C${ll.lat + 0.0025}&layer=mapnik&marker=${ll.lat}%2C${ll.lng}`}
-              />
-            </div>
-            <DirectionsLink placeId={place.id} lat={ll.lat} lng={ll.lng} className="mt-2 inline-flex items-center gap-1.5 text-sm text-goospe-green hover:underline" />
+            {/* fotos */}
+            <section>
+              <h2 className={`${eyebrow} mb-3`}>Fotos</h2>
+              {/* `empty` cubre también el caso "hay fotos pero ninguna cargó" (Google caído). */}
+              <PhotoGallery photos={gallery} alt={place.name} empty={noPhotos} />
+              <PhotoUpload placeId={place.id} />
+            </section>
 
-          </section>
-        )}
+            {/* carta */}
+            {menu?.sections && menu.sections.length > 0 && (
+              <section>
+                <h2 className={eyebrow}>Carta</h2>
+                <div className="mt-3 space-y-6">
+                  {menu.sections.map((sec, i) => (
+                    <div key={i}>
+                      <h3 className="mb-1 text-sm font-medium text-ink">{sec.name}</h3>
+                      <ul className="grid gap-x-8 [grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))]">
+                        {sec.items.map((it, j) => (
+                          <li key={j} className="flex justify-between gap-3 border-b border-line py-2.5">
+                            <div className="min-w-0">
+                              <div className="text-[15px] text-fg">{it.name}</div>
+                              {it.description && <div className="text-[13px] text-muted">{it.description}</div>}
+                            </div>
+                            {it.price && <span className="shrink-0 text-[15px] font-medium text-fg">{it.price}</span>}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
-        {/* eventos */}
-        {upcoming.length > 0 && (
-          <section className="mt-10 border-t border-line pt-8">
-            <h2 className="mb-4 text-xs font-medium uppercase tracking-[0.08em] text-muted">Próximos eventos</h2>
-            <ul className="space-y-3">
-              {upcoming.map((ev) => (
-                <li key={ev.id} className="flex flex-wrap items-center gap-4 rounded-xl border border-line bg-card p-4 shadow-sm">
-                  {ev.image_url && (
-                    <PhotoImg src={ev.image_url} alt={ev.name} className="h-16 w-16 shrink-0 rounded-lg object-cover" isoClassName="h-7 w-7" />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium uppercase text-goospe-green">{fmtEventDate(ev.starts_at, tz)}</p>
-                    <h3 className="font-medium text-fg">
-                      <Link href={eventPath(ev.id)} className="hover:text-goospe-green">{ev.name}</Link>
-                    </h3>
-                    {ev.description && <p className="line-clamp-1 text-sm text-fg-soft">{ev.description}</p>}
-                    {eventStats[ev.id] && <AttendanceCounts {...eventStats[ev.id]} className="mt-1 text-fg-soft" />}
+            {/* eventos */}
+            {upcoming.length > 0 && (
+              <section>
+                <h2 className={`${eyebrow} mb-3`}>Próximos eventos</h2>
+                <ul className="space-y-3">
+                  {upcoming.map((ev) => (
+                    <li key={ev.id} className="flex flex-wrap items-center gap-4 rounded-[18px] border border-line bg-card p-4">
+                      {ev.image_url && (
+                        <PhotoImg src={ev.image_url} alt={ev.name} className="h-16 w-16 shrink-0 rounded-[14px] object-cover" isoClassName="h-7 w-7" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium uppercase text-ink">{fmtEventDate(ev.starts_at, tz)}</p>
+                        <h3 className="font-medium text-fg">
+                          <Link href={eventPath(ev.id)} className="hover:text-ink">{ev.name}</Link>
+                        </h3>
+                        {ev.description && <p className="line-clamp-1 text-sm text-fg-soft">{ev.description}</p>}
+                        {eventStats[ev.id] && <AttendanceCounts {...eventStats[ev.id]} className="mt-1 text-fg-soft" />}
+                      </div>
+                      <RsvpButton eventId={ev.id} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {/* reseñas */}
+            <PlaceReviews placeId={place.id} />
+          </div>
+
+          {/* columna de datos */}
+          <aside className="flex flex-col gap-3.5 lg:sticky lg:top-[88px]">
+            <div className="rounded-[22px] border border-line bg-card p-5">
+              <div className="flex items-center justify-between gap-3">
+                {place.price_level ? (
+                  <span className="text-xl font-medium" aria-label={`Precio: ${place.price_level} de 4`}>
+                    <span className="text-fg">{'$'.repeat(place.price_level)}</span>
+                    <span className="text-line">{'$'.repeat(4 - place.price_level)}</span>
+                  </span>
+                ) : <span />}
+                <OpenNowBadge hours={hours} timezone={tz} tone="surface" />
+              </div>
+              {ll && (
+                <>
+                  <div className="mt-3.5 overflow-hidden rounded-[14px] bg-ph">
+                    <iframe
+                      title={`Mapa de ${place.name}`}
+                      className="h-[150px] w-full"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${ll.lng - 0.004}%2C${ll.lat - 0.0025}%2C${ll.lng + 0.004}%2C${ll.lat + 0.0025}&layer=mapnik&marker=${ll.lat}%2C${ll.lng}`}
+                    />
                   </div>
-                  <RsvpButton eventId={ev.id} />
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+                  <DirectionsLink placeId={place.id} lat={ll.lat} lng={ll.lng} className="mt-2.5 inline-flex items-center gap-1.5 text-[13px] font-medium text-ink hover:underline" />
+                </>
+              )}
+              <dl className="mt-2 text-sm">
+                <Fact icon={MapPin} label="Dirección">
+                  {(address || addr?.city) && <>{address}{address && addr?.city ? ', ' : ''}{addr?.city}</>}
+                </Fact>
+                <Fact icon={Clock} label="Horario">
+                  {hourLines
+                    ? <span className="space-y-0.5">{hourLines.map((l, i) => <span key={i} className="block">{l}</span>)}</span>
+                    : hours?.osm_raw ?? null}
+                </Fact>
+                <Fact icon={Phone} label="Teléfono">
+                  {place.phone && <ContactLink placeId={place.id} channel="phone" value={place.phone} />}
+                </Fact>
+                <Fact icon={MessageCircle} label="WhatsApp">
+                  {place.whatsapp && <ContactLink placeId={place.id} channel="whatsapp" value={place.whatsapp} />}
+                </Fact>
+                <Fact icon={Globe} label="Web">
+                  {place.website && <a href={webUrl(place.website)} target="_blank" rel="noreferrer" className={extLink}>{place.website}</a>}
+                </Fact>
+                <Fact icon={AtSign} label="Instagram">
+                  {place.instagram && (
+                    <a href={igUrl(place.instagram).url} target="_blank" rel="noreferrer" className={extLink}>{igUrl(place.instagram).label}</a>
+                  )}
+                </Fact>
+                <Fact icon={Mail} label="Email">
+                  {place.email && <ContactLink placeId={place.id} channel="email" value={place.email} />}
+                </Fact>
+              </dl>
+            </div>
 
-        {/* reseñas */}
-        <PlaceReviews placeId={place.id} />
+            {/* CTA de reclamo: solo si el lugar aún no tiene dueño */}
+            {!place.claimed && !place.business_id && (
+              <Link
+                href={`/panel/claim?q=${encodeURIComponent(place.name)}`}
+                className="flex items-center gap-3 rounded-[18px] border border-dashed border-line px-[18px] py-4 transition hover:border-goospe-green/60"
+              >
+                <span className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-tint text-ink">
+                  <BadgeCheck size={18} strokeWidth={1.75} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium text-fg">¿Es tu negocio?</span>
+                  <span className="block text-[13px] text-fg-soft">Reclámalo y edita tu ficha.</span>
+                </span>
+                <ArrowRight size={16} strokeWidth={1.75} className="shrink-0 text-ink" />
+              </Link>
+            )}
 
-        {/* sugerir una corrección de la ficha (llega a /admin/feedback y al dueño) */}
-        <div className="mt-8"><SuggestCorrection placeId={place.id} placeName={place.name} /></div>
+            {/* sugerir una corrección de la ficha (llega a /admin/feedback y al dueño) */}
+            <SuggestCorrection placeId={place.id} placeName={place.name} />
+          </aside>
+        </div>
 
         {/* lugares relacionados: misma categoría, cerca y parecidos (RPC related_places) */}
         {related.length > 0 && (
-          <section className="mt-10 border-t border-line pt-8">
+          <section className="mt-12 border-t border-line pt-8">
             <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="text-xs font-medium uppercase tracking-[0.08em] text-muted">Lugares relacionados</h2>
+              <h2 className={eyebrow}>Lugares relacionados</h2>
               {city && (
-                <Link href={cats[0] ? cityCategoryPath(city.slug, cats[0].slug) : cityPath(city.slug)} className="inline-flex items-center gap-1 text-sm text-goospe-green hover:underline">
+                <Link href={cats[0] ? cityCategoryPath(city.slug, cats[0].slug) : cityPath(city.slug)} className="inline-flex items-center gap-1 text-[13px] font-medium text-ink hover:underline">
                   Ver más en {city.name} <ArrowRight size={14} strokeWidth={1.75} />
                 </Link>
               )}
             </div>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr))]">
               {related.map((p) => <PlaceCard key={p.id} place={p} />)}
             </div>
           </section>

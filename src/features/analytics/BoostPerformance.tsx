@@ -50,7 +50,7 @@ export function BoostPerformance({ boosts, timeZone, now }: { boosts: BoostStat[
 }
 
 const TREND: Record<string, string> = {
-  up: 'text-goospe-green-dark', down: 'text-red-600 dark:text-red-400', flat: 'text-muted', none: 'text-muted',
+  up: 'text-ink', down: 'text-red-600 dark:text-red-400', flat: 'text-muted', none: 'text-muted',
 }
 
 /**

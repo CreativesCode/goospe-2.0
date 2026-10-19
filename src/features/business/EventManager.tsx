@@ -42,7 +42,7 @@ function Attendees({ ev, timeZone }: { ev: PanelEvent; timeZone: string | null }
       <button type="button" onClick={() => setOpen((v) => !v)} disabled={total === 0} aria-expanded={open}
         className="flex min-h-11 w-full items-center justify-between gap-2 border-t border-line px-3 py-2 text-left text-xs transition enabled:hover:bg-surface disabled:cursor-default">
         <span className="inline-flex items-center gap-1.5 text-fg-soft">
-          <Users size={13} strokeWidth={1.75} className="text-goospe-green" />
+          <Users size={13} strokeWidth={1.75} className="text-ink" />
           {total === 0 ? 'Sin participaciones aún' : (
             <>
               <span className="font-medium text-fg">{ev.goingCount}</span> asistirán
@@ -57,11 +57,11 @@ function Attendees({ ev, timeZone }: { ev: PanelEvent; timeZone: string | null }
           {ev.attendees.map((a, i) => (
             <li key={i} className="flex items-center justify-between gap-3 py-1.5 text-xs">
               <span className="inline-flex min-w-0 items-center gap-1.5 text-fg">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-goospe-green/15 text-[10px] font-medium text-goospe-green-dark">{a.name.charAt(0).toUpperCase()}</span>
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-tint2 text-[10px] font-medium text-ink">{a.name.charAt(0).toUpperCase()}</span>
                 <span className="truncate">{a.name}</span>
               </span>
               <span className="flex shrink-0 items-center gap-2 text-muted">
-                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${a.status === 'going' ? 'bg-goospe-green/15 text-goospe-green-dark' : 'bg-line text-muted'}`}>
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${a.status === 'going' ? 'bg-tint2 text-ink' : 'bg-line text-muted'}`}>
                   {a.status === 'going' ? 'Asistirá' : 'Interesado'}
                 </span>
                 {fmtDay(a.when, timeZone)}
@@ -142,9 +142,9 @@ function EventRow({ ev, placeId, timeZone, finished, onEdit }: {
             <span className={cancelled ? 'line-through' : ''}>{ev.name}</span>
             {cancelled && <span className={`${badge} bg-line text-fg-soft`}>Cancelado</span>}
             {!cancelled && finished && <span className={`${badge} bg-line text-fg-soft`}>Finalizado</span>}
-            {!closed && ev.is_boosted && <span className={`${badge} bg-goospe-green/15 text-goospe-green-dark`}><Sparkles size={10} strokeWidth={2} /> Destacado</span>}
+            {!closed && ev.is_boosted && <span className={`${badge} bg-tint2 text-ink`}><Sparkles size={10} strokeWidth={2} /> Destacado</span>}
           </p>
-          <p className="flex items-center gap-1 text-xs text-goospe-green"><Calendar size={11} strokeWidth={1.75} /> {fmt(ev.starts_at, timeZone)}</p>
+          <p className="flex items-center gap-1 text-xs text-ink"><Calendar size={11} strokeWidth={1.75} /> {fmt(ev.starts_at, timeZone)}</p>
         </div>
       </div>
 
@@ -176,15 +176,17 @@ function EventRow({ ev, placeId, timeZone, finished, onEdit }: {
  * Eventos del lugar: crear, editar, cancelar (avisando a los inscritos), destacar y eliminar.
  * `children`: bloque opcional bajo la lista (rendimiento de los eventos destacados).
  */
-export function EventManager({ placeId, events, timeZone, cityName, now, children }: {
+export function EventManager({ placeId, events, timeZone, cityName, now, startNew = false, children }: {
   placeId: string; events: PanelEvent[]; timeZone: string | null; cityName?: string | null
   /** "Ahora" del servidor (ms): decide qué eventos ya terminaron sin desfase de hidratación. */
   now: number
+  /** Abre el formulario de alta al entrar (atajo "Nuevo evento" del panel). */
+  startNew?: boolean
   children?: ReactNode
 }) {
   const router = useRouter()
   // 'new' = formulario de alta · id = edición de ese evento · null = cerrado
-  const [editing, setEditing] = useState<string | null>(null)
+  const [editing, setEditing] = useState<string | null>(startNew ? 'new' : null)
   const done = (message: string) => { setEditing(null); toast.success(message); router.refresh() }
   const current = events.find((e) => e.id === editing)
 

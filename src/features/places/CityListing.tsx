@@ -10,6 +10,7 @@ import { Breadcrumbs, type Crumb } from '@/shared/components/breadcrumbs'
 import { JsonLd } from '@/shared/components/json-ld'
 import { Pagination } from '@/shared/components/pagination'
 import { categoryIcon } from '@/shared/lib/icons'
+import { pageShell, pageTitle, pill } from '@/shared/lib/ui'
 import { PlaceCard } from '@/features/places/PlaceCard'
 import {
   LISTING_PAGE_SIZE, getCityBySlug, getCityDirectory, getCityPlaces, getPopularPlaces,
@@ -52,9 +53,6 @@ export function listingMetadata(target: ListingTarget, page: number): Metadata {
   }
 }
 
-const chip = 'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition'
-const chipOn = 'border-goospe-green bg-goospe-green/10 text-goospe-green-dark'
-const chipOff = 'border-line bg-card text-fg-soft hover:text-fg'
 
 export async function CityListing({ target, page }: { target: ListingTarget; page: number }) {
   const { city, category, basePath } = target
@@ -81,24 +79,28 @@ export async function CityListing({ target, page }: { target: ListingTarget; pag
   return (
     <main className="flex min-h-screen flex-col bg-surface">
       <AppNav />
-      <div className="mx-auto w-full max-w-7xl px-5 py-8">
+      <div className={pageShell}>
         <Breadcrumbs items={crumbs} className="mb-4" />
-        <h1 className="text-3xl font-medium text-fg">{headline}</h1>
-        <p className="mt-1 text-fg-soft">
+        <h1 className={pageTitle}>
+          {headline.endsWith(city.name)
+            ? <>{headline.slice(0, -city.name.length)}<span className="font-medium">{city.name}</span></>
+            : headline}
+        </h1>
+        <p className="mt-3 text-fg-soft">
           {total.toLocaleString('es-CL')} {total === 1 ? 'lugar' : 'lugares'} en {city.name}, {city.country}
           {pages > 1 && ` · página ${page} de ${pages}`}
         </p>
 
         {/* categorías de la ciudad (enlaces internos a cada listado) */}
         <nav aria-label="Categorías" className="mt-5 flex flex-wrap gap-2">
-          <Link href={cityPath(city.slug)} className={`${chip} ${category ? chipOff : chipOn}`} aria-current={category ? undefined : 'page'}>
+          <Link href={cityPath(city.slug)} className={pill(!category)} aria-current={category ? undefined : 'page'}>
             Todo <span className="text-xs opacity-70">{city.places.toLocaleString('es-CL')}</span>
           </Link>
           {city.categories.map((c) => {
             const Icon = categoryIcon(c.emoji)
             const active = category?.id === c.id
             return (
-              <Link key={c.id} href={cityCategoryPath(city.slug, c.slug)} className={`${chip} ${active ? chipOn : chipOff}`} aria-current={active ? 'page' : undefined}>
+              <Link key={c.id} href={cityCategoryPath(city.slug, c.slug)} className={pill(active)} aria-current={active ? 'page' : undefined}>
                 <Icon size={15} strokeWidth={1.75} /> {c.name} <span className="text-xs opacity-70">{c.places.toLocaleString('es-CL')}</span>
               </Link>
             )
@@ -108,7 +110,7 @@ export async function CityListing({ target, page }: { target: ListingTarget; pag
         {popular.length > 0 && (
           <section className="mt-8">
             <h2 className="mb-3 inline-flex items-center gap-2 text-lg font-medium text-fg">
-              <TrendingUp size={18} strokeWidth={1.75} className="text-goospe-green" /> Populares en {city.name}
+              <TrendingUp size={18} strokeWidth={1.75} className="text-ink" /> Populares en {city.name}
             </h2>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {popular.map((p) => <PlaceCard key={p.id} place={p} />)}
@@ -133,7 +135,7 @@ export async function CityListing({ target, page }: { target: ListingTarget; pag
               {others.map((c) => (
                 <li key={c.id}>
                   <Link href={category && c.categories.some((x) => x.slug === category.slug) ? cityCategoryPath(c.slug, category.slug) : cityPath(c.slug)}
-                    className="text-fg-soft transition hover:text-goospe-green">
+                    className="text-fg-soft transition hover:text-ink">
                     {c.name}
                   </Link>
                 </li>

@@ -28,14 +28,14 @@ export default async function UnsubscribePage({ searchParams }: { searchParams: 
           <UnsubscribeCard token={raw} category={target.category} subscribed={prefs[target.category]} />
         ) : (
           <div className="space-y-4 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-goospe-green/10 text-goospe-green">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-tint text-ink">
               <MailQuestion size={30} strokeWidth={1.75} />
             </div>
             <h1 className="text-2xl font-medium text-fg">Este enlace no es válido</h1>
             <p className="text-fg-soft">
               Abre el enlace del email más reciente que te enviamos o, si tienes cuenta, ajusta tus correos desde tu panel.
             </p>
-            <Link href="/panel#emails" className="inline-block text-goospe-green hover:underline">Ir a mi panel</Link>
+            <Link href="/panel#emails" className="inline-block text-ink hover:underline">Ir a mi panel</Link>
           </div>
         )}
         <p className="mt-6 text-center text-xs text-muted">

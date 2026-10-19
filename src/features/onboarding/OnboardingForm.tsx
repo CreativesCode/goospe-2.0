@@ -3,32 +3,87 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveOnboarding } from '@/actions/onboarding'
-import { Chip } from '@/shared/components/chip'
-import { LIKE_ICON, VIBE_ICON } from '@/shared/lib/icons'
-
-const LIKES = [
-  { v: 'comer', label: 'Comer' },
-  { v: 'cafe', label: 'Café' },
-  { v: 'beber', label: 'Bares' },
-  { v: 'noche', label: 'Salir de noche' },
-  { v: 'eventos', label: 'Eventos' },
-]
-const VIBES = [
-  { v: 'tranquilo', label: 'Tranquilo' },
-  { v: 'romántico', label: 'Romántico' },
-  { v: 'carrete', label: 'Carrete' },
-  { v: 'familiar', label: 'Familiar' },
-  { v: 'para trabajar', label: 'Para trabajar' },
-  { v: 'al aire libre', label: 'Al aire libre' },
-]
-const BUDGETS = [
-  { v: '1', label: 'Económico' }, { v: '2', label: 'Medio' }, { v: '3', label: 'Alto' }, { v: '4', label: 'Premium' },
-]
-const GENDERS = [
-  { v: 'female', label: 'Mujer' }, { v: 'male', label: 'Hombre' }, { v: 'other', label: 'Prefiero no decir' },
-]
+import { OnboardingChoices } from './OnboardingChoices'
 
 export type OnboardingInitial = { likes: string[]; budget: string; gender: string }
+
+const submitBtn = 'h-[52px] rounded-full bg-goospe-green font-medium text-on-brand transition hover:brightness-105 disabled:opacity-60'
+const skipBtn = 'h-[52px] shrink-0 px-[18px] text-[15px] text-fg-soft transition hover:text-fg'
+
+type ActionsProps = {
+  editing: boolean
+  saving: boolean
+  error: string | null
+  count: number
+  onSubmit: () => void
+  onSkip: () => void
+}
+
+function ErrorNote({ id, error, className = '' }: { id: string; error: string | null; className?: string }) {
+  if (!error) return null
+  return <p id={id} role="alert" className={`rounded-xl bg-red-500/10 p-3 text-sm text-red-600 ${className}`}>{error}</p>
+}
+
+/** Cabecera de la columna izquierda: isotipo, badge, titular y bajada. */
+function Intro({ editing }: { editing: boolean }) {
+  return (
+    <>
+      <div className="flex items-center gap-3">
+        <img src="/brand/isotipo-color.svg" alt="Goospe" className="h-7" />
+        <span className="rounded-full bg-tint px-[11px] py-[5px] text-xs font-medium text-ink">10 segundos</span>
+      </div>
+      <h1 className="mt-6 text-[clamp(36px,4.4vw,60px)] font-light leading-none tracking-[-0.03em] text-fg">
+        {editing ? 'Actualiza' : 'Cuéntanos'} <span className="font-medium">qué te gusta</span>
+      </h1>
+      <p className="mt-3.5 max-w-[380px] text-[17px] leading-[1.5] text-fg-soft">
+        Para decidirte mejor a dónde ir. Puedes cambiarlo cuando quieras desde tu perfil.
+      </p>
+    </>
+  )
+}
+
+/** Acciones en tablet/web: van bajo el titular, en la columna sticky. */
+function DesktopActions({ editing, saving, error, onSubmit, onSkip }: ActionsProps) {
+  return (
+    <div className="hidden md:block">
+      <ErrorNote id="onb-error" error={error} className="mt-6" />
+      <div className="mt-8 flex gap-3">
+        <button
+          type="button"
+          onClick={onSubmit}
+          disabled={saving}
+          aria-describedby={error ? 'onb-error' : undefined}
+          className={`${submitBtn} px-7`}
+        >
+          {saving ? 'Guardando…' : editing ? 'Guardar cambios' : 'Empezar a descubrir'}
+        </button>
+        <button type="button" onClick={onSkip} className={skipBtn}>{editing ? 'Cancelar' : 'Omitir'}</button>
+      </div>
+    </div>
+  )
+}
+
+/** Acciones en móvil: barra fija abajo con el contador de elegidos. */
+function MobileBar({ editing, saving, error, count, onSubmit, onSkip }: ActionsProps) {
+  const start = `Empezar · ${count} ${count === 1 ? 'elegido' : 'elegidos'}`
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface/[0.92] px-5 pb-[calc(20px+var(--sab))] pt-3 backdrop-blur-md md:hidden">
+      <ErrorNote id="onb-error-mobile" error={error} className="mb-3" />
+      <div className="flex gap-2">
+        <button type="button" onClick={onSkip} className={skipBtn}>{editing ? 'Cancelar' : 'Omitir'}</button>
+        <button
+          type="button"
+          onClick={onSubmit}
+          disabled={saving}
+          aria-describedby={error ? 'onb-error-mobile' : undefined}
+          className={`${submitBtn} min-w-0 flex-1`}
+        >
+          {saving ? 'Guardando…' : editing ? 'Guardar cambios' : start}
+        </button>
+      </div>
+    </div>
+  )
+}
 
 /**
  * Formulario de gustos. `initial` trae lo ya guardado (profiles.onboarding): al entrar desde
@@ -44,7 +99,7 @@ export function OnboardingForm({ initial }: { initial: OnboardingInitial | null 
   const [error, setError] = useState<string | null>(null)
 
   const toggle = (v: string) =>
-    setLikes((prev) => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n })
+    setLikes((prev) => { const n = new Set(prev); if (n.has(v)) n.delete(v); else n.add(v); return n })
 
   async function onSubmit() {
     if (likes.size === 0) { setError('Elige al menos una cosa'); return }
@@ -59,73 +114,28 @@ export function OnboardingForm({ initial }: { initial: OnboardingInitial | null 
     else router.push(editing ? '/profile' : '/feed')
   }
 
-  const sectionLabel = 'mb-3 text-xs font-medium uppercase tracking-[0.08em] text-muted'
+  const actions: ActionsProps = {
+    editing, saving, error, count: likes.size, onSubmit, onSkip: () => router.push(editing ? '/profile' : '/feed'),
+  }
 
   return (
     <main className="min-h-[100dvh] bg-goospe-paper">
-      <div className="mx-auto max-w-xl px-5 py-12">
-        <div className="flex items-center justify-between">
-          <img src="/brand/isotipo-color.svg" alt="Goospe" className="h-6" />
-          <span className="rounded-full bg-goospe-green/10 px-3 py-1.5 text-xs font-medium text-goospe-green-dark">10 segundos</span>
+      {/* En móvil el padding inferior deja sitio a la barra fija de acciones. */}
+      <div className="mx-auto grid max-w-[1180px] items-start gap-12 px-4 pb-[calc(124px+var(--sab))] pt-[calc(28px+var(--sat))] md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:px-6 md:py-16 lg:px-8">
+        <div className="md:sticky md:top-14">
+          <Intro editing={editing} />
+          <DesktopActions {...actions} />
         </div>
-
-        <h1 className="mt-6 text-3xl font-light leading-tight text-fg sm:text-4xl">
-          {editing ? 'Actualiza' : 'Cuéntanos'} <span className="font-medium">qué te gusta</span>
-        </h1>
-        <p className="mt-2 text-fg-soft">Para decidirte mejor a dónde ir.</p>
-
-        <section className="mt-8">
-          <h2 className={sectionLabel}>¿Qué te gusta hacer?</h2>
-          <div className="flex flex-wrap gap-2">
-            {LIKES.map((c) => (
-              <Chip key={c.v} label={c.label} icon={LIKE_ICON[c.v]} active={likes.has(c.v)} onClick={() => toggle(c.v)} />
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-7">
-          <h2 className={sectionLabel}>¿Qué ambiente buscas?</h2>
-          <div className="flex flex-wrap gap-2">
-            {VIBES.map((c) => (
-              <Chip key={c.v} label={c.label} icon={VIBE_ICON[c.v]} active={likes.has(c.v)} onClick={() => toggle(c.v)} />
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-7">
-          <h2 className={sectionLabel}>¿Presupuesto típico?</h2>
-          <div className="flex flex-wrap gap-2">
-            {BUDGETS.map((b) => (
-              <Chip key={b.v} label={b.label} active={budget === b.v} onClick={() => setBudget(budget === b.v ? '' : b.v)} />
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-7">
-          <h2 className={sectionLabel}>¿Con qué género te identificas? <span className="normal-case text-muted">(opcional)</span></h2>
-          <div className="flex flex-wrap gap-2">
-            {GENDERS.map((g) => (
-              <Chip key={g.v} label={g.label} active={gender === g.v} onClick={() => setGender(gender === g.v ? '' : g.v)} />
-            ))}
-          </div>
-        </section>
-
-        {error && <p id="onb-error" role="alert" className="mt-6 rounded-xl bg-red-500/10 p-3 text-sm text-red-600">{error}</p>}
-
-        <div className="mt-10 flex items-center gap-4">
-          <button
-            onClick={onSubmit}
-            disabled={saving}
-            aria-describedby={error ? 'onb-error' : undefined}
-            className="rounded-full bg-goospe-green px-8 py-3 font-medium text-white shadow-sm transition hover:bg-goospe-green-dark disabled:opacity-60"
-          >
-            {saving ? 'Guardando…' : editing ? 'Guardar cambios' : 'Empezar a descubrir'}
-          </button>
-          <button onClick={() => router.push(editing ? '/profile' : '/feed')} className="text-sm text-fg-soft hover:text-fg">
-            {editing ? 'Cancelar' : 'Omitir'}
-          </button>
-        </div>
+        <OnboardingChoices
+          likes={likes}
+          budget={budget}
+          gender={gender}
+          onToggle={toggle}
+          onBudget={(v) => setBudget(budget === v ? '' : v)}
+          onGender={(v) => setGender(gender === v ? '' : v)}
+        />
       </div>
+      <MobileBar {...actions} />
     </main>
   )
 }

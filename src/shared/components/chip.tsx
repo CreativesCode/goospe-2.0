@@ -21,7 +21,7 @@ export function Chip({
       aria-pressed={active}
       className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
         active
-          ? 'bg-goospe-green text-white'
+          ? 'bg-goospe-green text-on-brand'
           : 'border border-line bg-card text-fg-soft hover:border-goospe-green/40 hover:text-fg'
       }`}
     >

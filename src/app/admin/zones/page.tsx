@@ -38,12 +38,12 @@ export default async function CoverageZonesPage() {
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <div className="rounded-2xl border border-line bg-card p-4">
-          <Globe size={18} strokeWidth={1.75} className="text-goospe-green" />
+          <Globe size={18} strokeWidth={1.75} className="text-ink" />
           <div className="mt-2 text-2xl font-semibold text-fg">{zones.length}</div>
           <div className="text-xs font-medium text-fg-soft">Zonas distintas</div>
         </div>
         <div className="rounded-2xl border border-line bg-card p-4">
-          <MapPin size={18} strokeWidth={1.75} className="text-goospe-green" />
+          <MapPin size={18} strokeWidth={1.75} className="text-ink" />
           <div className="mt-2 text-2xl font-semibold text-fg">{totalHits}</div>
           <div className="text-xs font-medium text-fg-soft">Aperturas fuera de cobertura</div>
         </div>

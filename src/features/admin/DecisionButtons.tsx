@@ -68,7 +68,7 @@ export function DecisionButtons({ idField, id, approve, reject, approvedMessage,
       {children}
       <div className="inline-flex items-center gap-2">
         <button type="submit" disabled={pending}
-          className="inline-flex min-h-10 items-center gap-1 rounded-full bg-goospe-green px-4 text-xs font-medium text-white transition hover:bg-goospe-green-dark disabled:opacity-50">
+          className="inline-flex min-h-10 items-center gap-1 rounded-full bg-goospe-green px-4 text-xs font-medium text-on-brand transition hover:brightness-105 disabled:opacity-50">
           <Check size={13} strokeWidth={2} /> {pending ? 'Guardando…' : 'Aprobar'}
         </button>
         <button type="button" onClick={() => setRejecting(true)} disabled={pending}

@@ -42,7 +42,7 @@ export function NotificationHistory({ initial, unreadTotal }: { initial: Notif[]
         </p>
         {unread > 0 && (
           <button type="button" onClick={readAll} disabled={busy}
-            className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-goospe-green hover:underline disabled:opacity-60">
+            className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-ink hover:underline disabled:opacity-60">
             <CheckCheck size={16} strokeWidth={1.75} /> Marcar todas como leídas
           </button>
         )}

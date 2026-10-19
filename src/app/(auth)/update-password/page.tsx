@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { UpdatePasswordForm } from '@/features/auth/components'
+import { AuthHeading, UpdatePasswordForm } from '@/features/auth/components'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,8 +14,7 @@ export default async function UpdatePasswordPage() {
 
   return (
     <div>
-      <h1 className="text-center text-2xl font-medium text-fg">Nueva contraseña</h1>
-      <p className="mb-6 mt-1 text-center text-fg-soft">Define tu nueva contraseña</p>
+      <AuthHeading title="Nueva contraseña" subtitle="Define tu nueva contraseña." />
       <UpdatePasswordForm />
     </div>
   )

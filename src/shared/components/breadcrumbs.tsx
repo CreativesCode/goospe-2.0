@@ -18,7 +18,7 @@ export function Breadcrumbs({ items, className = '' }: { items: Crumb[]; classNa
           <li key={`${c.label}-${i}`} className="inline-flex min-w-0 items-center gap-1.5">
             {i > 0 && <ChevronRight size={14} strokeWidth={1.75} className="shrink-0 text-muted" aria-hidden />}
             {c.href ? (
-              <Link href={c.href} className="transition hover:text-goospe-green">{c.label}</Link>
+              <Link href={c.href} className="transition hover:text-ink">{c.label}</Link>
             ) : (
               <span aria-current="page" className="truncate text-fg">{c.label}</span>
             )}

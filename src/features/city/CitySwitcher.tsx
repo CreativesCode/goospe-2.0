@@ -8,11 +8,11 @@ import { fetchActiveCities, setCityChoice, useCityChoice } from './city-store'
 
 const TRIGGER: Record<'dark' | 'light' | 'inline', string> = {
   // Sobre la foto del feed móvil (overlay oscuro).
-  dark: 'pointer-events-auto inline-flex max-w-[52vw] items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white ring-1 ring-white/15 backdrop-blur transition hover:bg-white/20',
+  dark: 'pointer-events-auto inline-flex h-[34px] max-w-[52vw] shrink-0 items-center gap-1.5 rounded-full bg-white/[0.18] px-3 text-[13px] font-medium text-white backdrop-blur transition hover:bg-white/25',
   // Chip claro (tablet, buscador).
-  light: 'inline-flex max-w-[60vw] items-center gap-1.5 rounded-full border border-line bg-card px-4 py-2 text-sm font-medium text-fg transition hover:border-goospe-green/50',
+  light: 'inline-flex h-[42px] max-w-[60vw] items-center gap-[7px] rounded-full border border-line bg-card px-4 text-sm font-medium text-fg transition hover:border-goospe-green/50',
   // Texto con subrayado (cabecera del feed web).
-  inline: 'inline-flex items-center gap-1 text-sm text-muted underline-offset-4 transition hover:text-fg hover:underline',
+  inline: 'inline-flex items-center gap-1.5 text-sm text-fg-soft transition hover:text-fg',
 }
 
 /**
@@ -52,7 +52,7 @@ export function CitySwitcher({
         aria-label={`Cambiar de ciudad. Ahora: ${chosen?.name ?? label}`}
         className={`${TRIGGER[variant]} ${className}`}
       >
-        <MapPin size={variant === 'light' ? 15 : 13} strokeWidth={2} className={variant === 'dark' ? 'shrink-0 text-goospe-green-light' : 'shrink-0 text-goospe-green'} />
+        <MapPin size={variant === 'light' ? 15 : 13} strokeWidth={2} className={variant === 'dark' ? 'shrink-0' : 'shrink-0 text-goospe-green'} />
         <span className="min-w-0 truncate">{chosen?.name ?? label}</span>
         <ChevronDown size={variant === 'light' ? 14 : 12} strokeWidth={2.25} className="shrink-0 opacity-70" />
       </button>
@@ -151,14 +151,14 @@ function CityDialog({
             aria-pressed={chosenId === null}
             className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-surface"
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-goospe-green/10 text-goospe-green">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-tint text-ink">
               <LocateFixed size={17} strokeWidth={1.9} />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-medium">Cerca de mí</span>
               <span className="block text-xs text-muted">Usa la ubicación de este dispositivo</span>
             </span>
-            {chosenId === null && <Check size={17} strokeWidth={2.25} className="shrink-0 text-goospe-green" />}
+            {chosenId === null && <Check size={17} strokeWidth={2.25} className="shrink-0 text-ink" />}
           </button>
 
           {cities === null && !failed && (
@@ -194,7 +194,7 @@ function CityDialog({
                           {[c.region, `${c.places} ${c.places === 1 ? 'lugar' : 'lugares'}`].filter(Boolean).join(' · ')}
                         </span>
                       </span>
-                      {chosenId === c.id && <Check size={17} strokeWidth={2.25} className="shrink-0 text-goospe-green" />}
+                      {chosenId === c.id && <Check size={17} strokeWidth={2.25} className="shrink-0 text-ink" />}
                     </button>
                   </li>
                 ))}

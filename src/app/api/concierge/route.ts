@@ -16,18 +16,36 @@ const GLOBAL_DAILY = 2000 // cortafuegos: tope diario de TODAS las consultas (co
 const STRICT = { failOpen: false }
 const BUSY = 'El conserje está muy solicitado hoy. Intenta de nuevo más tarde.'
 const DAY_S = 86400
+const CANDIDATES = 12 // candidatos que ve el modelo para elegir 3
+const MAX_EXCLUDE = 24
 
 const bodySchema = z.object({
   query: z.string().trim().min(2).max(300),
   lat: z.number().min(-90).max(90).nullish(),
   lng: z.number().min(-180).max(180).nullish(),
+  // Contexto opcional del formulario (chips "Con quién" y "Presupuesto").
+  withWhom: z.enum(['solo', 'pareja', 'amigos', 'familia']).nullish(),
+  budget: z.number().int().min(1).max(4).nullish(),
+  // "Otras 3 opciones": lugares ya mostrados que no deben repetirse.
+  exclude: z.array(z.string().uuid()).max(MAX_EXCLUDE).nullish(),
 })
+
+const WITH_WHOM: Record<string, string> = { solo: 'voy solo', pareja: 'voy en pareja', amigos: 'voy con amigos', familia: 'voy en familia' }
+
+/** Pedido + contexto de los chips, en una sola frase para el embedding y para el modelo. */
+function withContext(query: string, withWhom?: string | null, budget?: number | null): string {
+  const extra = [
+    withWhom ? WITH_WHOM[withWhom] : null,
+    budget ? `presupuesto máximo ${'$'.repeat(budget)} (en una escala de $ a $$$$)` : null,
+  ].filter(Boolean)
+  return extra.length ? `${query} (${extra.join('; ')})` : query
+}
 // gpt-4o (aprox, USD por millón de tokens) + embeddings (despreciable, estimado).
 const COST = (u: Usage) => (u.input_tokens / 1e6) * 2.5 + (u.output_tokens / 1e6) * 10 + 0.00002
 
 const firstOfMonth = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01` }
 
-// POST { query, lat?, lng? } → { picks: [{...place, reason}] }
+// POST { query, lat?, lng?, withWhom?, budget?, exclude? } → stream SSE de picks [{...place, reason}]
 export async function POST(req: NextRequest) {
   let raw: unknown
   try {
@@ -43,7 +61,8 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     )
   }
-  const query = parsed.data.query
+  const query = withContext(parsed.data.query, parsed.data.withWhom, parsed.data.budget)
+  const exclude = new Set(parsed.data.exclude ?? [])
   const lat = parsed.data.lat ?? FALLBACK.lat
   const lng = parsed.data.lng ?? FALLBACK.lng
 
@@ -101,10 +120,11 @@ export async function POST(req: NextRequest) {
     const embedding = await embedQuery(query)
     const { data: candidates, error } = await admin.rpc('match_places', {
       p_embedding: JSON.stringify(embedding),
-      p_lat: lat, p_lng: lng, p_radius_m: 25000, p_limit: 12,
+      // Se piden de más para que, tras quitar los ya mostrados, sigan quedando candidatos.
+      p_lat: lat, p_lng: lng, p_radius_m: 25000, p_limit: CANDIDATES + exclude.size,
     })
     if (error) throw new Error(error.message)
-    cands = (candidates ?? []) as typeof cands
+    cands = ((candidates ?? []) as typeof cands).filter((c) => !exclude.has(c.id)).slice(0, CANDIDATES)
   } catch (e) {
     // Nunca devolver el error crudo (Postgres / OpenAI) al cliente.
     console.error('[concierge] candidatos:', (e as Error).message)

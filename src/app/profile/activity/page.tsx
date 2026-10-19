@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Camera, ChevronLeft, Heart, MessageSquare, Star, Ticket, type LucideIcon } from 'lucide-react'
+import { Camera, Heart, MessageSquare, Star, Ticket, type LucideIcon } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
+import { PageHeader } from '@/shared/components/page-header'
+import { pageShell, pill } from '@/shared/lib/ui'
 import { PhotoImg } from '@/shared/components/photo-img'
 import { fmtInZone } from '@/lib/tz'
 import { eventPath } from '@/features/places/seo-routes'
@@ -34,7 +36,7 @@ type PhotoRow = { id: string; url: string; status: string | null; created_at: st
 
 // Estado de moderación tal como lo entiende la persona.
 const STATUS: Record<string, { label: string; cls: string }> = {
-  approved: { label: 'Publicada', cls: 'bg-goospe-green/10 text-goospe-green-dark' },
+  approved: { label: 'Publicada', cls: 'bg-tint text-ink' },
   pending: { label: 'En revisión', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-400' },
   blocked: { label: 'Oculta por moderación', cls: 'bg-red-500/10 text-red-600 dark:text-red-400' },
 }
@@ -52,7 +54,7 @@ function Empty({ text, cta, href }: { text: string; cta: string; href: string })
   return (
     <div className="rounded-2xl border border-dashed border-line bg-card px-5 py-10 text-center">
       <p className="text-sm text-fg-soft">{text}</p>
-      <Link href={href} className="mt-3 inline-flex min-h-11 items-center rounded-full bg-goospe-gradient px-5 text-sm font-medium text-white shadow">{cta}</Link>
+      <Link href={href} className="mt-3 inline-flex min-h-11 items-center rounded-full bg-goospe-gradient px-5 text-sm font-medium text-on-brand shadow">{cta}</Link>
     </div>
   )
 }
@@ -65,7 +67,7 @@ function Reviews({ rows }: { rows: ReviewRow[] }) {
         <li key={r.id} className="rounded-2xl border border-line bg-card p-4">
           <div className="flex flex-wrap items-start justify-between gap-2">
             {r.places
-              ? <Link href={`/places/${r.places.slug}`} className="font-medium text-fg hover:text-goospe-green">{r.places.name}</Link>
+              ? <Link href={`/places/${r.places.slug}`} className="font-medium text-fg hover:text-ink">{r.places.name}</Link>
               : <span className="font-medium text-fg">Lugar no disponible</span>}
             <StatusPill status={r.status} />
           </div>
@@ -77,7 +79,7 @@ function Reviews({ rows }: { rows: ReviewRow[] }) {
           {r.status === 'blocked' && <p className="mt-2 text-xs text-muted">Esta reseña no cumple las normas de contenido y no es visible para los demás.</p>}
           {r.owner_reply && (
             <div className="mt-3 rounded-xl bg-goospe-green/[0.06] px-3 py-2 text-sm">
-              <p className="flex items-center gap-1.5 text-xs font-medium text-goospe-green-dark">
+              <p className="flex items-center gap-1.5 text-xs font-medium text-ink">
                 <MessageSquare size={13} strokeWidth={1.75} /> Respuesta del negocio{r.owner_replied_at ? ` · ${day(r.owner_replied_at)}` : ''}
               </p>
               <p className="mt-1 whitespace-pre-line text-fg-soft [overflow-wrap:anywhere]">{r.owner_reply}</p>
@@ -104,13 +106,13 @@ function Rsvps({ rows }: { rows: RsvpRow[] }) {
         return (
           <li key={`${ev.id}-${i}`} className={`rounded-2xl border border-line bg-card p-4 ${past || cancelled ? 'opacity-70' : ''}`}>
             <div className="flex flex-wrap items-start justify-between gap-2">
-              <Link href={eventPath(ev.id)} className="font-medium text-fg hover:text-goospe-green">{ev.name}</Link>
-              <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${cancelled ? 'bg-red-500/10 text-red-600 dark:text-red-400' : past ? 'bg-line text-fg-soft' : 'bg-goospe-green/10 text-goospe-green-dark'}`}>
+              <Link href={eventPath(ev.id)} className="font-medium text-fg hover:text-ink">{ev.name}</Link>
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${cancelled ? 'bg-red-500/10 text-red-600 dark:text-red-400' : past ? 'bg-line text-fg-soft' : 'bg-tint text-ink'}`}>
                 {cancelled ? 'Cancelado' : past ? 'Ya pasó' : r.status === 'interested' ? 'Me interesa' : 'Asistiré'}
               </span>
             </div>
             <p className="mt-1 text-sm text-fg-soft">{when} h</p>
-            {ev.places && <Link href={`/places/${ev.places.slug}`} className="mt-1 inline-block text-sm text-goospe-green hover:underline">{ev.places.name}</Link>}
+            {ev.places && <Link href={`/places/${ev.places.slug}`} className="mt-1 inline-block text-sm text-ink hover:underline">{ev.places.name}</Link>}
           </li>
         )
       })}
@@ -129,7 +131,7 @@ function Photos({ rows }: { rows: PhotoRow[] }) {
           </div>
           <div className="space-y-1.5 p-3">
             {p.places
-              ? <Link href={`/places/${p.places.slug}`} className="line-clamp-1 block text-sm font-medium text-fg hover:text-goospe-green">{p.places.name}</Link>
+              ? <Link href={`/places/${p.places.slug}`} className="line-clamp-1 block text-sm font-medium text-fg hover:text-ink">{p.places.name}</Link>
               : <span className="text-sm text-fg-soft">Lugar no disponible</span>}
             <StatusPill status={p.status} />
           </div>
@@ -181,14 +183,14 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
   return (
     <main className="flex min-h-screen flex-col bg-surface">
       <AppNav />
-      <div className="mx-auto w-full max-w-2xl px-5 py-8">
-        <Link href="/profile" className="inline-flex min-h-11 items-center gap-1 text-sm text-fg-soft hover:text-fg"><ChevronLeft size={16} /> Mi perfil</Link>
-        <h1 className="mt-1 text-2xl font-medium text-fg">Mi actividad</h1>
+      <div className={pageShell}>
+        <div className="max-w-3xl">
+        <PageHeader back={{ href: '/profile', label: 'Mi perfil' }} title={<>Mi <span className="font-medium">actividad</span></>} />
 
-        <nav aria-label="Secciones de mi actividad" className="mt-4 flex gap-2 overflow-x-auto pb-1">
+        <nav aria-label="Secciones de mi actividad" className="flex gap-2 overflow-x-auto pb-1">
           {TABS.map(({ key, label, icon: Icon }) => (
             <Link key={key} href={key === 'resenas' ? '/profile/activity' : `/profile/activity?tab=${key}`} aria-current={tab === key ? 'page' : undefined}
-              className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition ${tab === key ? 'border-goospe-green bg-goospe-green/10 text-goospe-green-dark' : 'border-line bg-card text-fg-soft hover:text-fg'}`}>
+              className={pill(tab === key)}>
               <Icon size={16} strokeWidth={1.75} /> {label}
             </Link>
           ))}
@@ -199,6 +201,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
 
         <div className="mt-5">{content}</div>
         {count >= LIMIT && <p className="mt-3 text-center text-xs text-muted">Se muestran los {LIMIT} más recientes.</p>}
+        </div>
       </div>
       <AppFooter />
     </main>

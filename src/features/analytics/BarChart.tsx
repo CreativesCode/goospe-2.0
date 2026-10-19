@@ -92,7 +92,7 @@ export function BarChart({ title, unit, labels, values, maxTicks = 6 }: {
       </div>
 
       <details className="mt-3">
-        <summary className="inline-flex min-h-11 cursor-pointer items-center text-xs font-medium text-goospe-green">Ver como tabla</summary>
+        <summary className="inline-flex min-h-11 cursor-pointer items-center text-xs font-medium text-ink">Ver como tabla</summary>
         <div className="max-h-64 overflow-y-auto rounded-xl border border-line">
           <table className="w-full text-sm">
             <caption className="sr-only">{title}</caption>

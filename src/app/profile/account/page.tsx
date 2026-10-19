@@ -1,13 +1,14 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ChevronLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getMuted } from '@/lib/notification-prefs'
 import { loadMemberships } from '@/lib/account-memberships'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
+import { PageHeader } from '@/shared/components/page-header'
+import { pageShell } from '@/shared/lib/ui'
 import { ChangeEmailForm, ChangePasswordForm } from '@/features/profile/AccountForms'
 import { DeleteAccount } from '@/features/profile/DeleteAccount'
 import { NotificationPrefs } from '@/features/notifications/NotificationPrefs'
@@ -39,14 +40,12 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   return (
     <main className="flex min-h-screen flex-col bg-surface">
       <AppNav />
-      <div className="mx-auto w-full max-w-2xl space-y-5 px-5 py-8">
-        <div>
-          <Link href="/profile" className="inline-flex min-h-11 items-center gap-1 text-sm text-fg-soft hover:text-fg"><ChevronLeft size={16} /> Mi perfil</Link>
-          <h1 className="mt-1 text-2xl font-medium text-fg">Cuenta y seguridad</h1>
-        </div>
+      <div className={pageShell}>
+        <div className="max-w-3xl space-y-5">
+        <PageHeader back={{ href: '/profile', label: 'Mi perfil' }} title={<>Cuenta y <span className="font-medium">seguridad</span></>} />
 
         {sp.email === 'ok' && (
-          <p role="status" className="rounded-xl bg-goospe-green/10 px-4 py-3 text-sm text-goospe-green-dark">
+          <p role="status" className="rounded-xl bg-tint px-4 py-3 text-sm text-ink">
             Confirmamos el enlace. Tu email de acceso es {user.email}.
           </p>
         )}
@@ -59,12 +58,13 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           <h2 className={sectionTitle}>Términos y privacidad</h2>
           <p className={`mt-1 ${hintClass}`}>
             {accepted ? `Aceptaste los términos el ${accepted}. ` : ''}
-            Puedes releer los <Link href="/terms" className="text-goospe-green hover:underline">Términos y Condiciones</Link> y la{' '}
-            <Link href="/privacy" className="text-goospe-green hover:underline">Política de privacidad</Link> cuando quieras.
+            Puedes releer los <Link href="/terms" className="text-ink hover:underline">Términos y Condiciones</Link> y la{' '}
+            <Link href="/privacy" className="text-ink hover:underline">Política de privacidad</Link> cuando quieras.
           </p>
         </section>
 
         <DeleteAccount blockers={blockers} emptyBusinesses={emptyBusinessesRemoved(mine).map((m) => m.businessName)} />
+        </div>
       </div>
       <AppFooter />
     </main>

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { Search, Clock, Utensils, Coffee, Martini, Moon, Ticket, X, type LucideIcon } from 'lucide-react'
+import { Search, Clock, Utensils, Coffee, Martini, Moon, Ticket, X, LayoutGrid, SlidersHorizontal, type LucideIcon } from 'lucide-react'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
 import { LocationNotice } from '@/shared/components/location-notice'
@@ -12,6 +12,9 @@ import { CitySwitcher } from '@/features/city/CitySwitcher'
 import { useCityChoice } from '@/features/city/city-store'
 import { CITY_EVENT } from '@/lib/city-choice'
 import { getPosition, type GeoSource } from '@/lib/geo'
+import { track } from '@/lib/track'
+import { useFavorites } from '@/hooks/useFavorites'
+import { appContainer, eyebrow, pill } from '@/shared/lib/ui'
 import {
   clearFilters, cleanQuery, hasFilters, parseSearchState, searchApiQuery, searchHref,
   type SearchState,
@@ -40,13 +43,56 @@ const CATEGORIES: { id: number; label: string; icon: LucideIcon }[] = [
 ]
 
 const DEBOUNCE_MS = 300
-const chip = (on: boolean) =>
-  `inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition ${on ? 'bg-goospe-green text-white' : 'border border-line bg-card text-fg-soft hover:text-fg'}`
+const PRICES = [1, 2, 3, 4]
+
+/** Fila de la lista de categorías de la columna lateral (web). */
+const sideItem = (on: boolean) =>
+  `flex h-[42px] w-full items-center gap-2.5 rounded-xl px-3 text-left text-sm font-medium transition ${on ? 'bg-tint2 text-ink' : 'text-fg-soft hover:text-fg'}`
+
+/** Precio máximo: control segmentado de 4. Volver a tocar el activo quita el filtro. */
+function PriceSegment({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+  return (
+    <div role="group" aria-label="Precio máximo" className="grid grid-cols-4 overflow-hidden rounded-xl border border-line bg-card">
+      {PRICES.map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => onChange(value === n ? null : n)}
+          aria-pressed={value === n}
+          aria-label={`Hasta ${'$'.repeat(n)}`}
+          className={`h-10 border-line text-sm transition ${n < 4 ? 'border-r' : ''} ${value === n ? 'bg-tint2 font-medium text-ink' : 'text-fg-soft hover:text-fg'}`}
+        >
+          {'$'.repeat(n)}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** Interruptor "Abierto ahora". */
+function OpenSwitch({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={() => onChange(!on)}
+      className="flex w-full items-center justify-between rounded-[14px] border border-line bg-card p-3.5 text-sm text-fg"
+    >
+      <span className="flex items-center gap-2"><Clock size={15} strokeWidth={1.75} className="text-ink" /> Abierto ahora</span>
+      <span className={`relative h-6 w-10 rounded-full transition ${on ? 'bg-goospe-green' : 'bg-line'}`}>
+        <span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-all ${on ? 'left-[19px]' : 'left-[3px]'}`} />
+      </span>
+    </button>
+  )
+}
 
 /**
  * Buscador. La URL es la única fuente de verdad del estado (texto, ciudad, categoría, precio,
  * abierto ahora): los filtros hacen pushState (atrás/adelante los recorre) y el texto, con
  * debounce, replaceState (no llena el historial letra a letra).
+ * Layout: columna lateral de filtros sticky en web; en tablet y móvil, chips con scroll
+ * horizontal y un botón de filtros. Los resultados son una rejilla (filas en móvil).
  */
 export function SearchClient() {
   const params = useSearchParams()
@@ -138,14 +184,56 @@ export function SearchClient() {
   const unknownCity = state.city !== null && status === 'ready' && apiCity === null
   const where = shownCity ? `en ${shownCity.name}` : unknownCity ? 'en todas las ciudades' : 'cerca de ti'
 
+  // Corazón de las tarjetas: una sola carga de guardados para toda la rejilla.
+  const { isSaved, toggle } = useFavorites()
+  const onToggleSave = (id: string) => { track(toggle(id) ? 'save' : 'unsave', { placeId: id }) }
+  // Panel de filtros de tablet/móvil (precio + abierto ahora); en web van en la columna lateral.
+  const [showFilters, setShowFilters] = useState(false)
+  const clearAll = () => { setText(''); navigate(clearFilters(state), 'push') }
+  const extraFilters = (state.price != null ? 1 : 0) + (state.open ? 1 : 0)
+
   return (
     <main className="flex min-h-screen flex-col bg-surface">
       <AppNav />
-      <div className="sticky top-[57px] z-20 space-y-3 border-b border-line bg-surface/90 px-5 py-4 backdrop-blur">
-        <div className="mx-auto max-w-5xl space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="relative min-w-0 flex-1">
-              <Search size={18} strokeWidth={1.75} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
+
+      {/* min-h: el pie no salta mientras cambian los resultados. */}
+      <div className={`${appContainer} grid min-h-[70vh] items-start gap-8 pb-12 pt-[18px] md:pt-7 lg:grid-cols-[240px_minmax(0,1fr)]`}>
+        {/* filtros (web) */}
+        <aside className="sticky top-[88px] hidden flex-col gap-[26px] lg:flex">
+          <div>
+            <div className={eyebrow}>Categoría</div>
+            <div className="mt-2.5 flex flex-col gap-0.5">
+              <button onClick={() => setFilter({ cat: null })} aria-pressed={state.cat === null} className={sideItem(state.cat === null)}>
+                <LayoutGrid size={17} strokeWidth={1.75} /> Todo
+              </button>
+              {CATEGORIES.map(({ id, label, icon: Icon }) => (
+                <button key={id} onClick={() => setFilter({ cat: state.cat === id ? null : id })} aria-pressed={state.cat === id} className={sideItem(state.cat === id)}>
+                  <Icon size={17} strokeWidth={1.75} /> {label}
+                </button>
+              ))}
+              {/* "Eventos" no es un filtro de lugares (ningún lugar lleva esa categoría): enlaza a la cartelera. */}
+              <Link href="/events" className={sideItem(false)}>
+                <Ticket size={17} strokeWidth={1.75} /> Eventos
+              </Link>
+            </div>
+          </div>
+          <div>
+            <div className={eyebrow}>Precio máximo</div>
+            {/* Es un TOPE ("hasta"), y con filtro activo no entran los lugares sin precio. */}
+            <div className="mt-2.5"><PriceSegment value={state.price} onChange={(price) => setFilter({ price })} /></div>
+          </div>
+          <OpenSwitch on={state.open} onChange={(open) => setFilter({ open })} />
+          {filtersOn && (
+            <button onClick={clearAll} className="inline-flex items-center gap-1.5 self-start text-sm text-muted transition hover:text-fg">
+              <X size={14} strokeWidth={2} /> Limpiar filtros
+            </button>
+          )}
+        </aside>
+
+        <div className="min-w-0">
+          <div className="flex gap-2.5">
+            <div className="flex h-[52px] min-w-0 flex-1 items-center gap-2.5 rounded-full border border-line bg-card px-[18px] transition focus-within:border-goospe-green focus-within:shadow-[0_0_0_4px_rgba(45,193,134,0.12)]">
+              <Search size={18} strokeWidth={1.75} className="shrink-0 text-muted" />
               <input
                 value={text}
                 onChange={(e) => setText(e.target.value)}
@@ -156,123 +244,123 @@ export function SearchClient() {
                 enterKeyHint="search"
                 autoComplete="off"
                 maxLength={80}
-                className="w-full rounded-full border border-line bg-card py-2.5 pl-11 pr-5 text-fg outline-none transition placeholder:text-muted focus:border-goospe-green focus:ring-2 focus:ring-goospe-green/30"
+                className="h-full min-w-0 flex-1 bg-transparent text-base text-fg outline-none placeholder:text-muted"
               />
             </div>
             <CitySwitcher
               current={state.city && !unknownCity ? (shownCity ?? { id: -1, name: '…' }) : null}
               label="Cerca de mí"
-              className="shrink-0 !max-w-[40vw] !py-2.5"
+              className="!h-[52px] shrink-0 !max-w-[38vw]"
               onChange={(c) => setFilter({ city: c?.slug ?? null })}
             />
+            <button
+              type="button"
+              onClick={() => setShowFilters((v) => !v)}
+              aria-expanded={showFilters}
+              aria-label={extraFilters ? `Filtros (${extraFilters} activos)` : 'Filtros'}
+              className={`relative flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border transition lg:hidden ${showFilters || extraFilters ? 'border-goospe-green bg-tint2 text-ink' : 'border-line bg-card text-fg'}`}
+            >
+              <SlidersHorizontal size={18} strokeWidth={1.75} />
+            </button>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+
+          {/* categorías como chips (tablet y móvil) */}
+          <div className="no-scrollbar -mx-4 mt-3.5 flex gap-2 overflow-x-auto px-4 md:-mx-6 md:px-6 lg:hidden">
+            <button onClick={() => setFilter({ cat: null })} aria-pressed={state.cat === null} className={pill(state.cat === null)}>
+              <LayoutGrid size={15} strokeWidth={1.75} /> Todo
+            </button>
             {CATEGORIES.map(({ id, label, icon: Icon }) => (
-              <button key={id} onClick={() => setFilter({ cat: state.cat === id ? null : id })} aria-pressed={state.cat === id} className={chip(state.cat === id)}>
+              <button key={id} onClick={() => setFilter({ cat: state.cat === id ? null : id })} aria-pressed={state.cat === id} className={pill(state.cat === id)}>
                 <Icon size={15} strokeWidth={1.75} /> {label}
               </button>
             ))}
-            {/* "Eventos" no es un filtro de lugares (ningún lugar lleva esa categoría): enlaza a la cartelera. */}
-            <Link href="/events" className={chip(false)}>
+            <Link href="/events" className={pill(false)}>
               <Ticket size={15} strokeWidth={1.75} /> Eventos
             </Link>
-            <span className="mx-1 h-5 w-px bg-line" />
-            <select
-              aria-label="Precio máximo"
-              value={state.price ?? ''}
-              onChange={(e) => setFilter({ price: e.target.value ? Number(e.target.value) : null })}
-              className="select-chevron rounded-full border border-line bg-card px-3 py-1.5 text-sm text-fg-soft outline-none focus:border-goospe-green"
-            >
-              {/* Es un TOPE ("hasta"), y con filtro activo no entran los lugares sin precio. */}
-              <option value="">Cualquier precio</option>
-              <option value="1">Hasta $</option>
-              <option value="2">Hasta $$</option>
-              <option value="3">Hasta $$$</option>
-              <option value="4">Hasta $$$$</option>
-            </select>
-            <button onClick={() => setFilter({ open: !state.open })} aria-pressed={state.open} className={chip(state.open)}>
-              <Clock size={15} strokeWidth={1.75} /> Abierto ahora
-            </button>
+          </div>
+
+          {showFilters && (
+            <div className="mt-3.5 grid gap-3 rounded-[20px] border border-line bg-card p-4 min-[560px]:grid-cols-2 lg:hidden">
+              <div>
+                <div className={eyebrow}>Precio máximo</div>
+                <div className="mt-2.5"><PriceSegment value={state.price} onChange={(price) => setFilter({ price })} /></div>
+              </div>
+              <div className="self-end"><OpenSwitch on={state.open} onChange={(open) => setFilter({ open })} /></div>
+            </div>
+          )}
+
+          {!state.city && <LocationNotice source={geoSource} onRetry={loadPos} className="mt-5" />}
+          {unknownCity && (
+            <p role="status" className="mt-5 rounded-[14px] border border-line bg-card px-3.5 py-2.5 text-sm text-fg-soft">
+              No encontramos esa ciudad, así que buscamos en todas. Elige una arriba para ver lo que hay cerca.
+            </p>
+          )}
+
+          {/* Línea de estado de alto fijo: anuncia el resultado sin mover la grilla. */}
+          <div className="mb-3.5 mt-[22px] flex h-5 items-center justify-between gap-3 text-sm">
+            <p role="status" aria-live="polite">
+              {loading ? 'Buscando…' : status === 'ready' && results.length > 0 ? (
+                <><b className="font-medium text-fg">{results.length}{results.length === 60 ? '+' : ''} {results.length === 1 ? 'lugar' : 'lugares'}</b> {where}</>
+              ) : ''}
+            </p>
             {filtersOn && (
-              <button
-                onClick={() => { setText(''); navigate(clearFilters(state), 'push') }}
-                className="inline-flex items-center gap-1 rounded-full px-2 py-1.5 text-sm text-muted transition hover:text-fg"
-              >
+              <button onClick={clearAll} className="inline-flex items-center gap-1 text-muted transition hover:text-fg lg:hidden">
                 <X size={14} strokeWidth={2} /> Limpiar
               </button>
             )}
           </div>
-        </div>
-      </div>
 
-      {/* min-h: el pie no salta mientras cambian los resultados. */}
-      <div className="mx-auto min-h-[70vh] w-full max-w-5xl px-5 py-8">
-        {!state.city && <LocationNotice source={geoSource} onRetry={loadPos} className="mb-6" />}
-        {unknownCity && (
-          <p role="status" className="mb-6 rounded-xl border border-line bg-card px-3.5 py-2.5 text-sm text-fg-soft">
-            No encontramos esa ciudad, así que buscamos en todas. Elige una arriba para ver lo que hay cerca.
-          </p>
-        )}
-
-        {/* Línea de estado de alto fijo: anuncia el resultado sin mover la grilla. */}
-        <p role="status" aria-live="polite" className="mb-4 h-5 text-sm text-muted">
-          {loading ? 'Buscando…' : status === 'ready' && results.length > 0
-            ? `${results.length}${results.length === 60 ? '+' : ''} ${results.length === 1 ? 'lugar' : 'lugares'} ${where}`
-            : ''}
-        </p>
-
-        {status === 'error' && (
-          <div className="flex flex-col items-center gap-3 py-16 text-center">
-            <p className="text-fg-soft">No pudimos completar la búsqueda. Revisa tu conexión e intenta de nuevo.</p>
-            <button
-              onClick={() => setAttempt((n) => n + 1)}
-              className="rounded-full bg-goospe-green px-5 py-2 text-sm font-medium text-white transition hover:bg-goospe-green-dark"
-            >
-              Reintentar
-            </button>
-          </div>
-        )}
-
-        {status === 'ready' && results.length === 0 && (
-          filtersOn ? (
+          {status === 'error' && (
             <div className="flex flex-col items-center gap-3 py-16 text-center">
-              <p className="text-fg-soft">Sin resultados {where} con estos filtros.</p>
-              <button
-                onClick={() => { setText(''); navigate(clearFilters(state), 'push') }}
-                className="rounded-full border border-line bg-card px-5 py-2 text-sm font-medium text-fg-soft transition hover:text-fg"
-              >
-                Limpiar filtros
+              <p className="text-fg-soft">No pudimos completar la búsqueda. Revisa tu conexión e intenta de nuevo.</p>
+              <button onClick={() => setAttempt((n) => n + 1)} className="h-11 rounded-full bg-goospe-green px-5 text-sm font-medium text-on-brand transition hover:brightness-105">
+                Reintentar
               </button>
             </div>
-          ) : (
-            <p className="py-16 text-center text-muted">Aún no hay lugares publicados {where}.</p>
-          )
-        )}
+          )}
 
-        {/* Primera carga: esqueleto con la forma de la grilla. En las siguientes se dejan los
-            resultados anteriores atenuados hasta que llegan los nuevos (sin parpadeo ni salto). */}
-        {loading && results.length === 0 ? (
-          <div aria-hidden className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <div key={i} className="overflow-hidden rounded-2xl border border-line bg-card">
-                <div className="aspect-[4/3] animate-pulse bg-line/50" />
-                <div className="space-y-2 p-4">
-                  <div className="h-4 w-2/3 animate-pulse rounded bg-line/50" />
-                  <div className="h-3 w-1/2 animate-pulse rounded bg-line/40" />
-                </div>
+          {status === 'ready' && results.length === 0 && (
+            filtersOn ? (
+              <div className="flex flex-col items-center gap-3 py-16 text-center">
+                <p className="text-fg-soft">Sin resultados {where} con estos filtros.</p>
+                <button onClick={clearAll} className="h-11 rounded-full border border-line bg-card px-5 text-sm font-medium text-fg transition hover:border-goospe-green/50">
+                  Limpiar filtros
+                </button>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div
-            aria-busy={loading}
-            className={`grid grid-cols-1 gap-5 transition-opacity sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${loading ? 'opacity-50' : ''}`}
-          >
-            {results.map((p) => (
-              <PlaceCard key={p.id} place={p} />
-            ))}
-          </div>
-        )}
+            ) : (
+              <p className="py-16 text-center text-muted">Aún no hay lugares publicados {where}.</p>
+            )
+          )}
+
+          {/* Primera carga: esqueleto con la forma de la grilla. En las siguientes se dejan los
+              resultados anteriores atenuados hasta que llegan los nuevos (sin parpadeo ni salto). */}
+          {loading && results.length === 0 ? (
+            <div aria-hidden className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr))]">
+              {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+                <div key={i} className="overflow-hidden rounded-[20px] border border-line bg-card">
+                  <div className="h-24 animate-pulse bg-ph md:h-[168px]" />
+                  <div className="space-y-2 p-4">
+                    <div className="h-4 w-2/3 animate-pulse rounded bg-line/50" />
+                    <div className="h-3 w-1/2 animate-pulse rounded bg-line/40" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div aria-busy={loading} className={`transition-opacity ${loading ? 'opacity-50' : ''}`}>
+              {/* móvil: filas con la foto a la izquierda */}
+              <div className="flex flex-col gap-2.5 md:hidden">
+                {results.map((p) => <PlaceCard key={p.id} place={p} layout="row" />)}
+              </div>
+              {/* tablet y web: rejilla de tarjetas */}
+              <div className="hidden gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr))] md:grid">
+                {results.map((p) => (
+                  <PlaceCard key={p.id} place={p} saved={isSaved(p.id)} onToggleSave={() => onToggleSave(p.id)} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <AppFooter />

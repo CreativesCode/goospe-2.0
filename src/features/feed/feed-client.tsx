@@ -5,7 +5,6 @@ import { RefreshCw } from 'lucide-react'
 import { useFeed, type FeedItem } from '@/features/feed/use-feed'
 import { useBreakpoint } from '@/features/feed/use-breakpoint'
 import { FeedMobile } from '@/features/feed/feed-mobile'
-import { FeedTablet } from '@/features/feed/feed-tablet'
 import { FeedDesktop } from '@/features/feed/feed-desktop'
 import { OutOfCoverageScreen } from '@/features/coverage/components/OutOfCoverageScreen'
 import { LocationNeededScreen } from '@/features/coverage/components/LocationNeededScreen'
@@ -14,7 +13,7 @@ import { Loader } from '@/shared/components/loader'
 import type { FeedEvent } from '@/features/events/EventFeedCard'
 
 /**
- * Feed de descubrimiento (cliente). Una sola carga de datos (`useFeed`) y tres layouts según
+ * Feed de descubrimiento (cliente). Una sola carga de datos (`useFeed`) y dos layouts según
  * el viewport. Recibe `initial`: la primera tanda renderizada en el servidor con la ubicación
  * por defecto (centro del piloto) → el feed pinta al instante al resolverse el breakpoint, sin
  * esperar geolocalización + 2 RPC; luego refina con la ubicación real en segundo plano.
@@ -59,7 +58,7 @@ export function FeedClient({ initial }: { initial: { items: FeedItem[]; events: 
         <p className="max-w-sm text-fg-soft">No pudimos cargar lugares cerca de ti. Revisa tu conexión e intenta de nuevo.</p>
         <button
           onClick={feed.retryLocation}
-          className="inline-flex items-center gap-2 rounded-full bg-goospe-green px-5 py-2.5 text-sm font-medium text-white transition hover:bg-goospe-green-dark"
+          className="inline-flex items-center gap-2 rounded-full bg-goospe-green px-5 py-2.5 text-sm font-medium text-on-brand transition hover:brightness-105"
         >
           <RefreshCw size={16} strokeWidth={2} /> Reintentar
         </button>
@@ -72,7 +71,5 @@ export function FeedClient({ initial }: { initial: { items: FeedItem[]; events: 
     return <ComingSoonScreen onRetry={feed.retryLocation} />
   }
 
-  if (bp === 'desktop') return <FeedDesktop feed={feed} />
-  if (bp === 'tablet') return <FeedTablet feed={feed} />
-  return <FeedMobile feed={feed} />
+  return bp === 'wide' ? <FeedDesktop feed={feed} /> : <FeedMobile feed={feed} />
 }

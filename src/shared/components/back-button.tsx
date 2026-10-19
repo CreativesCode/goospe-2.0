@@ -25,7 +25,7 @@ export function BackButton({
         if (typeof window !== 'undefined' && window.history.length > 1) router.back()
         else router.push(fallback)
       }}
-      className={`inline-flex items-center gap-1.5 text-sm text-fg-soft transition hover:text-goospe-green ${className}`}
+      className={`inline-flex items-center gap-1.5 text-sm text-fg-soft transition hover:text-ink ${className}`}
     >
       <ArrowLeft size={16} strokeWidth={1.75} /> {label}
     </button>

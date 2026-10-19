@@ -59,7 +59,7 @@ export function AdminNav({ badges = {} }: { badges?: Record<string, number> }) {
               <Link
                 href={href}
                 className={`inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-sm font-medium transition lg:w-full ${
-                  on ? 'bg-goospe-green/10 text-goospe-green-dark' : 'text-fg-soft hover:bg-card hover:text-fg'
+                  on ? 'bg-tint text-ink' : 'text-fg-soft hover:bg-card hover:text-fg'
                 }`}
               >
                 <Icon size={17} strokeWidth={1.75} /> {label}

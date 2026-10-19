@@ -36,7 +36,7 @@ export function ChangeRequestBox({ placeId, kind, pending }: { placeId: string; 
   if (pending) {
     return (
       <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-fg-soft">
-        <Clock size={13} strokeWidth={1.75} className="text-goospe-green" /> Tienes una solicitud de cambio en revisión.
+        <Clock size={13} strokeWidth={1.75} className="text-ink" /> Tienes una solicitud de cambio en revisión.
       </p>
     )
   }
@@ -60,7 +60,7 @@ export function ChangeRequestBox({ placeId, kind, pending }: { placeId: string; 
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-2 space-y-2 rounded-xl border border-goospe-green/30 bg-goospe-green/5 p-3">
+    <form onSubmit={onSubmit} className="mt-2 space-y-2 rounded-xl border border-goospe-green/30 bg-tint p-3">
       <label className="block text-xs font-medium text-fg-soft">
         {copy.title}
         {kind === 'name'

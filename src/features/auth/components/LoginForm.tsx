@@ -25,7 +25,7 @@ export function LoginForm() {
   }
 
   return (
-    <form action={handle} className="space-y-4">
+    <form action={handle} className="space-y-3.5">
       <input type="hidden" name="next" value={next} />
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-fg">Email</label>
@@ -43,14 +43,17 @@ export function LoginForm() {
           className={fieldClass}
         />
       </div>
-      <PasswordField required autoComplete="current-password" />
+      <PasswordField
+        required
+        autoComplete="current-password"
+        labelAside={
+          <Link href="/forgot-password" className="text-[13px] font-medium text-ink hover:underline">¿La olvidaste?</Link>
+        }
+      />
       {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-      <button type="submit" disabled={loading} className={primaryBtn}>
+      <button type="submit" disabled={loading} className={`${primaryBtn} !mt-5`}>
         {loading ? 'Entrando…' : 'Entrar'}
       </button>
-      <p className="text-center text-sm text-fg-soft">
-        <Link href="/forgot-password" className="text-goospe-green hover:underline">¿Olvidaste tu contraseña?</Link>
-      </p>
     </form>
   )
 }

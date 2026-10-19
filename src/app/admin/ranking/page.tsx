@@ -24,7 +24,7 @@ export default async function AdminRankingPage() {
         <p className="mt-1 max-w-2xl text-sm text-fg-soft">
           Pesos con los que se ordena «Para ti». Se aplican al instante a todos los usuarios, sin
           publicar una versión nueva. Cada cambio queda en la{' '}
-          <Link href="/admin/audit?type=feed_config" className="text-goospe-green underline-offset-2 hover:underline">bitácora</Link>.
+          <Link href="/admin/audit?type=feed_config" className="text-ink underline-offset-2 hover:underline">bitácora</Link>.
         </p>
       </header>
 

@@ -56,7 +56,7 @@ const getSnapshot = () => items
 const EMPTY: ToastItem[] = []
 
 const STYLE: Record<Variant, { icon: typeof Check; accent: string }> = {
-  success: { icon: Check, accent: 'text-goospe-green' },
+  success: { icon: Check, accent: 'text-ink' },
   error: { icon: AlertCircle, accent: 'text-red-500' },
   info: { icon: Info, accent: 'text-fg-soft' },
 }
@@ -85,7 +85,7 @@ export function Toaster() {
             {t.action && (
               <button
                 onClick={() => { t.action!.onClick(); dismiss(t.id) }}
-                className="shrink-0 rounded-full px-2 py-0.5 text-sm font-semibold text-goospe-green transition hover:bg-goospe-green/10"
+                className="shrink-0 rounded-full px-2 py-0.5 text-sm font-semibold text-ink transition hover:bg-tint"
               >
                 {t.action.label}
               </button>

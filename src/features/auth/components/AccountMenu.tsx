@@ -48,13 +48,13 @@ export function AccountMenu() {
   }, [open])
 
   // Skeleton del tamaño del avatar mientras carga la sesión → evita el salto del header.
-  if (loading) return <div className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-line" aria-hidden />
+  if (loading) return <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-line md:h-[38px] md:w-[38px]" aria-hidden />
 
   if (!user) {
     return (
       <Link
         href="/login"
-        className="rounded-full bg-goospe-green px-4 py-1.5 text-sm font-medium text-white transition hover:bg-goospe-green-dark"
+        className="inline-flex h-10 shrink-0 items-center rounded-full bg-goospe-green px-4 text-sm font-medium text-on-brand transition hover:brightness-105 md:h-[38px]"
       >
         Entrar
       </Link>
@@ -67,7 +67,7 @@ export function AccountMenu() {
   const Item = ({ href, icon: Icon, children }: { href: string; icon: LucideIcon; children: React.ReactNode }) => (
     <Link
       href={href}
-      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-fg transition hover:bg-goospe-green/10"
+      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-fg transition hover:bg-tint"
       onClick={() => setOpen(false)}
     >
       <Icon size={17} strokeWidth={1.75} className="text-fg-soft" /> {children}
@@ -78,7 +78,7 @@ export function AccountMenu() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex h-11 w-11 items-center justify-center rounded-full bg-goospe-gradient text-sm font-bold text-white shadow ring-1 ring-white/40"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-goospe-gradient text-sm font-medium text-on-brand md:h-[38px] md:w-[38px]"
         aria-label="Cuenta"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -101,16 +101,16 @@ export function AccountMenu() {
           {profile?.is_admin && (
             <Link
               href="/admin"
-              className="flex items-center gap-2.5 border-t border-line px-4 py-2.5 text-sm font-medium text-goospe-green-dark transition hover:bg-goospe-green/10"
+              className="flex items-center gap-2.5 border-t border-line px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-tint"
               onClick={() => setOpen(false)}
             >
-              <LayoutDashboard size={17} strokeWidth={1.75} className="text-goospe-green" /> Panel de administración
+              <LayoutDashboard size={17} strokeWidth={1.75} className="text-ink" /> Panel de administración
             </Link>
           )}
           <button
             type="button"
             onClick={toggle}
-            className="flex w-full items-center gap-2.5 border-t border-line px-4 py-2.5 text-left text-sm text-fg transition hover:bg-goospe-green/10"
+            className="flex w-full items-center gap-2.5 border-t border-line px-4 py-2.5 text-left text-sm text-fg transition hover:bg-tint"
           >
             {theme === 'dark'
               ? <><Sun size={17} strokeWidth={1.75} className="text-fg-soft" /> Modo claro</>

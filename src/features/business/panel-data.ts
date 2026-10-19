@@ -105,6 +105,14 @@ export async function loadOwnerReviews(admin: Admin, placeId: string): Promise<O
   return rows.map(({ user_id, ...r }) => ({ ...r, created_at: r.created_at ?? '', author: names[user_id] ?? 'Usuario' }))
 }
 
+/** Reseñas visibles que el negocio aún no responde (badge de "Reseñas" en el panel). */
+export async function countPendingReviews(admin: Admin, placeId: string): Promise<number> {
+  const { count, error } = await admin.from('reviews').select('id', { count: 'exact', head: true })
+    .eq('place_id', placeId).eq('status', 'approved').is('owner_reply', null)
+  if (error) console.error('[countPendingReviews]', error.message)
+  return count ?? 0
+}
+
 /** Boost activo del lugar (no de un evento), si lo hay. */
 export async function loadActiveBoost(admin: Admin, placeId: string, now: number): Promise<{ id: string; ends_at: string } | null> {
   const { data } = await admin.from('boosts').select('id, ends_at')

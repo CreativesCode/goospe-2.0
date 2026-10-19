@@ -47,7 +47,7 @@ export function WaitlistForm({ coords }: { coords?: { lat: number; lng: number }
       <button
         type="submit"
         disabled={status === 'sending'}
-        className="w-full rounded-full bg-white px-6 py-3 font-medium text-goospe-green-dark shadow-lg transition hover:bg-white/90 disabled:opacity-70"
+        className="w-full rounded-full bg-white px-6 py-3 font-medium text-ink shadow-lg transition hover:bg-white/90 disabled:opacity-70"
       >
         {status === 'sending' ? 'Enviando…' : 'Avísame cuando llegue'}
       </button>

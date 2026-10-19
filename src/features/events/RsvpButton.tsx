@@ -3,20 +3,21 @@
 import { Check, Star } from 'lucide-react'
 import { useRsvp } from './use-rsvp'
 
-const base = 'inline-flex items-center justify-center gap-1.5 rounded-full font-medium transition disabled:opacity-60'
-const idle = 'border border-goospe-green/40 text-goospe-green-dark hover:bg-goospe-green/10'
-const active = 'border border-goospe-green bg-goospe-green text-white'
+const base = 'inline-flex items-center justify-center gap-1.5 rounded-full border font-medium transition disabled:opacity-60'
+const idle = 'border-line text-fg hover:border-goospe-green/50'
+const active = 'border-goospe-green bg-goospe-green text-on-brand'
 
 /**
  * Respuesta a un evento con dos opciones separadas: "Me interesa" y "Asistiré". Solo
- * "Asistiré" suma al conteo público de asistentes. `size="lg"` es el de la página del evento.
+ * "Asistiré" suma al conteo público de asistentes. `size="lg"` es el de la página del evento;
+ * `fill` reparte los dos botones a lo ancho de la tarjeta (cartelera).
  */
-export function RsvpButton({ eventId, size = 'sm' }: { eventId: string; size?: 'sm' | 'lg' }) {
+export function RsvpButton({ eventId, size = 'sm', fill = false }: { eventId: string; size?: 'sm' | 'lg'; fill?: boolean }) {
   const { status, busy, ready, choose } = useRsvp(eventId)
-  const pad = size === 'lg' ? 'min-h-11 px-5 py-2.5 text-sm' : 'px-3 py-1.5 text-xs sm:text-sm'
-  const icon = size === 'lg' ? 17 : 14
+  const pad = fill ? 'h-10 flex-1 px-3 text-sm' : size === 'lg' ? 'h-11 px-5 text-sm' : 'h-9 px-3.5 text-[13px]'
+  const icon = size === 'lg' || fill ? 16 : 14
   return (
-    <div role="group" aria-label="Tu respuesta al evento" aria-busy={busy} className="flex shrink-0 flex-wrap gap-2">
+    <div role="group" aria-label="Tu respuesta al evento" aria-busy={busy} className={`flex gap-2 ${fill ? '' : 'shrink-0 flex-wrap'}`}>
       <button
         type="button"
         onClick={() => choose('interested')}

@@ -86,7 +86,7 @@ export function ZonePicker({ onStarted }: { onStarted: (jobId: string) => void }
           <button
             onClick={onSearch}
             disabled={!region || q.trim().length < 2 || busy !== 'idle'}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-goospe-green px-4 py-2.5 text-sm font-medium text-white transition hover:bg-goospe-green-dark disabled:opacity-50"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-goospe-green px-4 py-2.5 text-sm font-medium text-on-brand transition hover:brightness-105 disabled:opacity-50"
           >
             {busy === 'searching' ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />} Buscar
           </button>
@@ -100,7 +100,7 @@ export function ZonePicker({ onStarted }: { onStarted: (jobId: string) => void }
               <button
                 onClick={() => setSelected(c)}
                 className={`w-full rounded-xl border px-3 py-2 text-left text-sm transition ${
-                  selected === c ? 'border-goospe-green bg-goospe-green/10 text-fg' : 'border-line bg-surface text-fg-soft hover:border-goospe-green/40'
+                  selected === c ? 'border-goospe-green bg-tint text-fg' : 'border-line bg-surface text-fg-soft hover:border-goospe-green/40'
                 }`}
               >
                 <span className="font-medium text-fg">{c.name}</span>{' '}
@@ -116,7 +116,7 @@ export function ZonePicker({ onStarted }: { onStarted: (jobId: string) => void }
       <button
         onClick={onStart}
         disabled={!selected || busy !== 'idle'}
-        className="inline-flex items-center gap-2 rounded-full bg-goospe-gradient px-6 py-3 text-sm font-medium text-white shadow-lg transition hover:opacity-95 disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-full bg-goospe-gradient px-6 py-3 text-sm font-medium text-on-brand shadow-lg transition hover:opacity-95 disabled:opacity-50"
       >
         {busy === 'starting' ? <Loader2 size={16} className="animate-spin" /> : null}
         Cargar esta zona

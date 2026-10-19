@@ -115,7 +115,7 @@ export function HoursEditor({ initialRaw }: { initialRaw: string | null }) {
         {MODES.map((m) => (
           <button key={m.value} type="button" role="radio" aria-checked={value.mode === m.value}
             onClick={() => update({ ...value, mode: m.value })}
-            className={`min-h-11 rounded-full px-4 text-sm font-medium transition ${value.mode === m.value ? 'bg-goospe-green text-white' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}>
+            className={`min-h-11 rounded-full px-4 text-sm font-medium transition ${value.mode === m.value ? 'bg-goospe-green text-on-brand' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}>
             {m.label}
           </button>
         ))}

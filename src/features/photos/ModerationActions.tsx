@@ -23,7 +23,7 @@ export function ModerationActions({ photoId }: { photoId: string }) {
   return (
     <div className="flex gap-2">
       <button onClick={() => act('approve')} disabled={busy}
-        className="inline-flex items-center gap-1.5 rounded-full bg-goospe-green px-4 py-1.5 text-sm font-medium text-white transition hover:bg-goospe-green-dark disabled:opacity-60">
+        className="inline-flex items-center gap-1.5 rounded-full bg-goospe-green px-4 py-1.5 text-sm font-medium text-on-brand transition hover:brightness-105 disabled:opacity-60">
         <Check size={15} strokeWidth={2} /> Aprobar
       </button>
       <button onClick={() => act('reject')} disabled={busy}

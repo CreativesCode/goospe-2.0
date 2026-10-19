@@ -20,7 +20,7 @@ export default function Error({ reset }: { error: Error & { digest?: string }; r
       <div className="flex flex-wrap items-center justify-center gap-3">
         <button
           onClick={reset}
-          className="inline-flex items-center gap-2 rounded-full bg-goospe-green px-5 py-2.5 text-sm font-medium text-white transition hover:bg-goospe-green-dark"
+          className="inline-flex items-center gap-2 rounded-full bg-goospe-green px-5 py-2.5 text-sm font-medium text-on-brand transition hover:brightness-105"
         >
           <RefreshCw size={16} strokeWidth={2} /> Reintentar
         </button>

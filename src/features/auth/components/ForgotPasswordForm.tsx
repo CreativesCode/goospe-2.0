@@ -17,10 +17,12 @@ export function ForgotPasswordForm({ notice = null }: { notice?: string | null }
     else { setSuccess(true); setLoading(false) }
   }
 
-  if (success) return <p role="status" className="text-center text-goospe-green-dark">Revisa tu correo para el enlace de recuperación.</p>
+  if (success) {
+    return <p role="status" className="rounded-[14px] bg-tint px-4 py-3 text-ink">Revisa tu correo para el enlace de recuperación.</p>
+  }
 
   return (
-    <form action={handle} className="space-y-4">
+    <form action={handle} className="space-y-3.5">
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-fg">Email</label>
         <input
@@ -36,7 +38,7 @@ export function ForgotPasswordForm({ notice = null }: { notice?: string | null }
         />
       </div>
       {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-      <button type="submit" disabled={loading} className={primaryBtn}>
+      <button type="submit" disabled={loading} className={`${primaryBtn} !mt-5`}>
         {loading ? 'Enviando…' : 'Enviar enlace'}
       </button>
     </form>

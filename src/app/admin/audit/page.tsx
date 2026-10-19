@@ -32,7 +32,7 @@ function Payload({ payload }: { payload: unknown }) {
   if (!rows.length && !extra) return <span className="text-xs text-muted">Sin detalle</span>
   return (
     <details className="text-xs">
-      <summary className="cursor-pointer text-goospe-green hover:underline">
+      <summary className="cursor-pointer text-ink hover:underline">
         {rows.length ? `${rows.length} ${rows.length === 1 ? 'cambio' : 'cambios'}` : 'Ver detalle'}
       </summary>
       {rows.length > 0 && (
@@ -95,10 +95,10 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: P
         <label className="min-w-48 flex-1 text-xs font-medium text-fg-soft">Email o nombre del actor
           <input name="q" defaultValue={filters.actor} maxLength={AUDIT_ACTOR_MAX} placeholder="persona@correo.cl" className={`mt-1 block w-full ${field}`} />
         </label>
-        <button className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-goospe-green px-5 text-sm font-medium text-white transition hover:bg-goospe-green-dark">
+        <button className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-goospe-green px-5 text-sm font-medium text-on-brand transition hover:brightness-105">
           <Search size={15} strokeWidth={1.75} /> Filtrar
         </button>
-        {filtered && <Link href="/admin/audit" className="min-h-10 py-2 text-sm text-fg-soft hover:text-goospe-green">Limpiar</Link>}
+        {filtered && <Link href="/admin/audit" className="min-h-10 py-2 text-sm text-fg-soft hover:text-ink">Limpiar</Link>}
       </form>
 
       {error ? (
@@ -108,7 +108,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: P
       ) : rows.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-line bg-card px-5 py-8 text-center text-sm text-fg-soft">
           {filters.page > 1
-            ? <>No hay registros en esta página. <Link href={`/admin/audit${auditQuery(filters, 1)}`} className="text-goospe-green hover:underline">Volver a la primera</Link></>
+            ? <>No hay registros en esta página. <Link href={`/admin/audit${auditQuery(filters, 1)}`} className="text-ink hover:underline">Volver a la primera</Link></>
             : filtered ? 'Ningún registro coincide con el filtro.' : 'La bitácora está vacía.'}
         </p>
       ) : (
@@ -135,7 +135,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: P
                   <td className="px-3 py-3">
                     <span className="block text-fg">{typeLabel(r.object_type)}</span>
                     {r.place_id
-                      ? <Link href={`/admin/places/${r.place_id}`} className="block text-xs text-goospe-green hover:underline [overflow-wrap:anywhere]">{r.place_name ?? 'Ver lugar'}</Link>
+                      ? <Link href={`/admin/places/${r.place_id}`} className="block text-xs text-ink hover:underline [overflow-wrap:anywhere]">{r.place_name ?? 'Ver lugar'}</Link>
                       : <span className="block font-mono text-[11px] text-muted [overflow-wrap:anywhere]">{r.object_id ?? ''}</span>}
                   </td>
                   <td className="max-w-xs px-4 py-3"><Payload payload={r.payload} /></td>

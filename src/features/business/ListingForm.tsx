@@ -162,7 +162,7 @@ export function ListingForm({ place, categories }: { place: ListingPlace; catego
         </button>
         {msg && (
           <span role={msg.ok ? 'status' : 'alert'}
-            className={`inline-flex items-center gap-1 text-sm ${msg.ok ? 'text-goospe-green-dark' : 'text-red-600 dark:text-red-400'}`}>
+            className={`inline-flex items-center gap-1 text-sm ${msg.ok ? 'text-ink' : 'text-red-600 dark:text-red-400'}`}>
             {msg.ok && <Check size={15} strokeWidth={2} />}{msg.text}
           </span>
         )}

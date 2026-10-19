@@ -112,7 +112,7 @@ export function RankingWeightsForm({ initial }: { initial: RankingWeights }) {
         <button
           type="submit"
           disabled={pending || !parsed.ok || !dirty}
-          className="inline-flex min-h-10 items-center gap-2 rounded-full bg-goospe-green px-5 text-sm font-medium text-white transition hover:bg-goospe-green-dark disabled:opacity-50"
+          className="inline-flex min-h-10 items-center gap-2 rounded-full bg-goospe-green px-5 text-sm font-medium text-on-brand transition hover:brightness-105 disabled:opacity-50"
         >
           <Save size={16} strokeWidth={1.9} /> {pending ? 'Guardando…' : 'Guardar pesos'}
         </button>

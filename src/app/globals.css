@@ -16,7 +16,15 @@
   --line: 236 231 222;     /* #ECE7DE */
   --fg: 28 28 26;          /* #1C1C1A */
   --fg-soft: 99 99 99;     /* #636363 */
-  --muted: 154 150 141;    /* #9A968D */
+  --muted: 140 136 127;    /* #8C887F */
+  --ink: 31 138 94;        /* #1F8A5E texto verde sobre claro (AA). #2dc186 nunca como texto aquí */
+  --deep: 28 28 26;        /* #1C1C1A */
+  --deep-soft: 185 180 170;/* #B9B4AA */
+  --ph: 241 237 230;       /* #F1EDE6 */
+  --tint: rgb(45 193 134 / 0.10);
+  --tint2: rgb(45 193 134 / 0.18);
+  --paper-a: #EFEBE2;
+  --paper-b: #DED9CE;
 
   /* Safe-area insets. iOS/web usan env(); en Android (Capacitor edge-to-edge) env() es 0
      y el plugin SystemBars inyecta --safe-area-inset-* con el valor real. Usar var(--sat)/var(--sab). */
@@ -32,6 +40,14 @@
   --fg: 243 239 232;       /* #F3EFE8 */
   --fg-soft: 199 193 183;  /* aclarado para contraste sobre superficie oscura */
   --muted: 138 130 120;    /* #8A8278 */
+  --ink: 61 213 151;       /* #3DD597 texto verde sobre oscuro */
+  --deep: 11 10 9;         /* #0B0A09 */
+  --deep-soft: 163 157 147;/* #A39D93 */
+  --ph: 41 37 31;          /* #29251F */
+  --tint: rgb(45 193 134 / 0.13);
+  --tint2: rgb(45 193 134 / 0.22);
+  --paper-a: #1c1a17;
+  --paper-b: #131210;
 }
 
 @layer base {
@@ -44,6 +60,14 @@
 }
 
 @layer utilities {
+  /* Contenedores con scroll propio sin barra visible (mazo del feed, filas de chips). */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Sombra de texto para leer sobre fotos (el feed superpone texto blanco sobre
      imágenes que pueden ser claras). text-shadow se hereda → aplicar al contenedor. */
   .text-shadow-photo {
@@ -63,7 +87,7 @@
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239A968D' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238C887F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.7rem center;
     background-size: 1rem;

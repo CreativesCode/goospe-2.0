@@ -24,13 +24,14 @@ function Stars({ rating }: { rating: number }) {
     <span className="inline-flex items-center gap-0.5" role="img" aria-label={`${rating} de 5 estrellas`}>
       {[1, 2, 3, 4, 5].map((n) => {
         const on = n <= rating
-        return <Star key={n} size={14} strokeWidth={1.75} className={on ? 'text-goospe-green' : 'text-muted/40'} fill={on ? 'currentColor' : 'none'} />
+        return <Star key={n} size={14} strokeWidth={1.75} className={on ? 'text-ink' : 'text-muted/40'} fill={on ? 'currentColor' : 'none'} />
       })}
     </span>
   )
 }
 
-function ReviewRow({ placeId, r, timeZone }: { placeId: string; r: OwnerReview; timeZone: string | null }) {
+/** Una reseña con su respuesta. `plain`: fila sin caja, separada por una línea (tarjeta del Resumen). */
+export function ReviewRow({ placeId, r, timeZone, plain = false }: { placeId: string; r: OwnerReview; timeZone: string | null; plain?: boolean }) {
   const [published, setPublished] = useState(r.owner_reply)
   const [draft, setDraft] = useState<string | null>(null) // null = editor cerrado
   const [busy, setBusy] = useState<'ai' | 'save' | 'delete' | null>(null)
@@ -69,7 +70,7 @@ function ReviewRow({ placeId, r, timeZone }: { placeId: string; r: OwnerReview; 
 
   const critical = r.rating <= 2
   return (
-    <li className={`rounded-xl border p-3 ${critical ? 'border-amber-500/50 bg-amber-500/5' : 'border-line'}`}>
+    <li className={plain ? 'border-t border-line py-3 last:pb-0' : `rounded-xl border p-3 ${critical ? 'border-amber-500/50 bg-amber-500/5' : 'border-line'}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="inline-flex items-center gap-2 text-sm font-medium text-fg"><Stars rating={r.rating} /> {r.author}</span>
         <span className="text-xs text-muted">{fmt(r.created_at)}</span>
@@ -82,8 +83,8 @@ function ReviewRow({ placeId, r, timeZone }: { placeId: string; r: OwnerReview; 
       {r.body && <p className="mt-1 text-sm text-fg-soft [overflow-wrap:anywhere]">{r.body}</p>}
 
       {published && draft === null && (
-        <div className="mt-3 rounded-lg bg-goospe-green/5 p-3">
-          <p className="inline-flex items-center gap-1 text-xs font-medium text-goospe-green-dark"><BadgeCheck size={13} strokeWidth={2} /> Tu respuesta pública</p>
+        <div className="mt-3 rounded-lg bg-tint p-3">
+          <p className="inline-flex items-center gap-1 text-xs font-medium text-ink"><BadgeCheck size={13} strokeWidth={2} /> Tu respuesta pública</p>
           <p className="mt-1 whitespace-pre-line text-sm text-fg [overflow-wrap:anywhere]">{published}</p>
           <div className="mt-2 flex flex-wrap gap-x-4">
             <button type="button" onClick={() => setDraft(published)} className={`min-h-11 ${linkBtn}`}>Editar</button>
@@ -93,7 +94,7 @@ function ReviewRow({ placeId, r, timeZone }: { placeId: string; r: OwnerReview; 
       )}
 
       {draft !== null && (
-        <div className="mt-3 rounded-lg bg-goospe-green/5 p-3">
+        <div className="mt-3 rounded-lg bg-tint p-3">
           <label className="block text-xs font-medium text-fg-soft">
             Respuesta pública
             <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={4} maxLength={REPLY_MAX} className={`mt-1 ${inputSm}`} />

@@ -16,10 +16,10 @@ export function UpdatePasswordForm() {
   }
 
   return (
-    <form action={handle} className="space-y-4">
+    <form action={handle} className="space-y-3.5">
       <PasswordField label="Nueva contraseña" required minLength={6} autoComplete="new-password" />
       {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-      <button type="submit" disabled={loading} className={primaryBtn}>
+      <button type="submit" disabled={loading} className={`${primaryBtn} !mt-5`}>
         {loading ? 'Actualizando…' : 'Actualizar contraseña'}
       </button>
     </form>

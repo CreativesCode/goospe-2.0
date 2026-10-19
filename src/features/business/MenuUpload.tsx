@@ -60,12 +60,12 @@ export function MenuUpload({ placeId, hasMenu }: { placeId: string; hasMenu: boo
   }
 
   return (
-    <section className="rounded-2xl border border-line bg-card p-6 shadow-sm">
+    <section className="rounded-[22px] border border-line bg-card p-4 sm:p-6">
       <div className="flex items-center gap-2">
         <h2 className="font-medium text-fg">Carta / Menú</h2>
         <span
           title="Decídeme lee tu carta automáticamente y la convierte en menú digital"
-          className="rounded-full bg-goospe-green/15 px-2 py-0.5 text-[10px] font-medium text-goospe-green-dark"
+          className="rounded-full bg-tint2 px-2 py-0.5 text-[10px] font-medium text-ink"
         >
           Lectura automática
         </span>
@@ -77,7 +77,7 @@ export function MenuUpload({ placeId, hasMenu }: { placeId: string; hasMenu: boo
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
         {/* Subir / agregar páginas (append si ya hay carta) */}
-        <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-goospe-gradient px-4 py-2 text-sm font-medium text-white shadow">
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-goospe-gradient px-4 py-2 text-sm font-medium text-on-brand shadow">
           <input
             ref={appendRef}
             type="file"
@@ -112,7 +112,7 @@ export function MenuUpload({ placeId, hasMenu }: { placeId: string; hasMenu: boo
         )}
       </div>
       <UploadStatusList items={uploads.items} uploadingLabel="Subiendo y leyendo…" className="mt-3" />
-      {msg && <p role={msg.ok ? 'status' : 'alert'} className={`mt-2 text-sm ${msg.ok ? 'text-goospe-green-dark' : 'text-red-600 dark:text-red-400'}`}>{msg.text}</p>}
+      {msg && <p role={msg.ok ? 'status' : 'alert'} className={`mt-2 text-sm ${msg.ok ? 'text-ink' : 'text-red-600 dark:text-red-400'}`}>{msg.text}</p>}
     </section>
   )
 }

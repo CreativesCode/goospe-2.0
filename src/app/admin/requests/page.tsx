@@ -28,7 +28,7 @@ const STATUS: Record<string, string> = { approved: 'Aprobada', rejected: 'Rechaz
 function Coords({ label, lat, lng }: { label: string; lat?: number | null; lng?: number | null }) {
   if (lat == null || lng == null) return <span className="text-muted">{label}: sin coordenadas</span>
   return (
-    <a href={osm(lat, lng)} target="_blank" rel="noreferrer" className="text-goospe-green hover:underline">
+    <a href={osm(lat, lng)} target="_blank" rel="noreferrer" className="text-ink hover:underline">
       {label}: {lat.toFixed(5)}, {lng.toFixed(5)}
     </a>
   )
@@ -97,7 +97,7 @@ export default async function AdminRequestsPage() {
                       </span>
                       <span>{nameByUser[r.user_id] || 'Dueño'} · {fmt(r.created_at)}</span>
                     </p>
-                    <Link href={`/admin/places/${r.place_id}`} className="block font-medium text-fg hover:text-goospe-green">{r.places?.name ?? 'Lugar'}</Link>
+                    <Link href={`/admin/places/${r.place_id}`} className="block font-medium text-fg hover:text-ink">{r.places?.name ?? 'Lugar'}</Link>
                     <Change r={r} />
                     {r.message && (
                       <p className="flex items-start gap-1.5 rounded-lg bg-card px-3 py-2 text-sm text-fg-soft">

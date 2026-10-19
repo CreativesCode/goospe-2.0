@@ -13,9 +13,9 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       type="button"
       onClick={toggle}
       aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-      className={`inline-flex h-11 w-11 items-center justify-center rounded-full border border-line bg-card text-fg-soft transition hover:text-fg ${className}`}
+      className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-line bg-card text-fg-soft transition hover:text-fg md:h-[38px] md:w-[38px] ${className}`}
     >
-      {isDark ? <Sun size={20} strokeWidth={1.75} /> : <Moon size={20} strokeWidth={1.75} />}
+      {isDark ? <Sun size={17} strokeWidth={1.75} /> : <Moon size={17} strokeWidth={1.75} />}
     </button>
   )
 }

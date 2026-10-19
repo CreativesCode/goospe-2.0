@@ -1,29 +1,15 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Heart } from 'lucide-react'
-import { categoryIcon } from '@/shared/lib/icons'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
+import { appContainer, pageTitle } from '@/shared/lib/ui'
 import { createClient } from '@/lib/supabase/server'
-import { PhotoImg } from '@/shared/components/photo-img'
 import { FavoritesMigrator } from '@/features/places/FavoritesMigrator'
+import { SavedGrid } from '@/features/places/SavedGrid'
+import { SAVED_PLACE_SELECT, savedToCard, type SavedRow } from '@/features/places/saved-places'
 
 export const dynamic = 'force-dynamic'
-
-type SavedRow = {
-  place_id: string
-  places: {
-    id: string
-    slug: string
-    name: string
-    vibe_line: string | null
-    description: string | null
-    price_level: number | null
-    cover_url: string | null
-    place_photos: { url: string; status: string | null }[]
-    place_categories: { categories: { emoji: string | null; name: string } | null }[]
-  } | null
-}
 
 export default async function SavedPage() {
   const supabase = await createClient()
@@ -32,15 +18,12 @@ export default async function SavedPage() {
 
   const { data, error } = await supabase
     .from('favorites')
-    .select(
-      'place_id, places(id, slug, name, vibe_line, description, price_level, cover_url, place_photos(url, status), place_categories(categories(emoji, name)))'
-    )
+    .select(SAVED_PLACE_SELECT)
     .order('created_at', { ascending: false })
 
   // Lanza para que lo capture src/app/error.tsx (antes mostraba un crudo "Error: …" + "· 0").
   if (error) throw new Error(error.message)
-  const rows = (data ?? []) as unknown as SavedRow[]
-  const places = rows.map((r) => r.places).filter(Boolean) as NonNullable<SavedRow['places']>[]
+  const places = savedToCard((data ?? []) as unknown as SavedRow[])
 
   return (
     <main className="flex min-h-screen flex-col bg-surface">
@@ -48,60 +31,27 @@ export default async function SavedPage() {
       {/* Sube los guardados hechos sin sesión y refresca (el login puede aterrizar aquí). */}
       <FavoritesMigrator />
 
-      <div className="mx-auto max-w-5xl px-5 py-8">
-        <h1 className="mb-6 inline-flex items-center gap-2 text-2xl font-medium text-fg">
-          <Heart size={22} strokeWidth={1.75} className="text-goospe-green" /> Mis guardados
-          <span className="text-base font-normal text-muted">· {places.length}</span>
+      <div className={`${appContainer} pb-14 pt-[18px] md:pt-7`}>
+        <h1 className={pageTitle}>
+          Guardados <span className="text-[0.5em] font-normal tracking-normal text-muted">{places.length}</span>
         </h1>
 
-        {places.length === 0 && (
+        {places.length === 0 ? (
           <div className="flex flex-col items-center gap-4 py-24 text-center">
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-goospe-green/10 text-goospe-green">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-tint text-goospe-green">
               <Heart size={30} strokeWidth={1.5} />
             </span>
             <p className="text-lg font-medium text-fg">Aún no guardas nada</p>
             <p className="max-w-sm text-sm text-fg-soft">
               Toca el corazón en cualquier lugar del feed y aparecerá aquí.
             </p>
-            <Link
-              href="/feed"
-              className="mt-2 rounded-full bg-goospe-gradient px-6 py-2.5 text-sm font-medium text-white shadow"
-            >
+            <Link href="/feed" className="mt-2 inline-flex h-12 items-center rounded-full bg-goospe-green px-6 text-sm font-medium text-on-brand transition hover:brightness-105">
               Explorar lugares
             </Link>
           </div>
+        ) : (
+          <SavedGrid places={places} />
         )}
-
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {places.map((p) => {
-            const photo = p.cover_url || p.place_photos?.find((ph) => ph.status === 'approved')?.url // portada del dueño primero
-            const Cat = categoryIcon(p.place_categories?.[0]?.categories?.emoji)
-            return (
-              <Link
-                href={`/places/${p.slug}`}
-                key={p.id}
-                className="group block overflow-hidden rounded-2xl border border-line bg-card shadow-sm transition hover:shadow-md"
-              >
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  {/* foto, o gradiente + icono de categoría si no hay o no carga */}
-                  <PhotoImg
-                    src={photo}
-                    alt={p.name}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    fallback={<Cat size={44} strokeWidth={1.5} />}
-                  />
-                </div>
-                <div className="space-y-1.5 p-4">
-                  <h2 className="font-medium leading-tight text-fg">{p.name}</h2>
-                  {p.vibe_line && <p className="text-sm font-medium text-goospe-green">{p.vibe_line}</p>}
-                  {p.description && (
-                    <p className="line-clamp-2 text-sm leading-snug text-fg-soft">{p.description}</p>
-                  )}
-                </div>
-              </Link>
-            )
-          })}
-        </div>
       </div>
 
       <AppFooter />

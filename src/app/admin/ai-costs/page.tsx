@@ -112,7 +112,7 @@ export default async function GastosIaPage({ searchParams }: { searchParams: Pro
               <Link
                 key={r.key}
                 href={`/admin/ai-costs?range=${r.key}`}
-                className={`rounded-full px-3 py-1 font-medium transition ${range === r.key ? 'bg-goospe-green/10 text-goospe-green-dark' : 'text-fg-soft hover:text-fg'}`}
+                className={`rounded-full px-3 py-1 font-medium transition ${range === r.key ? 'bg-tint text-ink' : 'text-fg-soft hover:text-fg'}`}
               >
                 {r.label}
               </Link>
@@ -212,7 +212,7 @@ function PageLink({ range, page, disabled, children }: { range: string; page: nu
 function Kpi({ icon: Icon, label, value, hint, accent }: { icon: typeof Coins; label: string; value: string | number; hint?: string; accent?: boolean }) {
   return (
     <div className={`rounded-2xl border p-4 ${accent ? 'border-goospe-green/30 bg-goospe-green/[0.06]' : 'border-line bg-card'}`}>
-      <Icon size={18} strokeWidth={1.75} className="text-goospe-green" />
+      <Icon size={18} strokeWidth={1.75} className="text-ink" />
       <div className="mt-2 text-2xl font-semibold text-fg">{value}</div>
       <div className="text-xs font-medium text-fg-soft">{label}</div>
       {hint && <div className="mt-0.5 text-[11px] text-muted">{hint}</div>}

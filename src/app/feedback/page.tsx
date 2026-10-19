@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
-import { MessageSquareText } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
+import { PageHeader } from '@/shared/components/page-header'
+import { pageShell } from '@/shared/lib/ui'
 import { safeInternalLink } from '@/features/notifications/format'
 import { FeedbackForm } from '@/features/feedback/FeedbackForm'
 import { GENERAL_CATEGORIES, type GeneralCategory } from '@/features/feedback/feedback-schema'
@@ -28,14 +29,15 @@ export default async function FeedbackPage({ searchParams }: { searchParams: Pro
   return (
     <main className="flex min-h-screen flex-col bg-surface">
       <AppNav />
-      <div className="mx-auto w-full max-w-xl px-5 py-8">
-        <h1 className="inline-flex items-center gap-2 text-2xl font-medium text-fg">
-          <MessageSquareText size={22} strokeWidth={1.75} className="text-goospe-green" /> Enviar comentarios
-        </h1>
-        <p className="mb-6 mt-1 text-sm text-fg-soft">
-          ¿Algo no funciona, falta un lugar o tienes una idea? Escríbenos. Para corregir los datos de un lugar, usa “Sugerir una corrección” en su ficha.
-        </p>
+      <div className={pageShell}>
+        <div className="max-w-2xl">
+        <PageHeader
+          kicker="Ayúdanos a mejorar"
+          title={<>Enviar <span className="font-medium">comentarios</span></>}
+          subtitle="¿Algo no funciona, falta un lugar o tienes una idea? Escríbenos. Para corregir los datos de un lugar, usa “Sugerir una corrección” en su ficha."
+        />
         <FeedbackForm signedIn={!!user} initialCategory={category} from={safeInternalLink(one(sp.desde))?.slice(0, 300) ?? null} />
+        </div>
       </div>
       <AppFooter />
     </main>

@@ -107,7 +107,7 @@ export default async function AdminProductPage() {
                     <td className="py-2 pr-3 text-right tabular-nums text-fg-soft">{w.anonymous}</td>
                     <td className="py-2 pr-3 text-right tabular-nums text-fg-soft">{w.visits}</td>
                     <td className="py-2 pr-3 text-right tabular-nums text-fg-soft">{w.decided_visits}</td>
-                    <td className={`py-2 pr-3 text-right tabular-nums ${r.low ? 'text-muted' : 'font-medium text-goospe-green'}`}>{fmtRate(r)}</td>
+                    <td className={`py-2 pr-3 text-right tabular-nums ${r.low ? 'text-muted' : 'font-medium text-ink'}`}>{fmtRate(r)}</td>
                     <td className="py-2 text-right tabular-nums text-fg-soft">{w.decisions}</td>
                   </tr>
                 )

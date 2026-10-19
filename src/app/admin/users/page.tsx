@@ -77,7 +77,7 @@ export default async function AdminUsersPage() {
                 <td className="max-w-[220px] px-4 py-3">
                   <div className="flex items-center gap-2">
                     <span className="truncate font-medium text-fg">{u.profile?.display_name || u.email.split('@')[0]}</span>
-                    {u.profile?.is_admin && <span className="inline-flex items-center gap-1 rounded-full bg-goospe-green/10 px-2 py-0.5 text-[10px] font-medium text-goospe-green-dark"><ShieldCheck size={11} /> admin</span>}
+                    {u.profile?.is_admin && <span className="inline-flex items-center gap-1 rounded-full bg-tint px-2 py-0.5 text-[10px] font-medium text-ink"><ShieldCheck size={11} /> admin</span>}
                   </div>
                   <span className="block truncate text-xs text-muted">{u.email}</span>
                 </td>

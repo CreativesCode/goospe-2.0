@@ -87,7 +87,7 @@ export default async function AdminFeedbackPage() {
                     <p className="font-medium text-fg">{categoryLabel(r.kind, r.category)}</p>
                     {r.places && r.place_id && (
                       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                        <Link href={`/admin/places/${r.place_id}`} className="font-medium text-goospe-green hover:underline">{r.places.name}</Link>
+                        <Link href={`/admin/places/${r.place_id}`} className="font-medium text-ink hover:underline">{r.places.name}</Link>
                         <Link href={`/places/${r.places.slug}`} target="_blank" className="text-fg-soft hover:underline">Ver ficha pública</Link>
                         {r.places.business_id && <span className="inline-flex items-center gap-1 text-xs text-muted"><Store size={12} /> Tiene dueño (ya fue avisado)</span>}
                       </p>

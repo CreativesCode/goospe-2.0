@@ -77,7 +77,7 @@ export default async function AdminStatsPage() {
                 const c = byKind(kind)
                 return (
                   <tr key={kind} className="border-b border-line/60 last:border-0">
-                    <td className="py-2 pr-3"><span className="inline-flex items-center gap-2 text-fg"><Icon size={15} strokeWidth={1.75} className="text-goospe-green" /> {label}</span></td>
+                    <td className="py-2 pr-3"><span className="inline-flex items-center gap-2 text-fg"><Icon size={15} strokeWidth={1.75} className="text-ink" /> {label}</span></td>
                     <td className="py-2 pr-3 text-right tabular-nums font-medium text-fg">{c.total}</td>
                     <td className="py-2 pr-3 text-right tabular-nums text-fg-soft">{c.d30}</td>
                     <td className="py-2 text-right tabular-nums text-fg-soft">{c.d7}</td>
@@ -115,10 +115,10 @@ export default async function AdminStatsPage() {
             {ranking.map((r, i) => (
               <li key={r.id}>
                 <div className="flex items-center justify-between gap-3 text-sm">
-                  <Link href={`/admin/places/${r.id}`} className="inline-flex min-w-0 items-center gap-2 text-fg hover:text-goospe-green">
+                  <Link href={`/admin/places/${r.id}`} className="inline-flex min-w-0 items-center gap-2 text-fg hover:text-ink">
                     <span className="text-muted">{i + 1}.</span> <span className="truncate">{r.name}</span>
                   </Link>
-                  <span className="shrink-0 font-medium text-goospe-green">{r.n}</span>
+                  <span className="shrink-0 font-medium text-ink">{r.n}</span>
                 </div>
                 <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface">
                   <div className="h-full rounded-full bg-goospe-green/70" style={{ width: `${(r.n / maxRank) * 100}%` }} />

@@ -17,7 +17,7 @@ const fmtEvent = (s: string, tz: string | null | undefined) =>
 const badge = (status: string) => {
   const hidden = status === 'blocked' || status === 'rejected'
   return (
-    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${hidden ? 'bg-red-100 text-red-600' : 'bg-goospe-green/10 text-goospe-green-dark'}`}>
+    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${hidden ? 'bg-red-100 text-red-600' : 'bg-tint text-ink'}`}>
       {hidden ? 'Oculto' : 'Visible'}
     </span>
   )
@@ -47,10 +47,10 @@ export default async function AdminContenidoPage() {
                 <li key={r.id} className="flex items-start justify-between gap-4 rounded-xl border border-line bg-card p-4">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center gap-1 text-sm text-goospe-green">
+                      <span className="inline-flex items-center gap-1 text-sm text-ink">
                         <Star size={13} strokeWidth={1.75} fill="currentColor" /> {r.rating}
                       </span>
-                      {r.places && <Link href={`/places/${r.places.slug}`} className="text-sm font-medium text-fg hover:text-goospe-green">{r.places.name}</Link>}
+                      {r.places && <Link href={`/places/${r.places.slug}`} className="text-sm font-medium text-fg hover:text-ink">{r.places.name}</Link>}
                       {badge(r.status)}
                       <span className="text-xs text-muted">{fmt(r.created_at)}</span>
                     </div>

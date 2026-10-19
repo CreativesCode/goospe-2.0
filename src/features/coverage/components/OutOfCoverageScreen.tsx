@@ -17,7 +17,7 @@ export function OutOfCoverageScreen({ coords }: { coords?: { lat: number; lng: n
   }, [])
 
   return (
-    <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-goospe-gradient px-6 pt-[var(--sat)] pb-[var(--sab)] text-center text-white">
+    <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-goospe-gradient px-6 pt-[var(--sat)] pb-[var(--sab)] text-center text-on-brand">
       <img src="/brand/isotipo-white.svg" alt="" className="h-16 w-16" />
 
       <h1 className="mt-7 text-3xl font-light leading-tight tracking-tight sm:text-4xl">

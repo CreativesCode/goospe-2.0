@@ -43,7 +43,7 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
       <PasswordField id="email_current_password" name="current_password" label="Tu contraseña actual" required autoComplete="current-password" />
       {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
       {sent && (
-        <p role="status" className="rounded-xl bg-goospe-green/10 px-3 py-2 text-sm text-goospe-green-dark">
+        <p role="status" className="rounded-xl bg-tint px-3 py-2 text-sm text-ink">
           Te enviamos un enlace de confirmación al nuevo email. Tu email no cambia hasta que lo abras (en este mismo navegador).
         </p>
       )}

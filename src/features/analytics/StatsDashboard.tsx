@@ -20,7 +20,7 @@ const UNIT: Record<MetricKey, string> = {
 }
 const GROUP_SHORT: Record<Group, string> = { day: 'Día', hour: 'Hora', dow: 'Semana' }
 const seg = (on: boolean) =>
-  `min-h-11 flex-1 whitespace-nowrap rounded-full px-3 text-sm font-medium transition sm:flex-none ${on ? 'bg-goospe-green text-white' : 'text-fg-soft hover:text-fg'}`
+  `min-h-11 flex-1 whitespace-nowrap rounded-full px-3 text-sm font-medium transition sm:flex-none ${on ? 'bg-goospe-green text-on-brand' : 'text-fg-soft hover:text-fg'}`
 const segWrap = 'flex rounded-full border border-line bg-surface p-0.5'
 
 /**
@@ -57,7 +57,7 @@ export function StatsDashboard({ placeId, timeZone, cityName, initialRows, initi
   const contactParts = current.kinds.filter((k) => (channels[k] ?? 0) > 0).map((k) => `${CHANNEL_LABEL[k]} ${fmtNum(channels[k])}`)
 
   return (
-    <section id="estadisticas" className="scroll-mt-32 rounded-2xl border border-line bg-card p-4 shadow-sm sm:p-6">
+    <section id="estadisticas" className="scroll-mt-32 rounded-[22px] border border-line bg-card p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-medium text-fg">Estadísticas</h2>
         <div className="flex w-full flex-wrap gap-2 sm:w-auto">
@@ -84,8 +84,8 @@ export function StatsDashboard({ placeId, timeZone, cityName, initialRows, initi
               const on = key === metric
               return (
                 <button key={key} type="button" aria-pressed={on} onClick={() => setMetric(key)}
-                  className={`rounded-xl border p-3 text-left transition ${on ? 'border-goospe-green bg-goospe-green/5 ring-1 ring-goospe-green' : 'border-transparent bg-surface hover:border-line'}`}>
-                  <Icon size={17} strokeWidth={1.75} className="text-goospe-green" aria-hidden="true" />
+                  className={`rounded-xl border p-3 text-left transition ${on ? 'border-goospe-green bg-tint ring-1 ring-goospe-green' : 'border-transparent bg-surface hover:border-line'}`}>
+                  <Icon size={17} strokeWidth={1.75} className="text-ink" aria-hidden="true" />
                   <span className="mt-1 block text-2xl font-semibold tabular-nums text-fg">{fmtNum(totals[key])}</span>
                   <span className="block text-xs text-fg-soft">{label}</span>
                 </button>
@@ -101,8 +101,8 @@ export function StatsDashboard({ placeId, timeZone, cityName, initialRows, initi
       )}
 
       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 border-t border-line pt-4 text-sm text-fg-soft">
-        <span className="inline-flex items-center gap-1.5"><Heart size={15} strokeWidth={1.75} className="text-goospe-green" /> {fmtNum(savesTotal)} guardados en total</span>
-        <span className="inline-flex items-center gap-1.5"><Star size={15} strokeWidth={1.75} className="text-goospe-green" fill="currentColor" /> {Number(rating).toFixed(1)} · {reviewsCount} {reviewsCount === 1 ? 'reseña' : 'reseñas'}</span>
+        <span className="inline-flex items-center gap-1.5"><Heart size={15} strokeWidth={1.75} className="text-ink" /> {fmtNum(savesTotal)} guardados en total</span>
+        <span className="inline-flex items-center gap-1.5"><Star size={15} strokeWidth={1.75} className="text-ink" fill="currentColor" /> {Number(rating).toFixed(1)} · {reviewsCount} {reviewsCount === 1 ? 'reseña' : 'reseñas'}</span>
       </div>
       <p className="mt-2 text-xs text-muted">
         Últimos {days} días, hora de {cityName ?? 'la ciudad del lugar'}. No cuenta tus propias visitas con sesión iniciada.

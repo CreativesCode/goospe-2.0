@@ -114,7 +114,7 @@ export default async function AdminLugaresPage({ searchParams }: { searchParams:
           <h1 className="text-2xl font-medium text-fg">Lugares</h1>
           <p className="text-sm text-fg-soft">{totalRows} {totalRows === 1 ? 'lugar' : 'lugares'} · crea y edita cualquier ficha.</p>
         </div>
-        <Link href="/admin/places/new" className="inline-flex items-center gap-1.5 rounded-full bg-goospe-gradient px-4 py-2 text-sm font-medium text-white shadow">
+        <Link href="/admin/places/new" className="inline-flex items-center gap-1.5 rounded-full bg-goospe-gradient px-4 py-2 text-sm font-medium text-on-brand shadow">
           <Plus size={16} /> Nuevo lugar
         </Link>
       </header>
@@ -132,18 +132,18 @@ export default async function AdminLugaresPage({ searchParams }: { searchParams:
         <div className="flex flex-wrap gap-1.5">
           {[['all', 'Todos'], ['pub', 'Publicados'], ['hidden', 'Ocultos'], ['claimed', 'Reclamados']].map(([k, label]) => (
             <Link key={k} href={filterLink({ estado: k })}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${estado === k ? 'bg-goospe-green/10 text-goospe-green-dark' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}>
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${estado === k ? 'bg-tint text-ink' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}>
               {label}
             </Link>
           ))}
           <span className="mx-1 w-px self-stretch bg-line" />
           <Link href={filterLink({ cat: 'all' })}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition ${cat === 'all' ? 'bg-goospe-green/10 text-goospe-green-dark' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}>
+            className={`rounded-full px-3 py-1 text-xs font-medium transition ${cat === 'all' ? 'bg-tint text-ink' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}>
             Toda categoría
           </Link>
           {categories.map((c) => (
             <Link key={c.id} href={filterLink({ cat: c.slug })}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${cat === c.slug ? 'bg-goospe-green/10 text-goospe-green-dark' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}>
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${cat === c.slug ? 'bg-tint text-ink' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}>
               {c.name}
             </Link>
           ))}
@@ -151,12 +151,12 @@ export default async function AdminLugaresPage({ searchParams }: { searchParams:
         {cities.length > 1 && (
           <div className="flex flex-wrap gap-1.5">
             <Link href={filterLink({ ciudad: 'all' })}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${ciudad === 'all' ? 'bg-goospe-green/10 text-goospe-green-dark' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}>
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${ciudad === 'all' ? 'bg-tint text-ink' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}>
               Toda zona
             </Link>
             {cities.map((c) => (
               <Link key={c.id} href={filterLink({ ciudad: String(c.id) })}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition ${ciudad === String(c.id) ? 'bg-goospe-green/10 text-goospe-green-dark' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}>
+                className={`rounded-full px-3 py-1 text-xs font-medium transition ${ciudad === String(c.id) ? 'bg-tint text-ink' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}>
                 {c.name}{c.is_active ? '' : ' · inactiva'}
               </Link>
             ))}
@@ -191,7 +191,7 @@ export default async function AdminLugaresPage({ searchParams }: { searchParams:
                 return (
                   <tr key={p.id} className="border-b border-line/60 last:border-0">
                     <td className="px-4 py-3">
-                      <Link href={`/admin/places/${p.id}`} className="font-medium text-fg hover:text-goospe-green">{p.name}</Link>
+                      <Link href={`/admin/places/${p.id}`} className="font-medium text-fg hover:text-ink">{p.name}</Link>
                       {p.price_level ? <span className="ml-2 text-xs text-muted">{PRICE[p.price_level]}</span> : null}
                     </td>
                     <td className="px-3 py-3 text-fg-soft">{cnames.join(', ') || '—'}</td>
@@ -202,11 +202,11 @@ export default async function AdminLugaresPage({ searchParams }: { searchParams:
                     <td className="px-3 py-3 text-right tabular-nums text-fg-soft">{st?.saves_count ?? 0}</td>
                     <td className="px-3 py-3 text-fg-soft">
                       {p.claimed && p.business_id ? (
-                        <span className="inline-flex items-center gap-1 text-goospe-green-dark"><BadgeCheck size={13} /> {ownerByBiz[p.business_id] ?? 'Dueño'}</span>
+                        <span className="inline-flex items-center gap-1 text-ink"><BadgeCheck size={13} /> {ownerByBiz[p.business_id] ?? 'Dueño'}</span>
                       ) : <span className="text-muted">—</span>}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Link href={`/admin/places/${p.id}`} className="text-xs font-medium text-goospe-green hover:underline">Editar</Link>
+                      <Link href={`/admin/places/${p.id}`} className="text-xs font-medium text-ink hover:underline">Editar</Link>
                     </td>
                   </tr>
                 )

@@ -84,7 +84,7 @@ export function AdminPlaceForm({ place, categories, cities = [] }: { place: Admi
             {categories.map((c) => {
               const checked = place.category_ids.includes(c.id)
               return (
-                <label key={c.id} className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-sm text-fg has-[:checked]:border-goospe-green has-[:checked]:bg-goospe-green/10 has-[:checked]:text-goospe-green-dark">
+                <label key={c.id} className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-sm text-fg has-[:checked]:border-goospe-green has-[:checked]:bg-goospe-green/10 has-[:checked]:text-ink">
                   <input type="checkbox" name="category_ids" value={c.id} defaultChecked={checked} className="accent-goospe-green" />
                   {c.name}
                 </label>
@@ -152,16 +152,16 @@ export function AdminPlaceForm({ place, categories, cities = [] }: { place: Admi
 
       <div className="flex flex-wrap items-center gap-4">
         <button type="submit" disabled={saving}
-          className="rounded-full bg-goospe-gradient px-6 py-2.5 font-medium text-white shadow disabled:opacity-60">
+          className="rounded-full bg-goospe-gradient px-6 py-2.5 font-medium text-on-brand shadow disabled:opacity-60">
           {saving ? 'Guardando…' : isNew ? 'Crear lugar' : 'Guardar cambios'}
         </button>
         {place.slug && !isNew && (
-          <Link href={place.is_published ? `/places/${place.slug}` : `/places/${place.slug}/preview`} target="_blank" className="inline-flex items-center gap-1.5 text-sm text-goospe-green hover:underline">
+          <Link href={place.is_published ? `/places/${place.slug}` : `/places/${place.slug}/preview`} target="_blank" className="inline-flex items-center gap-1.5 text-sm text-ink hover:underline">
             {place.is_published ? 'Ver ficha pública' : 'Vista previa'} <ExternalLink size={14} />
           </Link>
         )}
         {msg && (
-          <span className={`inline-flex items-center gap-1 text-sm ${msg.ok ? 'text-goospe-green-dark' : 'text-red-600'}`}>
+          <span className={`inline-flex items-center gap-1 text-sm ${msg.ok ? 'text-ink' : 'text-red-600'}`}>
             {msg.ok && <Check size={15} strokeWidth={2} />}{msg.text}
           </span>
         )}

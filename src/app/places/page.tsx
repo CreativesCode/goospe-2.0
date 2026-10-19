@@ -5,6 +5,8 @@ import { absoluteUrl } from '@/lib/email/config'
 import { AppFooter } from '@/shared/components/app-footer'
 import { AppNav } from '@/shared/components/app-nav'
 import { JsonLd } from '@/shared/components/json-ld'
+import { PageHeader } from '@/shared/components/page-header'
+import { eyebrow, pageShell } from '@/shared/lib/ui'
 import { categoryIcon } from '@/shared/lib/icons'
 import { getCityDirectory, groupByCountry } from '@/features/places/listings'
 import { cityCategoryPath, cityPath } from '@/features/places/seo-routes'
@@ -28,22 +30,23 @@ export default async function PlacesIndexPage() {
   return (
     <main className="flex min-h-screen flex-col bg-surface">
       <AppNav />
-      <div className="mx-auto w-full max-w-6xl px-5 py-8">
-        <h1 className="text-3xl font-medium text-fg">Lugares por ciudad</h1>
-        <p className="mt-1 text-fg-soft">
-          {total.toLocaleString('es-CL')} lugares en {cities.length} {cities.length === 1 ? 'ciudad' : 'ciudades'}. Elige la tuya.
-        </p>
+      <div className={pageShell}>
+        <PageHeader
+          kicker="Explora"
+          title={<>Lugares por <span className="font-medium">ciudad</span></>}
+          subtitle={`${total.toLocaleString('es-CL')} lugares en ${cities.length} ${cities.length === 1 ? 'ciudad' : 'ciudades'}. Elige la tuya.`}
+        />
 
         {groups.map((g) => (
-          <section key={g.country} className="mt-8">
-            <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-muted">{g.country}</h2>
+          <section key={g.country} className="mt-8 first-of-type:mt-0">
+            <h2 className={`${eyebrow} mb-3`}>{g.country}</h2>
             <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {g.cities.map((city) => (
                 <li key={city.id} className="rounded-2xl border border-line bg-card p-4 shadow-sm">
                   <Link href={cityPath(city.slug)} className="group flex items-start justify-between gap-3">
                     <span className="min-w-0">
-                      <span className="flex items-center gap-1.5 font-medium text-fg transition group-hover:text-goospe-green">
-                        <MapPin size={16} strokeWidth={1.75} className="shrink-0 text-goospe-green" /> {city.name}
+                      <span className="flex items-center gap-1.5 font-medium text-fg transition group-hover:text-ink">
+                        <MapPin size={16} strokeWidth={1.75} className="shrink-0 text-ink" /> {city.name}
                       </span>
                       {city.region && <span className="block text-xs text-muted">{city.region}</span>}
                     </span>
@@ -54,7 +57,7 @@ export default async function PlacesIndexPage() {
                       const Icon = categoryIcon(c.emoji)
                       return (
                         <Link key={c.id} href={cityCategoryPath(city.slug, c.slug)}
-                          className="inline-flex items-center gap-1 rounded-full bg-goospe-green/10 px-2.5 py-1 text-xs text-goospe-green-dark transition hover:bg-goospe-green/20">
+                          className="inline-flex items-center gap-1 rounded-full bg-tint px-2.5 py-1 text-xs text-ink transition hover:bg-tint2">
                           <Icon size={12} strokeWidth={1.75} /> {c.name} · {c.places.toLocaleString('es-CL')}
                         </Link>
                       )

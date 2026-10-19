@@ -11,7 +11,7 @@ export function DirectionsLink({
   placeId,
   lat,
   lng,
-  className = 'inline-flex items-center gap-1.5 text-sm text-goospe-green hover:underline',
+  className = 'inline-flex items-center gap-1.5 text-sm text-ink hover:underline',
   label = 'Cómo llegar',
 }: {
   placeId: string

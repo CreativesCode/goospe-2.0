@@ -55,7 +55,7 @@ export function FeedbackButtons({ feedbackId, onDone }: { feedbackId: string; on
       </label>
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => run('resolved')} disabled={pending}
-          className="inline-flex min-h-10 items-center gap-1 rounded-full bg-goospe-green px-4 text-xs font-medium text-white transition hover:bg-goospe-green-dark disabled:opacity-50">
+          className="inline-flex min-h-10 items-center gap-1 rounded-full bg-goospe-green px-4 text-xs font-medium text-on-brand transition hover:brightness-105 disabled:opacity-50">
           <Check size={13} strokeWidth={2} /> Resuelto
         </button>
         <button type="button" onClick={() => run('dismissed')} disabled={pending}

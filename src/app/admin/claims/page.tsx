@@ -112,7 +112,7 @@ export default async function AdminClaimsPage() {
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0 space-y-2">
                       <div>
-                        <Link href={place ? `/admin/places/${c.place_id}` : '#'} className="font-medium text-fg hover:text-goospe-green">
+                        <Link href={place ? `/admin/places/${c.place_id}` : '#'} className="font-medium text-fg hover:text-ink">
                           {place?.name ?? 'Lugar'}
                         </Link>
                         <p className="text-xs text-muted">
@@ -121,9 +121,9 @@ export default async function AdminClaimsPage() {
                         </p>
                       </div>
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-fg-soft">
-                        <span className="inline-flex items-center gap-1 font-medium text-fg"><BadgeCheck size={13} className="text-goospe-green" /> {requester}</span>
-                        {ev.phone && <a href={`tel:${ev.phone}`} className="inline-flex items-center gap-1 hover:text-goospe-green"><Phone size={12} /> {ev.phone}</a>}
-                        {ev.email && <a href={`mailto:${ev.email}`} className="inline-flex items-center gap-1 hover:text-goospe-green"><Mail size={12} /> {ev.email}</a>}
+                        <span className="inline-flex items-center gap-1 font-medium text-fg"><BadgeCheck size={13} className="text-ink" /> {requester}</span>
+                        {ev.phone && <a href={`tel:${ev.phone}`} className="inline-flex items-center gap-1 hover:text-ink"><Phone size={12} /> {ev.phone}</a>}
+                        {ev.email && <a href={`mailto:${ev.email}`} className="inline-flex items-center gap-1 hover:text-ink"><Mail size={12} /> {ev.email}</a>}
                         <span className="inline-flex items-center gap-1 text-muted"><Clock size={12} /> {fmtFull(c.created_at)}</span>
                       </div>
                       {ev.message && (
@@ -150,7 +150,7 @@ export default async function AdminClaimsPage() {
 
       {places.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line bg-card py-20 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-goospe-green/10 text-goospe-green"><Store size={26} strokeWidth={1.5} /></span>
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-tint text-ink"><Store size={26} strokeWidth={1.5} /></span>
           <p className="text-fg-soft">Ningún lugar está reclamado por ahora.</p>
         </div>
       ) : (
@@ -172,10 +172,10 @@ export default async function AdminClaimsPage() {
                 return (
                   <tr key={p.id} className="border-b border-line/60 last:border-0">
                     <td className="px-4 py-3">
-                      <Link href={`/admin/places/${p.id}`} className="font-medium text-fg hover:text-goospe-green">{p.name}</Link>
+                      <Link href={`/admin/places/${p.id}`} className="font-medium text-fg hover:text-ink">{p.name}</Link>
                     </td>
                     <td className="px-3 py-3">
-                      <span className="inline-flex items-center gap-1 text-goospe-green-dark"><BadgeCheck size={14} /> {owner || 'Dueño'}</span>
+                      <span className="inline-flex items-center gap-1 text-ink"><BadgeCheck size={14} /> {owner || 'Dueño'}</span>
                     </td>
                     <td className="px-3 py-3 text-fg-soft">{fmt(claim?.created_at ?? null)}</td>
                     <td className="px-3 py-3 text-fg-soft">{claim?.status ?? 'aprobado'}{claim?.method ? ` · ${claim.method}` : ''}</td>

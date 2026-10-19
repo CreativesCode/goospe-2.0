@@ -1,12 +1,15 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, Search } from 'lucide-react'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ClaimRequestForm } from '@/features/business/ClaimRequestForm'
+import { ClaimSteps } from '@/features/business/ClaimSteps'
 import { PhotoImg } from '@/shared/components/photo-img'
+import { PageHeader } from '@/shared/components/page-header'
+import { pageShell } from '@/shared/lib/ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +21,27 @@ type Claimable = {
   address: { formatted?: string; city?: string } | null
   place_photos: { url: string; status: string }[] | null
   place_categories: { categories: Category | null }[] | null
+}
+
+function ClaimResult({ place }: { place: Claimable }) {
+  const photos = place.place_photos ?? []
+  const photo = photos.find((ph) => ph.status === 'approved')?.url ?? photos[0]?.url
+  const cats = (place.place_categories ?? []).map((pc) => pc.categories).filter(Boolean) as Category[]
+  const meta = [...cats.map((c) => `${c.emoji ? c.emoji + ' ' : ''}${c.name}`), place.address?.city].filter(Boolean).join(' · ')
+  return (
+    <div className="flex flex-wrap items-center gap-4 rounded-[22px] border border-line bg-card p-4 sm:p-5">
+      <div className="flex min-w-0 flex-1 basis-64 gap-4">
+        <PhotoImg src={photo} alt={place.name} tone="tint" className="h-[72px] w-[72px] shrink-0 rounded-[14px] object-cover" isoClassName="h-7 w-7" />
+        <div className="min-w-0">
+          <h2 className="text-lg font-medium leading-tight text-fg">{place.name}</h2>
+          {meta && <p className="mt-0.5 text-xs text-muted">{meta}</p>}
+          {place.vibe_line && <p className="mt-1 truncate text-sm font-medium text-ink">{place.vibe_line}</p>}
+          {place.address?.formatted && <p className="truncate text-xs text-muted">{place.address.formatted}</p>}
+        </div>
+      </div>
+      <ClaimRequestForm placeId={place.id} placeName={place.name} />
+    </div>
+  )
 }
 
 export default async function ReclamarPage({
@@ -50,77 +74,60 @@ export default async function ReclamarPage({
     <main className="flex min-h-screen flex-col bg-surface">
       <AppNav />
 
-      <div className="mx-auto max-w-3xl px-5 py-8">
-        <Link href="/panel" className="mb-4 inline-flex items-center gap-1.5 text-sm text-fg-soft transition hover:text-goospe-green">
-          <ArrowLeft size={16} strokeWidth={1.75} /> Mis lugares
-        </Link>
-        <h1 className="text-2xl font-medium text-fg">Reclama tu negocio</h1>
-        <p className="mt-1 text-fg-soft">Busca tu lugar y solicita administrarlo. Revisamos cada solicitud personalmente.</p>
+      <div className={pageShell}>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-10">
+          <div className="min-w-0">
+            <PageHeader back={{ href: '/panel', label: 'Mis lugares' }} kicker="Para tu negocio" title={<>Reclama tu <span className="font-medium">negocio</span></>} subtitle="Busca tu lugar y solicita administrarlo. Revisamos cada solicitud personalmente." />
 
-        {sent && (
-          <div className="mt-4 flex items-start gap-3 rounded-xl border border-goospe-green/30 bg-goospe-green/5 p-4">
-            <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-goospe-green" />
-            <div>
-              <p className="font-medium text-fg">¡Solicitud enviada!</p>
-              <p className="text-sm text-fg-soft">Nuestro equipo revisará tu reclamo y te contactará para confirmar que el negocio es tuyo. Te avisaremos cuando esté aprobado.</p>
+            {sent && (
+              <div className="mt-6 flex items-start gap-3 rounded-[22px] border border-goospe-green/30 bg-tint p-4 sm:p-5">
+                <CheckCircle2 size={22} className="mt-0.5 shrink-0 text-ink" />
+                <div>
+                  <p className="font-medium text-fg">¡Solicitud enviada!</p>
+                  <p className="text-sm text-fg-soft">Nuestro equipo revisará tu reclamo y te contactará para confirmar que el negocio es tuyo. Te avisaremos cuando esté aprobado.</p>
+                </div>
+              </div>
+            )}
+
+            {error && <p className="mt-6 rounded-[14px] bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+            <form method="GET" className="flex flex-col gap-2 sm:flex-row">
+              <label className="relative flex-1">
+                <span className="sr-only">Nombre de tu negocio</span>
+                <Search size={19} strokeWidth={1.75} className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-muted" aria-hidden />
+                <input
+                  name="q"
+                  defaultValue={q}
+                  placeholder="Nombre de tu negocio…"
+                  className="h-[54px] w-full rounded-full border border-line bg-card pl-[52px] pr-5 text-fg outline-none transition placeholder:text-muted focus:border-goospe-green focus:shadow-[0_0_0_4px_rgba(45,193,134,0.12)]"
+                />
+              </label>
+              <button className="h-[54px] rounded-full bg-goospe-green px-7 font-medium text-on-brand transition hover:brightness-105">Buscar</button>
+            </form>
+
+            <div className="mt-6 space-y-3">
+              {q.length >= 2 && (
+                <p className="text-sm text-muted">
+                  {results.length === 0 ? 'Sin resultados' : `${results.length} ${results.length === 1 ? 'lugar' : 'lugares'} sin reclamar`} para “{q}”
+                </p>
+              )}
+              {q.length >= 2 && results.length === 0 && (
+                <p className="rounded-[22px] border border-line bg-card p-5 text-sm text-fg-soft">
+                  No encontramos lugares sin reclamar con “{q}”. Puede que ya esté reclamado o aún no esté en Goospe.
+                </p>
+              )}
+              {results.map((p) => <ClaimResult key={p.id} place={p} />)}
+              {q.length >= 2 && (
+                <p className="rounded-[22px] border border-dashed border-line p-5 text-sm text-fg-soft">
+                  ¿Tu negocio no aparece en la lista?{' '}
+                  <Link href={`/panel/propose?name=${encodeURIComponent(q)}`} className="font-medium text-ink hover:underline">Proponlo como lugar nuevo</Link>
+                  {' '}y lo sumamos a Goospe.
+                </p>
+              )}
             </div>
           </div>
-        )}
 
-        {error && (
-          <p className="mt-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-600">{error}</p>
-        )}
-
-        <form method="GET" className="mt-6 flex gap-2">
-          <input
-            name="q"
-            defaultValue={q}
-            placeholder="Nombre de tu negocio…"
-            className="flex-1 rounded-full border border-line bg-card px-5 py-3 text-fg outline-none transition placeholder:text-muted focus:border-goospe-green focus:ring-2 focus:ring-goospe-green/30"
-          />
-          <button className="rounded-full bg-goospe-gradient px-6 py-3 font-medium text-white shadow">Buscar</button>
-        </form>
-
-        <div className="mt-6 space-y-3">
-          {q.length >= 2 && results.length === 0 && (
-            <p className="rounded-xl bg-card p-4 text-sm text-fg-soft">
-              No encontramos lugares sin reclamar con “{q}”. Puede que ya esté reclamado o aún no esté en Goospe.
-            </p>
-          )}
-          {results.map((p) => {
-            const photo = (p.place_photos ?? []).find((ph) => ph.status === 'approved')?.url
-              ?? (p.place_photos ?? [])[0]?.url
-            const cats = (p.place_categories ?? []).map((pc) => pc.categories).filter(Boolean) as Category[]
-            const city = p.address?.city
-            return (
-              <div key={p.id} className="rounded-xl border border-line bg-card p-4 shadow-sm">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex min-w-0 gap-3">
-                    <PhotoImg src={photo} alt={p.name} className="h-16 w-16 shrink-0 rounded-lg object-cover" isoClassName="h-7 w-7" />
-                    <div className="min-w-0">
-                      <h2 className="font-medium text-fg">{p.name}</h2>
-                      {cats.length > 0 && (
-                        <p className="text-xs text-muted">
-                          {cats.map((c) => `${c.emoji ? c.emoji + ' ' : ''}${c.name}`).join(' · ')}
-                          {city ? ` · ${city}` : ''}
-                        </p>
-                      )}
-                      {p.vibe_line && <p className="truncate text-sm text-goospe-green">{p.vibe_line}</p>}
-                      {p.address?.formatted && <p className="truncate text-xs text-muted">{p.address.formatted}</p>}
-                    </div>
-                  </div>
-                </div>
-                <ClaimRequestForm placeId={p.id} placeName={p.name} />
-              </div>
-            )
-          })}
-          {q.length >= 2 && (
-            <p className="rounded-xl border border-dashed border-line bg-card p-4 text-sm text-fg-soft">
-              ¿Tu negocio no aparece en la lista?{' '}
-              <Link href={`/panel/propose?name=${encodeURIComponent(q)}`} className="font-medium text-goospe-green hover:underline">Proponlo como lugar nuevo</Link>
-              {' '}y lo sumamos a Goospe.
-            </p>
-          )}
+          <ClaimSteps />
         </div>
       </div>
 
