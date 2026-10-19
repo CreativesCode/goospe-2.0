@@ -19,12 +19,19 @@ Plan vigente: `.claude/PRPs/prp-legacy-y-brechas.md` (9 fases). Análisis de ori
 | 8 Monetización | Pendiente, al final |
 | 9 Validación final | Pendiente |
 
-Fuera del plan de 9 fases: **rediseño visual (variante audaz)** aplicado en local el 2026-10-13,
-sin commit ni push; detalle y pendientes en [[rediseno-audaz]] y lista de revisión en
-`docs/16-revision-local.md` (sección 0).
+Fuera del plan de 9 fases: **rediseño visual (variante audaz)**, completo y **desplegado en
+producción el 2026-10-19** (commit 58bfdde; build, CI y Vercel en verde). Detalle en [[rediseno-audaz]].
 
-Esperando al usuario: revisar el rediseño en local y decidir cuándo se sube; cuenta de Resend + dominio de envío; reactivar facturación de Google
-Cloud (fotos, horarios); revisar ~14 pares de posibles lugares duplicados; decidir si se
+Duplicados revisados el 2026-10-19 (pares publicados de la misma ciudad, nombre parecido, <150 m):
+12 despublicados con aprobación del usuario + la ficha "R" de Granada (nombre basura). Cada uno
+quedó en la bitácora como `admin.place_unpublish_duplicate` con la ficha conservada (`kept`).
+Quedan sin tocar, a verificar a mano: 5 "probables" de distinta categoría (Churrería Perdomo/Perdomo,
+Sushi Alerce/Alerce, Don Salmon/Cafetería Don Salmon, La Ermica/La Ermita, Matt's/Max Burger en
+Puerto Varas) y 5 "dudosos" que pueden ser sucursales (Los Manueles x2, La Cueva de 1900, Subway
+Puerto Montt, La Hormiguita Castro).
+
+Esperando al usuario: cuenta de Resend + dominio de envío; reactivar facturación de Google
+Cloud (fotos, horarios); verificar los 10 pares de duplicados que quedaron dudosos; decidir si se
 versiona `package-lock.json`; rotar secretos del repo legacy.
 
 ## Para encender los emails (fase 6)

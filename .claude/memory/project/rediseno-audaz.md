@@ -5,8 +5,7 @@ type: project
 ---
 
 Rediseño visual aplicado el 2026-10-13 a partir de `docs/design/design_handoff_goospe_rediseno/`
-(variante **audaz**; "pulido" no se implementa). Sin commit ni push al cerrar la sesión: el
-usuario decide cuándo sube.
+(variante **audaz**; "pulido" no se implementa). **Desplegado en producción el 2026-10-19.**
 
 Convenciones que introdujo (respetarlas en pantallas nuevas):
 - Breakpoints Tailwind: `md` = 720 px (tablet), `lg` = 1100 px (web); 900 px con `min-[900px]:`.
