@@ -58,7 +58,7 @@ export function RankingWeightsForm({ initial }: { initial: RankingWeights }) {
         {WEIGHT_FIELDS.map((f) => {
           const changed = values[f.key] !== String(saved[f.key])
           return (
-            <label key={f.key} className="block rounded-2xl border border-line bg-card p-4">
+            <label key={f.key} className="block rounded-[22px] border border-line bg-card p-4">
               <span className="flex items-baseline justify-between gap-2">
                 <span className="text-sm font-medium text-fg">{f.label}</span>
                 <span className="text-xs text-muted">original {DEFAULT_WEIGHTS[f.key]}</span>
@@ -81,7 +81,7 @@ export function RankingWeightsForm({ initial }: { initial: RankingWeights }) {
       </div>
 
       {/* Lectura rápida de la configuración que se va a guardar. Alto fijo: no salta al teclear. */}
-      <div className="min-h-[92px] rounded-2xl border border-line bg-card p-4">
+      <div className="min-h-[92px] rounded-[22px] border border-line bg-card p-4">
         {shares && preview ? (
           <>
             <div className="flex h-2.5 overflow-hidden rounded-full bg-surface" aria-hidden>

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Eye, ScrollText, Heart, Compass, Share2, Sparkles, CalendarCheck, type LucideIcon } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/admin-guard'
+import { adminTitle } from '@/features/admin/ui'
 
 export const metadata: Metadata = { title: 'Estadísticas' }
 
@@ -56,8 +57,8 @@ export default async function AdminStatsPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl font-medium text-fg">Estadísticas</h1>
-        <p className="text-sm text-fg-soft">Comportamiento global · {total} interacciones registradas.</p>
+        <h1 className={`${adminTitle}`}><span className="font-medium">Estadísticas</span></h1>
+        <p className="mt-2 max-w-3xl text-sm text-fg-soft">Comportamiento global · {total} interacciones registradas.</p>
       </header>
 
       {/* por tipo */}
@@ -134,7 +135,7 @@ export default async function AdminStatsPage() {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-line bg-card p-5">
+    <div className="rounded-[22px] border border-line bg-card p-5">
       <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-muted">{title}</h2>
       {children}
     </div>

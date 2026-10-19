@@ -85,7 +85,7 @@ export async function ProposalInbox() {
               const dup = dups[i]
               const ref = p.location_ref?.trim() ?? ''
               return (
-                <li key={p.id} className="rounded-2xl border border-amber-300/50 bg-amber-500/5 p-4 shadow-sm">
+                <li key={p.id} className="rounded-[22px] border border-amber-300/50 bg-amber-500/5 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0 flex-1 basis-64 space-y-2">
                       <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
@@ -127,7 +127,7 @@ export async function ProposalInbox() {
       {recent.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-sm font-medium uppercase tracking-wide text-muted">Propuestas resueltas recientemente</h2>
-          <ul className="divide-y divide-line rounded-2xl border border-line bg-card">
+          <ul className="divide-y divide-line rounded-[22px] border border-line bg-card">
             {recent.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3 text-sm">
                 <span className="min-w-0 text-fg [overflow-wrap:anywhere]">

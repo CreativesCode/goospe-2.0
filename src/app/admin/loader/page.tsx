@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { isLocalhostRequest } from '@/lib/local-only'
 import { LoaderClient } from '@/features/loader/components/LoaderClient'
 import { requireAdmin } from '@/lib/admin-guard'
+import { adminTitle } from '@/features/admin/ui'
 
 export const metadata: Metadata = { title: 'Cargador de zonas' }
 
@@ -13,8 +14,8 @@ export default async function LoaderPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-light tracking-tight text-fg">Cargador de zonas</h1>
-      <p className="mt-1 max-w-2xl text-sm text-fg-soft">
+      <h1 className={`${adminTitle}`}>Cargador de <span className="font-medium">zonas</span></h1>
+      <p className="mt-2 max-w-3xl text-sm text-fg-soft">
         Solo local. Carga una ciudad nueva de punta a punta (OSM → fotos → enriquecimiento IA por
         niveles) y la activa en el feed al terminar. El proceso corre en tu máquina; sigue el
         progreso en vivo aquí abajo.

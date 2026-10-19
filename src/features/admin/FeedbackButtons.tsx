@@ -16,7 +16,7 @@ export function FeedbackOpenItem({ feedbackId, children }: { feedbackId: string;
   const [closed, setClosed] = useState(false)
   if (closed) return null
   return (
-    <li className="rounded-2xl border border-amber-300/50 bg-amber-500/5 p-4 shadow-sm">
+    <li className="rounded-[22px] border border-amber-300/50 bg-amber-500/5 p-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 flex-1 space-y-2">{children}</div>
         <FeedbackButtons feedbackId={feedbackId} onDone={() => setClosed(true)} />

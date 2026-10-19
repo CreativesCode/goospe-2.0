@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/admin-guard'
 import { RankingWeightsForm } from '@/features/admin/RankingWeightsForm'
 import { FEED_RANKING_KEY, readWeights } from '@/features/feed/ranking-weights'
+import { adminTitle } from '@/features/admin/ui'
 
 export const metadata: Metadata = { title: 'Ranking del feed' }
 
@@ -20,8 +21,8 @@ export default async function AdminRankingPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-medium text-fg">Ranking del feed</h1>
-        <p className="mt-1 max-w-2xl text-sm text-fg-soft">
+        <h1 className={`${adminTitle}`}>Ranking del <span className="font-medium">feed</span></h1>
+        <p className="mt-2 max-w-3xl text-sm text-fg-soft">
           Pesos con los que se ordena «Para ti». Se aplican al instante a todos los usuarios, sin
           publicar una versión nueva. Cada cambio queda en la{' '}
           <Link href="/admin/audit?type=feed_config" className="text-ink underline-offset-2 hover:underline">bitácora</Link>.
@@ -42,7 +43,7 @@ export default async function AdminRankingPage() {
 
       <RankingWeightsForm initial={weights} />
 
-      <section className="rounded-2xl border border-line bg-card p-5 text-sm text-fg-soft">
+      <section className="rounded-[22px] border border-line bg-card p-5 text-sm text-fg-soft">
         <h2 className="mb-2 text-xs font-medium uppercase tracking-[0.08em] text-muted">Cómo se calcula</h2>
         <p className="font-mono text-xs leading-relaxed text-fg">
           puntaje = cercanía × e^(−distancia ÷ caída) + tendencia × (tendencia del lugar ÷ 5) + variedad × azar fijo del lugar

@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminToggle } from '@/features/admin/AdminToggle'
 import { requireAdmin } from '@/lib/admin-guard'
 import { ADMIN_TZ, fmtInZone } from '@/lib/tz'
+import { adminTitle } from '@/features/admin/ui'
 
 export const metadata: Metadata = { title: 'Usuarios' }
 
@@ -48,15 +49,15 @@ export default async function AdminUsersPage() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-medium text-fg">Usuarios</h1>
-          <p className="text-sm text-fg-soft">{rows.length} {rows.length === 1 ? 'usuario registrado' : 'usuarios registrados'} · actividad y rol.</p>
+          <h1 className={`${adminTitle}`}><span className="font-medium">Usuarios</span></h1>
+          <p className="mt-2 max-w-3xl text-sm text-fg-soft">{rows.length} {rows.length === 1 ? 'usuario registrado' : 'usuarios registrados'} · actividad y rol.</p>
         </div>
         <a href="/admin/users/export" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-4 py-2 text-sm font-medium text-fg-soft transition hover:text-fg">
           <Download size={15} /> Exportar CSV
         </a>
       </header>
 
-      <div className="overflow-x-auto rounded-2xl border border-line bg-card">
+      <div className="overflow-x-auto rounded-[22px] border border-line bg-card">
         {/* min-w ajustado al ancho útil del backoffice: con 960px la columna "Rol" quedaba cortada */}
         <table className="w-full min-w-[720px] text-sm">
           <thead>

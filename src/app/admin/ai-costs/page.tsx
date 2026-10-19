@@ -5,6 +5,7 @@ import { Sparkles, Coins, Hash, Download } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/admin-guard'
 import { ADMIN_TZ, fmtInZone } from '@/lib/tz'
+import { adminTitle } from '@/features/admin/ui'
 
 export const metadata: Metadata = { title: 'Gastos IA' }
 
@@ -103,8 +104,8 @@ export default async function GastosIaPage({ searchParams }: { searchParams: Pro
     <div className="space-y-8">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-medium text-fg">Gastos de IA</h1>
-          <p className="text-sm text-fg-soft">Tokens y costo (USD) de cada llamada a los modelos.</p>
+          <h1 className={`${adminTitle}`}>Gastos de <span className="font-medium">IA</span></h1>
+          <p className="mt-2 max-w-3xl text-sm text-fg-soft">Tokens y costo (USD) de cada llamada a los modelos.</p>
         </div>
         <div className="flex items-center gap-2">
           <nav className="flex items-center gap-1 rounded-full border border-line bg-card p-1 text-sm">
@@ -112,7 +113,7 @@ export default async function GastosIaPage({ searchParams }: { searchParams: Pro
               <Link
                 key={r.key}
                 href={`/admin/ai-costs?range=${r.key}`}
-                className={`rounded-full px-3 py-1 font-medium transition ${range === r.key ? 'bg-tint text-ink' : 'text-fg-soft hover:text-fg'}`}
+                className={`rounded-full px-3 py-1 font-medium transition ${range === r.key ? 'bg-goospe-green text-on-brand' : 'text-fg-soft hover:text-fg'}`}
               >
                 {r.label}
               </Link>
@@ -222,7 +223,7 @@ function Kpi({ icon: Icon, label, value, hint, accent }: { icon: typeof Coins; l
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-line bg-card p-5">
+    <div className="rounded-[22px] border border-line bg-card p-5">
       <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-muted">{title}</h2>
       {children}
     </div>

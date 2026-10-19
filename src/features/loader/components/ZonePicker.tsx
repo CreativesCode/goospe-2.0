@@ -116,7 +116,7 @@ export function ZonePicker({ onStarted }: { onStarted: (jobId: string) => void }
       <button
         onClick={onStart}
         disabled={!selected || busy !== 'idle'}
-        className="inline-flex items-center gap-2 rounded-full bg-goospe-gradient px-6 py-3 text-sm font-medium text-on-brand shadow-lg transition hover:opacity-95 disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-full bg-goospe-green px-6 py-3 text-sm font-medium text-on-brand transition hover:brightness-105 disabled:opacity-50"
       >
         {busy === 'starting' ? <Loader2 size={16} className="animate-spin" /> : null}
         Cargar esta zona

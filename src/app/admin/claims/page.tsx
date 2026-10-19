@@ -6,6 +6,7 @@ import { UnclaimButton } from '@/features/admin/UnclaimButton'
 import { ClaimReviewButtons } from '@/features/admin/ClaimReviewButtons'
 import { requireAdmin } from '@/lib/admin-guard'
 import { ADMIN_TZ, fmtInZone } from '@/lib/tz'
+import { adminTitle } from '@/features/admin/ui'
 
 export const metadata: Metadata = { title: 'Reclamos' }
 
@@ -79,8 +80,8 @@ export default async function AdminClaimsPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl font-medium text-fg">Reclamos</h1>
-        <p className="text-sm text-fg-soft">Revisa cada solicitud de forma personal antes de dar acceso, y administra los lugares ya reclamados. Al rechazar, el motivo es obligatorio: el solicitante lo ve en su campana y en “Mis solicitudes”.</p>
+        <h1 className={`${adminTitle}`}><span className="font-medium">Reclamos</span></h1>
+        <p className="mt-2 max-w-3xl text-sm text-fg-soft">Revisa cada solicitud de forma personal antes de dar acceso, y administra los lugares ya reclamados. Al rechazar, el motivo es obligatorio: el solicitante lo ve en su campana y en “Mis solicitudes”.</p>
       </header>
 
       {/* Cola de moderación: solicitudes pendientes */}
@@ -108,7 +109,7 @@ export default async function AdminClaimsPage() {
               const ev = c.evidence ?? {}
               const requester = ev.contact_name || pendNameByUser[c.user_id] || 'Solicitante'
               return (
-                <li key={c.id} className="rounded-2xl border border-amber-300/50 bg-amber-500/5 p-4 shadow-sm">
+                <li key={c.id} className="rounded-[22px] border border-amber-300/50 bg-amber-500/5 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0 space-y-2">
                       <div>
@@ -154,7 +155,7 @@ export default async function AdminClaimsPage() {
           <p className="text-fg-soft">Ningún lugar está reclamado por ahora.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-line bg-card">
+        <div className="overflow-x-auto rounded-[22px] border border-line bg-card">
           <table className="w-full min-w-[680px] text-sm">
             <thead>
               <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">

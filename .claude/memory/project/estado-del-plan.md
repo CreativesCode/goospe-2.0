@@ -27,6 +27,21 @@ Esperando al usuario: revisar el rediseño en local y decidir cuándo se sube; c
 Cloud (fotos, horarios); revisar ~14 pares de posibles lugares duplicados; decidir si se
 versiona `package-lock.json`; rotar secretos del repo legacy.
 
+## Datos de prueba en producción que HAY QUE BORRAR
+
+Creados el 2026-10-19 a pedido del usuario para revisar el panel y la cartelera con la cuenta
+demo (`demo@goospe.cl`, uid `3b9e4761-64ec-4eee-8a83-67fc19ee7c4c`). Borrar cuando termine la
+revisión, **confirmando antes con el usuario**:
+- Lugar **Deleitar** (`06c59f07-7138-497b-881e-415bb34b9270`) reclamado por demo: volver a
+  `business_id = null, claimed = false, source = 'osm'`.
+- Negocio `c66609bb-b8a0-45c0-8599-2534893b1f89` ("Deleitar"): borrarlo (su `business_members`
+  cae por cascade).
+- Reclamo aprobado `b0be1f06-55c0-47d4-b1f8-ad63dc5894d6` (evidencia `qa_seed`).
+- 4 eventos del lugar: `ad0bf505-d2ed-4824-aeb3-e3ff7880d7f9`, `8145d2d9-348c-4a3c-b8aa-3117a0cfd864`,
+  `4a7e0037-b752-4410-b8e3-4fb724b18798`, `a3717c69-7b74-4469-9b59-5622d5e2ce14` (borrar también
+  sus asistencias / "me interesa" si alguien las marcó).
+- Si se tocó el panel: revisar horarios, fotos, respuestas o cambios que haya dejado la prueba.
+
 ## Para encender los emails (fase 6)
 
 1. Cuenta de Resend con el dominio de envío verificado.

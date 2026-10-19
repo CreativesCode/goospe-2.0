@@ -6,6 +6,7 @@ import {
   pointsDelta, stickiness, todayIn,
   type CohortRow, type DailyRow, type Rate, type WeeklyRow,
 } from '@/features/admin/product-metrics'
+import { adminTitle } from '@/features/admin/ui'
 
 export const metadata: Metadata = { title: 'Producto' }
 
@@ -28,7 +29,7 @@ export default async function AdminProductPage() {
     console.error('[admin/product] rpc:', failed.message)
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-medium text-fg">Producto</h1>
+        <h1 className={`${adminTitle}`}><span className="font-medium">Producto</span></h1>
         <p role="alert" className="rounded-xl border border-amber-400/50 bg-amber-400/10 px-4 py-3 text-sm text-fg">
           No pudimos calcular las métricas de producto. Si acabas de desplegar, falta aplicar la migración 0043.
         </p>
@@ -53,8 +54,8 @@ export default async function AdminProductPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl font-medium text-fg">Producto</h1>
-        <p className="mt-1 max-w-2xl text-sm text-fg-soft">
+        <h1 className={`${adminTitle}`}><span className="font-medium">Producto</span></h1>
+        <p className="mt-2 max-w-3xl text-sm text-fg-soft">
           Uso, retención y métrica norte. Días y semanas (lunes a domingo) en hora de {REPORT_TZ.split('/')[1]?.replace('_', ' ')}.
         </p>
       </header>
@@ -191,7 +192,7 @@ function RetentionTile({ label, r }: { label: string; r: Rate }) {
 
 function Tile({ label, value, note, low = false }: { label: string; value: string; note: string; low?: boolean }) {
   return (
-    <div className="rounded-2xl border border-line bg-card p-5">
+    <div className="rounded-[22px] border border-line bg-card p-5">
       <div className="text-xs font-medium uppercase tracking-[0.08em] text-muted">{label}</div>
       <div className={`mt-2 text-3xl font-light tabular-nums ${low ? 'text-muted' : 'text-fg'}`}>{value}</div>
       <div className="mt-1 text-xs text-fg-soft">{note}</div>
@@ -201,7 +202,7 @@ function Tile({ label, value, note, low = false }: { label: string; value: strin
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-line bg-card p-5">
+    <div className="rounded-[22px] border border-line bg-card p-5">
       <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-muted">{title}</h2>
       {children}
     </div>

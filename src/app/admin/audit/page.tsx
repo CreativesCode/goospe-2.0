@@ -9,6 +9,7 @@ import {
   AUDIT_ACTOR_MAX, AUDIT_PAGE_SIZE, AUDIT_PREFIXES, OBJECT_TYPE_LABEL, PREFIX_LABEL,
   auditQuery, pageCount, parseAuditFilters, payloadDiff, showValue,
 } from '@/features/admin/audit-filters'
+import { adminTitle } from '@/features/admin/ui'
 
 export const metadata: Metadata = { title: 'Bitácora' }
 
@@ -75,11 +76,11 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: P
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-medium text-fg">Bitácora</h1>
-        <p className="text-sm text-fg-soft">Acciones sensibles de dueños y del equipo, de la más nueva a la más antigua. Las horas están en la zona del equipo ({ADMIN_TZ}).</p>
+        <h1 className={`${adminTitle}`}><span className="font-medium">Bitácora</span></h1>
+        <p className="mt-2 max-w-3xl text-sm text-fg-soft">Acciones sensibles de dueños y del equipo, de la más nueva a la más antigua. Las horas están en la zona del equipo ({ADMIN_TZ}).</p>
       </header>
 
-      <form key={auditQuery(filters, 1)} method="GET" className="flex flex-wrap items-end gap-3 rounded-2xl border border-line bg-card p-4">
+      <form key={auditQuery(filters, 1)} method="GET" className="flex flex-wrap items-end gap-3 rounded-[22px] border border-line bg-card p-4">
         <label className="text-xs font-medium text-fg-soft">Quién
           <select name="who" defaultValue={filters.prefix?.slice(0, -1) ?? ''} className={`select-chevron mt-1 block ${field}`}>
             <option value="">Todos</option>
@@ -112,7 +113,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: P
             : filtered ? 'Ningún registro coincide con el filtro.' : 'La bitácora está vacía.'}
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-line bg-card">
+        <div className="overflow-x-auto rounded-[22px] border border-line bg-card">
           <table className="w-full min-w-[820px] text-sm">
             <thead>
               <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">

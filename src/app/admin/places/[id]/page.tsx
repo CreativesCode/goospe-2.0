@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminPlaceForm, type AdminPlace } from '@/features/admin/AdminPlaceForm'
 import { requireAdmin } from '@/lib/admin-guard'
+import { adminTitle } from '@/features/admin/ui'
 
 export const metadata: Metadata = { title: 'Editar lugar' }
 
@@ -44,7 +45,7 @@ export default async function EditarLugarPage({ params }: { params: Promise<{ id
       <Link href="/admin/places" className="inline-flex items-center gap-1.5 text-sm text-fg-soft hover:text-fg">
         <ArrowLeft size={15} /> Volver a lugares
       </Link>
-      <h1 className="text-2xl font-medium text-fg">{p.name}</h1>
+      <h1 className={`${adminTitle}`}><span className="font-medium">{p.name}</span></h1>
       <AdminPlaceForm
         place={initial}
         categories={(cats ?? []) as { id: number; name: string }[]}

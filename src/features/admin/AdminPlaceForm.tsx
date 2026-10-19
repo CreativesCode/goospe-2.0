@@ -57,7 +57,7 @@ export function AdminPlaceForm({ place, categories, cities = [] }: { place: Admi
     <form onSubmit={onSubmit} className="space-y-6">
       {place.id && <input type="hidden" name="id" value={place.id} />}
 
-      <section className="space-y-5 rounded-2xl border border-line bg-card p-5">
+      <section className="space-y-5 rounded-[22px] border border-line bg-card p-5">
         <h2 className="text-xs font-medium uppercase tracking-[0.08em] text-muted">Identidad</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -94,7 +94,7 @@ export function AdminPlaceForm({ place, categories, cities = [] }: { place: Admi
         </div>
       </section>
 
-      <section className="space-y-5 rounded-2xl border border-line bg-card p-5">
+      <section className="space-y-5 rounded-[22px] border border-line bg-card p-5">
         <h2 className="text-xs font-medium uppercase tracking-[0.08em] text-muted">Contacto</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div><label className={lbl} htmlFor="phone">Teléfono</label><input id="phone" name="phone" defaultValue={place.phone ?? ''} className={field} /></div>
@@ -105,7 +105,7 @@ export function AdminPlaceForm({ place, categories, cities = [] }: { place: Admi
         </div>
       </section>
 
-      <section className="space-y-5 rounded-2xl border border-line bg-card p-5">
+      <section className="space-y-5 rounded-[22px] border border-line bg-card p-5">
         <h2 className="text-xs font-medium uppercase tracking-[0.08em] text-muted">Detalles y ubicación</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -145,14 +145,14 @@ export function AdminPlaceForm({ place, categories, cities = [] }: { place: Admi
         </p>
       </section>
 
-      <label className="flex items-center gap-3 rounded-2xl border border-line bg-card p-4">
+      <label className="flex items-center gap-3 rounded-[22px] border border-line bg-card p-4">
         <input type="checkbox" name="is_published" defaultChecked={!!place.is_published} className="h-4 w-4 accent-goospe-green" />
         <span className="text-sm font-medium text-fg">Publicado <span className="font-normal text-muted">— visible en feed, búsqueda y mapa</span></span>
       </label>
 
       <div className="flex flex-wrap items-center gap-4">
         <button type="submit" disabled={saving}
-          className="rounded-full bg-goospe-gradient px-6 py-2.5 font-medium text-on-brand shadow disabled:opacity-60">
+          className="rounded-full bg-goospe-green px-6 py-2.5 font-medium text-on-brand transition hover:brightness-105 disabled:opacity-60">
           {saving ? 'Guardando…' : isNew ? 'Crear lugar' : 'Guardar cambios'}
         </button>
         {place.slug && !isNew && (

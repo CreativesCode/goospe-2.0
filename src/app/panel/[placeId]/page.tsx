@@ -60,7 +60,7 @@ async function loadContext(placeId: string, tab: PanelTab): Promise<PanelCtx> {
 
   const visibility: PlaceVisibility = place.is_published ? 'visible' : place.owner_paused_at ? 'paused' : 'hidden_by_admin'
   return {
-    admin, place, businessId: place.business_id, role: business.role, brandVoice: business.brandVoice,
+    place, businessId: place.business_id, role: business.role, brandVoice: business.brandVoice,
     placesCount: business.placesCount, ownedCount: business.ownedCount, visibility, now: Date.now(),
     pendingReviews: await countPendingReviews(admin, placeId),
   }

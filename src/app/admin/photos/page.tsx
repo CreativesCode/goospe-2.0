@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { ModerationActions } from '@/features/photos/ModerationActions'
 import { PhotoImg } from '@/shared/components/photo-img'
 import { requireAdmin } from '@/lib/admin-guard'
+import { adminChip, adminTitle } from '@/features/admin/ui'
 
 export const metadata: Metadata = { title: 'Moderar fotos' }
 
@@ -80,14 +81,14 @@ export default async function AdminFotosPage({ searchParams }: { searchParams: P
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-medium text-fg">Fotos por revisar · {counts.all.toLocaleString('es-CL')}</h1>
+      <h1 className={`${adminTitle} mb-4`}>Fotos por <span className="font-medium">revisar</span> <span className="text-muted">{counts.all.toLocaleString('es-CL')}</span></h1>
 
       <div className="mb-6 flex flex-wrap gap-1.5">
         {SOURCES.map((s) => (
           <Link
             key={s.key}
             href={href({ fuente: s.key })}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition ${fuente === s.key ? 'bg-tint text-ink' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}
+            className={adminChip(fuente === s.key)}
           >
             {s.label} · {counts[s.key].toLocaleString('es-CL')}
           </Link>
@@ -106,7 +107,7 @@ export default async function AdminFotosPage({ searchParams }: { searchParams: P
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {pending.map((ph) => (
-            <div key={ph.id} className="overflow-hidden rounded-2xl border border-line bg-card shadow-sm">
+            <div key={ph.id} className="overflow-hidden rounded-[22px] border border-line bg-card">
               <PhotoImg src={ph.url} alt="" className="aspect-[4/3] w-full object-cover" />
               <div className="space-y-3 p-4">
                 <div className="flex items-center justify-between gap-2 text-sm">

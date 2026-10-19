@@ -6,6 +6,7 @@ import { requireAdmin } from '@/lib/admin-guard'
 import { FeedbackOpenItem } from '@/features/admin/FeedbackButtons'
 import { STATUS_LABELS, categoryLabel, type FeedbackStatus } from '@/features/feedback/feedback-schema'
 import { ADMIN_TZ, fmtInZone } from '@/lib/tz'
+import { adminTitle } from '@/features/admin/ui'
 
 export const metadata: Metadata = { title: 'Feedback' }
 
@@ -57,8 +58,8 @@ export default async function AdminFeedbackPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl font-medium text-fg">Feedback y correcciones</h1>
-        <p className="text-sm text-fg-soft">Mensajes de usuarios y sugerencias de corrección de las fichas. Marcar como resuelto no cambia el lugar: corrige el dato en su ficha y luego ciérralo aquí.</p>
+        <h1 className={`${adminTitle}`}>Feedback y <span className="font-medium">correcciones</span></h1>
+        <p className="mt-2 max-w-3xl text-sm text-fg-soft">Mensajes de usuarios y sugerencias de corrección de las fichas. Marcar como resuelto no cambia el lugar: corrige el dato en su ficha y luego ciérralo aquí.</p>
       </header>
 
       {failed && (
@@ -104,7 +105,7 @@ export default async function AdminFeedbackPage() {
       {recent.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-sm font-medium uppercase tracking-wide text-muted">Cerrados recientemente</h2>
-          <ul className="divide-y divide-line rounded-2xl border border-line bg-card">
+          <ul className="divide-y divide-line rounded-[22px] border border-line bg-card">
             {recent.map((r) => (
               <li key={r.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3 text-sm">
                 <span className="min-w-0 text-fg [overflow-wrap:anywhere]">

@@ -6,6 +6,7 @@ import { isAdmin } from '@/lib/ownership'
 import { AppNav } from '@/shared/components/app-nav'
 import { AppFooter } from '@/shared/components/app-footer'
 import { AdminNav } from '@/features/admin/AdminNav'
+import { appContainer } from '@/shared/lib/ui'
 
 // Título de cada sección del backoffice: "<Sección> · Admin | Goospe" (antes todas las
 // pestañas decían lo mismo que la portada). Nada del backoffice se indexa.
@@ -36,9 +37,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <main className="flex min-h-screen flex-col bg-surface">
       <AppNav />
-      <div className="mx-auto w-full max-w-6xl flex-1 px-5 py-6 lg:flex lg:gap-8">
+      <div className={`${appContainer} grid flex-1 items-start gap-6 pb-14 pt-5 md:pt-7 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-8`}>
         <AdminNav badges={badges} />
-        <div className="min-w-0 flex-1">{children}</div>
+        <div className="min-w-0">{children}</div>
       </div>
       <AppFooter />
     </main>

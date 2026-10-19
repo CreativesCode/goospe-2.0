@@ -24,8 +24,8 @@ const DELTA_TONE: Record<Delta['trend'], string> = { up: 'text-ink', down: 'text
 /** KPI de los últimos 7 días con su variación frente a los 7 anteriores (ambos de la misma serie real). */
 function Kpi({ label, icon: Icon, value, delta }: { label: string; icon: LucideIcon; value: number | null; delta: Delta | null }) {
   return (
-    <div className="rounded-[20px] border border-line bg-card p-[18px]">
-      <div className="flex items-center justify-between gap-2 text-[13px] text-fg-soft">
+    <div className="min-w-0 rounded-[20px] border border-line bg-card p-4 sm:p-[18px]">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-[13px] text-fg-soft">
         <span className="flex items-center gap-1.5"><Icon size={15} strokeWidth={1.75} className="text-ink" aria-hidden="true" />{label}</span>
         {delta && delta.trend !== 'none' && (
           <span className={`font-medium ${DELTA_TONE[delta.trend]}`} title="Frente a los 7 días anteriores">
@@ -59,7 +59,7 @@ export function PanelOverview({ place, series, reviews, pendingReviews, report, 
 
   return (
     <>
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,170px),1fr))] gap-3">
+      <div className="grid grid-cols-2 gap-3 min-[900px]:grid-cols-4">
         {KPIS.map(({ key, label, icon }) => (
           <Kpi key={key} label={label} icon={icon}
             value={series.ok ? total(key, week) : null}

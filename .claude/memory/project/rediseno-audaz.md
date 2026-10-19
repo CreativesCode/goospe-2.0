@@ -27,12 +27,14 @@ listados por ciudad y páginas institucionales (`LegalPage`). Encabezado común 
 `src/shared/components/page-header.tsx` y contenedor `pageShell` en `src/shared/lib/ui.ts`:
 usarlos en toda pantalla nueva.
 
-Sigue con estilo antiguo: el backoffice `/admin/*` (uso interno) y la tarjeta de `/unsubscribe`.
+Backoffice `/admin/*` pasado al rediseño el 2026-10-19 (sin revisar en navegador: hace falta sesión
+de admin): lateral agrupado (Operación, Bandejas, Moderación, Métricas, Ajustes) como el panel del
+dueño, chips en móvil, `adminTitle` y `adminChip` en `src/features/admin/ui.ts`, botones verdes
+planos. Sigue con estilo antiguo solo la tarjeta de `/unsubscribe`.
 
 Sin revisar en navegador:
 - Panel de un lugar (`/panel/[placeId]`, secciones por `?tab=`): solo el dueño real tiene acceso.
 - Cartelera agrupada por día: no había eventos próximos.
-- Resultados de Decídeme, chips "con quién"/"presupuesto" y "Otras 3 opciones" (gastan IA).
 - `npm run build` no se ejecutó.
 
 Qué se hizo, por pantalla: navegación (barra superior en píldoras, barra inferior móvil con
@@ -43,7 +45,7 @@ buscar (filtros laterales), Decídeme (chips "con quién" y "presupuesto" que vi
 cartelera por día, guardados con chips, perfil en dos columnas, panel de negocio con lateral y
 secciones por `?tab=` más un Resumen nuevo, acceso en pantalla partida, onboarding y landing.
 
-Decisiones tomadas por el agente que el usuario aún no ha confirmado:
+Decisiones del agente **confirmadas por el usuario el 2026-10-19** (también revisó los resultados de Decídeme):
 - "Paso" sigue descartando el lugar (con deshacer); el diseño solo saltaba a la siguiente.
 - "Por qué te sugerimos" se arma con datos del lugar, sin IA (`src/features/feed/feed-why.ts`).
 - La cartelera perdió la fila de chips por ciudad; queda el selector.

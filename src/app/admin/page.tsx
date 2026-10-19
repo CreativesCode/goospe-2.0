@@ -12,6 +12,7 @@ import { fmtInZone } from '@/lib/tz' // `day` es clave de día de la BD: se pint
 export const metadata: Metadata = { title: 'Dashboard · Admin | Goospe' }
 
 export const dynamic = 'force-dynamic'
+import { adminTitle } from '@/features/admin/ui'
 
 const DAY = 86400_000
 const fmtUsd = (n: number) => `$${n.toFixed(2)}`
@@ -91,8 +92,8 @@ export default async function AdminDashboard() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl font-medium text-fg">Dashboard</h1>
-        <p className="text-sm text-fg-soft">Visión general del piloto Goospe.</p>
+        <h1 className={`${adminTitle}`}><span className="font-medium">Dashboard</span></h1>
+        <p className="mt-2 max-w-3xl text-sm text-fg-soft">Visión general del piloto Goospe.</p>
       </header>
 
       {/* KPIs principales */}
@@ -226,7 +227,7 @@ function Kpi({ icon: Icon, label, value, hint, accent }: { icon: LucideIcon; lab
 
 function Pending({ href, icon: Icon, label, n }: { href: string; icon: LucideIcon; label: string; n: number }) {
   return (
-    <Link href={href} className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-card p-4 transition hover:border-goospe-green/40">
+    <Link href={href} className="flex items-center justify-between gap-3 rounded-[22px] border border-line bg-card p-4 transition hover:border-goospe-green/40">
       <span className="inline-flex items-center gap-2 text-sm text-fg-soft"><Icon size={17} strokeWidth={1.75} /> {label}</span>
       <span className={`rounded-full px-2.5 py-0.5 text-sm font-semibold ${n > 0 ? 'bg-tint2 text-ink' : 'text-muted'}`}>{n}</span>
     </Link>
@@ -235,7 +236,7 @@ function Pending({ href, icon: Icon, label, n }: { href: string; icon: LucideIco
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-line bg-card p-5">
+    <div className="rounded-[22px] border border-line bg-card p-5">
       <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-muted">{title}</h2>
       {children}
     </div>

@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { ModStatusButtons } from '@/features/admin/ModStatusButtons'
 import { requireAdmin } from '@/lib/admin-guard'
 import { ADMIN_TZ, fmtInZone } from '@/lib/tz'
+import { adminTitle } from '@/features/admin/ui'
 
 export const metadata: Metadata = { title: 'Moderar contenido' }
 
@@ -37,14 +38,14 @@ export default async function AdminContenidoPage() {
 
   return (
     <div className="space-y-10">
-      <h1 className="text-2xl font-medium text-fg">Moderación de contenido</h1>
+      <h1 className={`${adminTitle}`}>Moderación de <span className="font-medium">contenido</span></h1>
 
       <section>
           <h2 className="mb-4 text-xl font-medium text-fg">Reseñas recientes</h2>
           {rv.length === 0 ? <p className="text-sm text-muted">Sin reseñas.</p> : (
             <ul className="space-y-2">
               {rv.map((r) => (
-                <li key={r.id} className="flex items-start justify-between gap-4 rounded-xl border border-line bg-card p-4">
+                <li key={r.id} className="flex items-start justify-between gap-4 rounded-[22px] border border-line bg-card p-4">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="inline-flex items-center gap-1 text-sm text-ink">
@@ -64,11 +65,11 @@ export default async function AdminContenidoPage() {
         </section>
 
         <section>
-          <h1 className="mb-4 text-xl font-medium text-fg">Eventos recientes</h1>
+          <h2 className="mb-4 text-xl font-medium text-fg">Eventos recientes</h2>
           {ev.length === 0 ? <p className="text-sm text-muted">Sin eventos.</p> : (
             <ul className="space-y-2">
               {ev.map((e) => (
-                <li key={e.id} className="flex items-center justify-between gap-4 rounded-xl border border-line bg-card p-4">
+                <li key={e.id} className="flex items-center justify-between gap-4 rounded-[22px] border border-line bg-card p-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="truncate text-sm font-medium text-fg">{e.name}</span>

@@ -19,10 +19,11 @@ import { loadBoostStats, loadEventBoostStats, loadPlaceSeries } from '@/features
 
 // Contenido de cada sección del panel. Cada una carga SOLO lo suyo; la página ya validó la
 // sesión y la membresía antes de renderizarlas (las lecturas son con service role).
+// El cliente admin NO viaja en `ctx`: las props de un Server Component se serializan al
+// navegador en desarrollo (rompía la hidratación y exponía la service key). Cada sección crea el suyo.
 type Admin = ReturnType<typeof createAdminClient>
 
 export type PanelCtx = {
-  admin: Admin
   place: PanelPlace
   businessId: string
   role: string
@@ -40,7 +41,8 @@ export type PanelCtx = {
 const tzOf = (place: PanelPlace) => place.cities?.timezone ?? null
 
 async function OverviewSection({ ctx }: { ctx: PanelCtx }) {
-  const { admin, place } = ctx
+  const { place } = ctx
+  const admin = createAdminClient()
   const [series, reviews, report] = await Promise.all([
     loadPlaceSeries(place.id, OVERVIEW_DAYS, 'day'),
     loadOwnerReviews(admin, place.id),
@@ -63,7 +65,8 @@ async function loadIdentity(admin: Admin, placeId: string) {
 }
 
 async function ListingSection({ ctx }: { ctx: PanelCtx }) {
-  const { admin, place } = ctx
+  const { place } = ctx
+  const admin = createAdminClient()
   const [categories, identity] = await Promise.all([loadCategories(admin), loadIdentity(admin, place.id)])
   const addressLine = [place.address?.formatted, place.address?.city].filter(Boolean).join(', ') || null
   return (
@@ -88,13 +91,15 @@ async function ListingSection({ ctx }: { ctx: PanelCtx }) {
   )
 }
 
-async function PhotosSection({ ctx: { admin, place } }: { ctx: PanelCtx }) {
+async function PhotosSection({ ctx: { place } }: { ctx: PanelCtx }) {
+  const admin = createAdminClient()
   const photos = await loadOwnerPhotos(admin, place.id)
   return <PlaceMedia placeId={place.id} name={place.name} coverUrl={place.cover_url} logoUrl={place.logo_url} photos={photos} />
 }
 
 async function EventsSection({ ctx, startNew }: { ctx: PanelCtx; startNew: boolean }) {
-  const { admin, place, now } = ctx
+  const { place, now } = ctx
+  const admin = createAdminClient()
   const tz = tzOf(place)
   const [events, boostStats] = await Promise.all([loadPanelEvents(admin, place.id), loadEventBoostStats(place.id)])
   return (
@@ -106,13 +111,15 @@ async function EventsSection({ ctx, startNew }: { ctx: PanelCtx; startNew: boole
   )
 }
 
-async function ReviewsSection({ ctx: { admin, place } }: { ctx: PanelCtx }) {
+async function ReviewsSection({ ctx: { place } }: { ctx: PanelCtx }) {
+  const admin = createAdminClient()
   const reviews = await loadOwnerReviews(admin, place.id)
   return <ReviewReplies placeId={place.id} reviews={reviews} timeZone={tzOf(place)} />
 }
 
 async function StatsSection({ ctx }: { ctx: PanelCtx }) {
-  const { admin, place } = ctx
+  const { place } = ctx
+  const admin = createAdminClient()
   const [series, { data }, report] = await Promise.all([
     loadPlaceSeries(place.id, 30, 'day'),
     admin.from('place_stats').select('saves_count, rating, reviews_count').eq('place_id', place.id).maybeSingle(),
@@ -131,7 +138,8 @@ async function StatsSection({ ctx }: { ctx: PanelCtx }) {
   )
 }
 
-async function BoostSection({ ctx: { admin, place, now } }: { ctx: PanelCtx }) {
+async function BoostSection({ ctx: { place, now } }: { ctx: PanelCtx }) {
+  const admin = createAdminClient()
   const tz = tzOf(place)
   const [active, boostStats] = await Promise.all([loadActiveBoost(admin, place.id, now), loadBoostStats(place.id)])
   return (

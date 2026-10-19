@@ -5,6 +5,7 @@ import { Plus, Star, Bookmark, Image as ImageIcon, Search, BadgeCheck } from 'lu
 import { createAdminClient } from '@/lib/supabase/admin'
 import { PublishToggle } from '@/features/admin/PublishToggle'
 import { requireAdmin } from '@/lib/admin-guard'
+import { adminChip, adminTitle } from '@/features/admin/ui'
 
 export const metadata: Metadata = { title: 'Lugares' }
 
@@ -111,10 +112,10 @@ export default async function AdminLugaresPage({ searchParams }: { searchParams:
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-medium text-fg">Lugares</h1>
-          <p className="text-sm text-fg-soft">{totalRows} {totalRows === 1 ? 'lugar' : 'lugares'} · crea y edita cualquier ficha.</p>
+          <h1 className={`${adminTitle}`}><span className="font-medium">Lugares</span></h1>
+          <p className="mt-2 max-w-3xl text-sm text-fg-soft">{totalRows} {totalRows === 1 ? 'lugar' : 'lugares'} · crea y edita cualquier ficha.</p>
         </div>
-        <Link href="/admin/places/new" className="inline-flex items-center gap-1.5 rounded-full bg-goospe-gradient px-4 py-2 text-sm font-medium text-on-brand shadow">
+        <Link href="/admin/places/new" className="inline-flex items-center gap-1.5 rounded-full bg-goospe-green px-5 py-2.5 text-sm font-medium text-on-brand transition hover:brightness-105">
           <Plus size={16} /> Nuevo lugar
         </Link>
       </header>
@@ -132,18 +133,18 @@ export default async function AdminLugaresPage({ searchParams }: { searchParams:
         <div className="flex flex-wrap gap-1.5">
           {[['all', 'Todos'], ['pub', 'Publicados'], ['hidden', 'Ocultos'], ['claimed', 'Reclamados']].map(([k, label]) => (
             <Link key={k} href={filterLink({ estado: k })}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${estado === k ? 'bg-tint text-ink' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}>
+              className={adminChip(estado === k)}>
               {label}
             </Link>
           ))}
           <span className="mx-1 w-px self-stretch bg-line" />
           <Link href={filterLink({ cat: 'all' })}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition ${cat === 'all' ? 'bg-tint text-ink' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}>
+            className={adminChip(cat === 'all')}>
             Toda categoría
           </Link>
           {categories.map((c) => (
             <Link key={c.id} href={filterLink({ cat: c.slug })}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${cat === c.slug ? 'bg-tint text-ink' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}>
+              className={adminChip(cat === c.slug)}>
               {c.name}
             </Link>
           ))}
@@ -151,12 +152,12 @@ export default async function AdminLugaresPage({ searchParams }: { searchParams:
         {cities.length > 1 && (
           <div className="flex flex-wrap gap-1.5">
             <Link href={filterLink({ ciudad: 'all' })}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${ciudad === 'all' ? 'bg-tint text-ink' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}>
+              className={adminChip(ciudad === 'all')}>
               Toda zona
             </Link>
             {cities.map((c) => (
               <Link key={c.id} href={filterLink({ ciudad: String(c.id) })}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition ${ciudad === String(c.id) ? 'bg-tint text-ink' : 'border border-line bg-card text-fg-soft hover:text-fg'}`}>
+                className={adminChip(ciudad === String(c.id))}>
                 {c.name}{c.is_active ? '' : ' · inactiva'}
               </Link>
             ))}
@@ -168,7 +169,7 @@ export default async function AdminLugaresPage({ searchParams }: { searchParams:
       {totalRows === 0 ? (
         <p className="rounded-2xl border border-dashed border-line bg-card py-16 text-center text-sm text-muted">Sin resultados con estos filtros.</p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-line bg-card">
+        <div className="overflow-x-auto rounded-[22px] border border-line bg-card">
           <table className="w-full min-w-[760px] text-sm">
             <thead>
               <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
